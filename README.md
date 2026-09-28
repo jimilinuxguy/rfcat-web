@@ -539,3 +539,31 @@ Protocol-analysis features are intended for development, interoperability resear
 ## License
 
 See the repository license for details.
+## Project Structure
+
+The browser UI is intentionally kept separate from the RFCat transport and protocol encoders:
+
+```text
+app.js                    UI state and event wiring
+js/core/bytes.js          Byte/hex helpers
+js/rfcat/constants.js     RFCat commands, modes, supported USB IDs
+js/rfcat/device.js        WebUSB transport + RFCat/CC1111 device operations
+js/radio/registers.js     Named CC1111 register addresses
+js/radio/presets.js       Reusable radio configuration presets
+js/protocols/binary.js    Raw binary OOK packing
+js/protocols/came12.js    Experimental CAME-12 waveform encoder
+js/ui/log.js              DOM lookup and activity logging
+tests/                    Hardware-independent protocol/unit tests
+```
+
+Protocol encoders should remain pure functions: they accept data/options and return bytes/waveforms without accessing WebUSB or the DOM. This keeps them testable without radio hardware.
+
+### Tests
+
+The test suite uses Node's built-in test runner and has no package dependencies:
+
+```bash
+npm test
+```
+
+When adding a protocol encoder, add tests for its expected waveform length, byte packing, padding, and invalid inputs before wiring it into the transmitter UI.
