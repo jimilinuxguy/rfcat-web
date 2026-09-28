@@ -2,11 +2,11 @@
 
 Browser-native control of RFCat-compatible CC1111 radios using WebUSB.
 
-RFCat Web provides a lightweight web interface for controlling devices such as the **Great Scott Gadgets YARD Stick One** directly from a Chromium-based browser without Python, libusb, or a local RFCat backend.
+RFCat Web provides a lightweight web interface for controlling devices such as the Great Scott Gadgets YARD Stick One directly from a Chromium-based browser without Python, libusb, or a local RFCat backend.
 
 The application implements RFCat's USB protocol directly in JavaScript and supports radio configuration, packet reception, raw ASK/OOK experimentation, protocol-specific transmission, and SDR-assisted protocol analysis.
 
-> Only transmit on frequencies, devices, and systems you are authorized to use.
+> **Only transmit on frequencies, devices, vehicles, and systems you are authorized to use.**
 
 ---
 
@@ -76,7 +76,7 @@ When sync detection is disabled, received entries may represent raw RFCat receiv
 
 ### Lowball Mode
 
-An optional **Lowball** preset is provided for weak/raw OOK reception.
+An optional Lowball preset is provided for weak/raw OOK reception.
 
 The preset applies the RFCat-style lowball register changes:
 
@@ -136,6 +136,7 @@ Current protocol support includes:
 
 - Experimental CAME-12 ASK/OOK waveform generation
 - LRS pager packet generation and 2-FSK transmission
+- Tesla charge-port ASK/OOK waveform transmission
 
 Protocol encoders are kept separate from the WebUSB transport so they can be tested independently of radio hardware.
 
@@ -143,19 +144,32 @@ Protocol encoders are kept separate from the WebUSB transport so they can be tes
 
 ## ASK/OOK Transmission
 
-ASK/OOK transmission requires the CC1111 PA path to select the appropriate PATABLE entry.
+ASK/OOK transmission requires correct configuration of both the CC1111 PATABLE and `FREND0.PA_POWER`.
 
-RFCat Web sets:
+During SDR testing, an incorrect PATABLE base address caused the CC1111 to produce an almost continuously keyed carrier rather than the intended ASK/OOK waveform.
+
+The correct PATABLE base used by RFCat Web is:
 
 ```text
-FREND0.PA_POWER = 1
+0xDF2D
 ```
 
-immediately before ASK/OOK transmission.
+A known-good RFCat ASK/OOK configuration observed during Tesla waveform testing used:
 
-Without this setting, testing showed that the CC1111 could transmit what appeared to be a continuous carrier rather than the intended ASK/OOK bitstream.
+```text
+PATABLE[0] = 0xC0
+FREND0     = 0x11
+```
 
-A known-good ASK/OOK test is:
+The important `FREND0` setting is:
+
+```text
+PA_POWER = 1
+```
+
+RFCat Web establishes the required PA state before protocol-specific ASK/OOK transmission.
+
+A simple ASK/OOK test configuration is:
 
 ```text
 Frequency:   433.920 MHz
@@ -165,13 +179,15 @@ Sync mode:   None
 Payload:     F0 CC AA 55 0F
 ```
 
-SDR verification produced:
+SDR verification should produce:
 
 ```text
 F0 CC AA 55 0F
 ```
 
 over the air.
+
+If an ASK/OOK capture appears as a nearly continuous carrier or decodes primarily as `111111...`, verify the PATABLE base, PA table contents, and `FREND0.PA_POWER` before changing the encoded payload.
 
 ---
 
@@ -206,7 +222,7 @@ The requested frequency deviation is 15 kHz. The nearest CC1111 `DEVIATN` config
 
 The LRS TX path is intentionally separate from the ASK/OOK PA configuration.
 
-For 2-FSK transmission, RFCat Web configures the appropriate PATABLE entry and enables the YARD Stick One amplifier for transmission. The amplifier is disabled again after transmission.
+For 2-FSK transmission, RFCat Web configures the appropriate PA path and enables the YARD Stick One amplifier for transmission. The amplifier is disabled again after transmission.
 
 ### LRS Packet Format
 
@@ -299,20 +315,32 @@ Web UI
 
 ## PATABLE
 
-The CC1111 PA table can be inspected directly.
+The CC1111 PA table can be inspected and configured directly.
 
-An observed ASK/OOK configuration is:
+The PATABLE base address used by RFCat Web is:
+
+```text
+0xDF2D
+```
+
+An observed known-good ASK/OOK configuration is:
 
 ```text
 PATABLE:
 C0 00 00 00 00 00 00 00
 ```
 
-ASK/OOK transmission uses `FREND0.PA_POWER = 1` as required by the RFCat-style CC1111 configuration.
+with:
 
-The LRS 2-FSK configuration uses the appropriate non-OOK PA path instead of applying the ASK/OOK-specific `PA_POWER = 1` behavior.
+```text
+FREND0 = 0x11
+```
 
-The PA configuration should not be interpreted as calibrated RF output-power control.
+For ASK/OOK, the PA table and `FREND0.PA_POWER` must agree on which PA entry is selected.
+
+The LRS 2-FSK configuration uses its appropriate non-OOK PA path instead of blindly applying ASK/OOK-specific PA behavior.
+
+PA-table values should not be interpreted as calibrated RF output-power measurements.
 
 ---
 
@@ -426,7 +454,7 @@ D3 49 A6 D3 40 00 00 00
 
 ### Status
 
-The CAME-12 encoder is **experimental**.
+The CAME-12 encoder is experimental.
 
 SDR testing has verified:
 
@@ -441,6 +469,230 @@ SDR testing has verified:
 The remaining work is to compare the generated pulse ordering and framing against captures from authorized reference hardware.
 
 Do not assume that the current logical `0`/`1` mapping represents every CAME transmitter or protocol variant.
+
+---
+
+## Tesla Charge Port Transmitter
+
+The Tesla transmitter implements the ASK/OOK waveform used by the original `TeslaPop.py` RFCat/YARD Stick One implementation.
+
+> **Use only with vehicles and RF systems you own or are authorized to test.**
+
+### Reference Configuration
+
+The original RFCat implementation configures the YARD Stick One with:
+
+```python
+d.setModeIDLE()
+d.setMdmModulation(MOD_ASK_OOK)
+d.setFreq(433920000)
+d.setMdmDRate(2500)
+d.setAmpMode(1)
+```
+
+The reference transmission sends the same 42-byte frame five times:
+
+```text
+15 55 55 51 59 4C B5 55
+52 D5 4B 4A D3 4C AB 4B
+15 94 CB 33 33 2D 54 B4
+56 9A 65 5A 48 AC C6 59
+99 99 69 A5 B2 B4 D4 2A
+D2 80
+```
+
+This produces a 210-byte transmit buffer:
+
+```text
+42 bytes × 5 frames = 210 bytes
+```
+
+The five frames are constructed by the Tesla encoder before transmission. The generic RFCat transmit repeat value should therefore remain:
+
+```text
+0
+```
+
+### Tesla Radio Configuration
+
+The WebUSB implementation configures Tesla transmission as:
+
+| Setting | Value |
+|---|---|
+| Frequency | 433.920 MHz |
+| Modulation | ASK/OOK |
+| Data rate | 2500 baud |
+| Sync | Disabled |
+| Manchester | Disabled |
+| Frame size | 42 bytes |
+| Frames | 5 |
+| TX buffer | 210 bytes |
+| RFCat outer repeat | 0 |
+| External amplifier | Enabled during TX |
+
+The UI also provides a selectable **315 MHz** option for authorized testing.
+
+The original `TeslaPop.py` reference configuration uses **433.920 MHz**.
+
+### Tesla ASK/OOK PA Configuration
+
+Correct PA configuration is essential for generating the expected OOK waveform.
+
+During development, an incorrect PATABLE address caused the transmitter to produce an almost continuously keyed carrier rather than the expected ASK/OOK pulse train.
+
+The corrected CC1111 PATABLE base is:
+
+```js
+PATABLE: 0xdf2d
+```
+
+A register dump from the known-good native RFCat Tesla configuration showed:
+
+```text
+PATABLE[0] = 0xC0
+FREND0     = 0x11
+```
+
+RFCat Web therefore establishes the appropriate ASK/OOK PA state before Tesla transmission.
+
+Conceptually:
+
+```js
+async configureAskOokPa() {
+    const pa = new Uint8Array([
+        0xc0, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+    ]);
+
+    await this.poke(R.PATABLE, pa);
+
+    let frend0 = (await this.peek(R.FREND0, 1))[0];
+
+    // PA_POWER = 1 while preserving the remaining FREND0 bits.
+    frend0 = (frend0 & 0xf8) | 0x01;
+
+    await this.poke(R.FREND0, new Uint8Array([frend0]));
+}
+```
+
+The external YARD Stick One amplifier is enabled immediately before transmission and disabled afterward.
+
+### Tesla Transmit Sequence
+
+The Tesla transmit path follows this sequence:
+
+```text
+RF_IDLE
+   ↓
+Set ASK/OOK modulation
+   ↓
+Set carrier frequency
+   ↓
+Set 2500 baud
+   ↓
+Configure ASK/OOK PATABLE
+   ↓
+Set FREND0 PA_POWER = 1
+   ↓
+Enable external amplifier
+   ↓
+Transmit 210-byte buffer
+   ↓
+RF_IDLE
+   ↓
+Disable external amplifier
+```
+
+Conceptually:
+
+```js
+await d.mode(C.RF_IDLE);
+
+await d.setModulation(0x30);
+await d.setFrequency(frequencyMHz * 1_000_000);
+await d.setDataRate(2500);
+
+await d.configureAskOokPa();
+
+await d.setAmpMode(true);
+
+await d.transmit(bytes, 0, 0);
+
+await d.mode(C.RF_IDLE);
+await d.setAmpMode(false);
+```
+
+### Tesla Waveform Verification
+
+The WebUSB implementation was compared directly against the original Python/RFCat transmitter using Universal Radio Hacker.
+
+For a 1 MS/s capture at 2500 baud:
+
+```text
+Samples per symbol = 1,000,000 / 2,500
+                   = 400
+```
+
+A useful URH interpretation configuration is therefore:
+
+```text
+Sample rate:       1 MS/s
+Frequency:         433.920 MHz
+Modulation:        ASK
+Samples/Symbol:    400
+Bits/Symbol:       1
+Signal view:       Demodulated
+```
+
+The native Python/RFCat implementation produces clearly separated ASK/OOK transitions.
+
+After correcting the PATABLE base and PA configuration, the WebUSB implementation produces the same characteristic pulse structure rather than the previously observed continuous-carrier behavior.
+
+Repeated frames show inter-frame pauses of approximately:
+
+```text
+~4000 samples
+```
+
+at a 1 MS/s capture rate, corresponding to approximately:
+
+```text
+4000 / 1,000,000
+= 0.004 seconds
+= 4 ms
+```
+
+### Tesla Troubleshooting
+
+If URH displays an almost continuous carrier and decodes primarily:
+
+```text
+111111111111111111...
+```
+
+check the PA configuration before modifying the Tesla payload.
+
+Verify:
+
+```text
+PATABLE base = 0xDF2D
+PATABLE[0]   = 0xC0
+FREND0       = 0x11
+```
+
+Also verify:
+
+```text
+Frequency:        433.920 MHz
+Modulation:       ASK/OOK
+Data rate:        2500 baud
+Manchester:       Off
+RFCat TX repeat:  0
+```
+
+A successful `NIC_XMIT` transaction proves that RFCat received the requested byte buffer, but does not by itself prove that the CC1111 generated the expected over-the-air waveform.
+
+For RF debugging, capture both the WebUSB and known-good native RFCat transmissions using identical SDR and URH settings.
 
 ---
 
@@ -466,7 +718,7 @@ Bits/Symbol:       1
 Signal view:       Demodulated
 ```
 
-At 1 MS/s, the relationship between samples and timing is particularly convenient:
+At 1 MS/s:
 
 ```text
 320 samples ≈ 320 µs
@@ -488,6 +740,19 @@ Bits/Symbol:       1
 Encoding:          Manchester II
 ```
 
+### Tesla Analysis
+
+For Tesla ASK/OOK analysis:
+
+```text
+Sample rate:       1 MS/s
+Frequency:         433.920 MHz
+Modulation:        ASK
+Samples/Symbol:    400
+Bits/Symbol:       1
+Signal view:       Demodulated
+```
+
 Receiver threshold and gain should be adjusted for the local SDR setup.
 
 ---
@@ -506,7 +771,7 @@ LEN_HI
 PAYLOAD...
 ```
 
-where the payload length is a little-endian 16-bit integer.
+The payload length is a little-endian 16-bit integer.
 
 ### Inbound Frame
 
@@ -595,185 +860,173 @@ offset      = configured offset value
 data        = generated LRS packet
 ```
 
+Tesla constructs its five repetitions directly into the RF payload:
+
+```text
+data_length = 210
+repeat      = 0
+offset      = 0
+data        = 42-byte Tesla frame × 5
+```
+
 ---
 
-## Tesla Charge Port Transmitter
-
-The Tesla transmitter implements the ASK/OOK waveform used by the original `TeslaPop.py` RFCat/YARD Stick One implementation.
-
-> **Use only with vehicles and RF systems you own or are authorized to test.**
-
-### Reference Configuration
-
-The original RFCat implementation configures the YARD Stick One with:
-
-```python
-d.setModeIDLE()
-d.setMdmModulation(MOD_ASK_OOK)
-d.setFreq(433920000)
-d.setMdmDRate(2500)
-d.setAmpMode(1)
-```
-
-The reference transmission sends the same 42-byte frame five times:
+## Project Structure
 
 ```text
-15 55 55 51 59 4C B5 55
-52 D5 4B 4A D3 4C AB 4B
-15 94 CB 33 33 2D 54 B4
-56 9A 65 5A 48 AC C6 59
-99 99 69 A5 B2 B4 D4 2A
-D2 80
+rfcat-web/
+├── index.html
+├── app.js
+├── styles.css
+├── package.json
+├── README.md
+├── js/
+│   ├── core/
+│   │   └── bytes.js
+│   ├── protocols/
+│   │   ├── binary.js
+│   │   ├── came12.js
+│   │   ├── lrs.js
+│   │   └── tesla.js
+│   ├── radio/
+│   │   ├── presets.js
+│   │   └── registers.js
+│   ├── rfcat/
+│   │   ├── constants.js
+│   │   └── device.js
+│   └── ui/
+│       └── log.js
+└── tests/
 ```
 
-This produces a 210-byte transmit buffer:
+The project intentionally separates:
 
 ```text
-42 bytes × 5 frames = 210 bytes
+WebUSB transport
+Radio configuration
+Protocol encoding
+UI behavior
 ```
 
-The five frames are constructed by the Tesla encoder before transmission. The generic RFCat transmit repeat value should therefore remain `0`.
+so each layer can be tested independently.
 
-### Radio Configuration
+---
 
-The WebUSB implementation configures Tesla transmission as:
+## Browser Requirements
 
-| Setting | Value |
-|---|---|
-| Frequency | 433.920 MHz |
-| Modulation | ASK/OOK |
-| Data rate | 2500 baud |
-| Sync | Disabled |
-| Manchester | Disabled |
-| Frame size | 42 bytes |
-| Frames | 5 |
-| TX buffer | 210 bytes |
-| RFCat outer repeat | 0 |
-| External amplifier | Enabled during TX |
+RFCat Web requires WebUSB.
 
-The UI also provides a selectable 315 MHz option for authorized testing. The original `TeslaPop.py` reference uses **433.920 MHz**.
+Use a Chromium-based desktop browser such as:
 
-### ASK/OOK PA Configuration
+- Google Chrome
+- Microsoft Edge
+- Chromium
 
-Correct PA configuration is important for generating the OOK waveform.
-
-During development, an incorrect PATABLE address caused the transmitter to produce an almost continuously keyed carrier rather than the expected ASK/OOK pulse train.
-
-The CC1111 PATABLE base used by this project is:
-
-```js
-PATABLE: 0xdf2d
-```
-
-The known-good RFCat Tesla configuration showed:
+The application must be served from a secure context:
 
 ```text
-PATABLE[0] = 0xC0
-FREND0     = 0x11
+https://
 ```
 
-The Tesla transmit path explicitly establishes the required ASK/OOK PA state before transmission.
+or:
+
+```text
+http://localhost
+```
+
+Opening `index.html` directly using `file://` is not recommended.
+
+---
+
+## Running Locally
+
+A simple local HTTP server is sufficient.
 
 For example:
 
+```bash
+python3 -m http.server 8000
+```
+
+Then open:
+
+```text
+http://localhost:8000
+```
+
+in Chrome or another compatible Chromium browser.
+
+---
+
+## Testing
+
+Protocol encoders are designed to be testable without RF hardware.
+
+Run the JavaScript tests with:
+
+```bash
+npm test
+```
+
+Hardware-dependent WebUSB functionality requires a connected RFCat-compatible device.
+
+For RF protocol development, SDR verification is strongly recommended.
+
+A useful workflow is:
+
+```text
+Protocol encoder
+      ↓
+RFCat Web
+      ↓
+YARD Stick One
+      ↓
+RF
+      ↓
+RTL-SDR
+      ↓
+URH / inspectrum
+      ↓
+Compare expected vs observed waveform
+```
+
+---
+
+## Development Notes
+
+### RX
+
+After entering:
+
 ```js
-async configureAskOokPa() {
-    const pa = new Uint8Array([
-        0xc0, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00,
-    ]);
-
-    await this.poke(R.PATABLE, pa);
-
-    let frend0 = (await this.peek(R.FREND0, 1))[0];
-
-    // PA_POWER = 1 while preserving the remaining FREND0 bits.
-    frend0 = (frend0 & 0xf8) | 0x01;
-
-    await this.poke(R.FREND0, new Uint8Array([frend0]));
-}
+await d.mode(C.RF_RX);
 ```
 
-The external YARD Stick One amplifier is then enabled immediately before transmission and disabled afterward.
+avoid unnecessary register reads while actively receiving.
 
-### Transmit Sequence
+Some CC1111/RFCat operations can interfere with active RX behavior.
 
-The Tesla transmit path follows this sequence:
+### TX
 
-```text
-RF_IDLE
-   ↓
-Set ASK/OOK modulation
-   ↓
-Set carrier frequency
-   ↓
-Set 2500 baud
-   ↓
-Configure ASK/OOK PATABLE
-   ↓
-Set FREND0 PA_POWER = 1
-   ↓
-Enable external amplifier
-   ↓
-Transmit 210-byte buffer
-   ↓
-RF_IDLE
-   ↓
-Disable external amplifier
-```
+Protocol-specific TX modes should:
 
-Conceptually:
+1. Enter `RF_IDLE`.
+2. Configure the required radio parameters.
+3. Configure the correct PA path for the modulation.
+4. Enable the external amplifier only when required.
+5. Transmit the encoded buffer.
+6. Return to `RF_IDLE`.
+7. Disable the external amplifier.
 
-```js
-await d.mode(C.RF_IDLE);
+Where possible, amplifier cleanup should be performed even if transmission throws an exception.
 
-await d.setModulation(0x30);
-await d.setFrequency(frequencyMHz * 1_000_000);
-await d.setDataRate(2500);
+### ASK/OOK
 
-await d.configureAskOokPa();
+Do not assume that setting `MOD_ASK_OOK` alone is sufficient.
 
-await d.setAmpMode(true);
+The CC1111 PA configuration must also be correct.
 
-await d.transmit(bytes, 0, 0);
-
-await d.mode(C.RF_IDLE);
-await d.setAmpMode(false);
-```
-
-### Waveform Verification
-
-The implementation was compared against the original Python/RFCat transmitter using Universal Radio Hacker (URH).
-
-For a 1 MS/s capture at 2500 baud:
-
-```text
-Samples per symbol = 1,000,000 / 2,500
-                   = 400
-```
-
-Recommended URH interpretation settings for this capture are therefore:
-
-```text
-Modulation:       ASK
-Bits/Symbol:      1
-Samples/Symbol:   400
-```
-
-The corrected WebUSB transmitter produces clearly separated ASK/OOK high/low transitions matching the structure produced by the native RFCat implementation.
-
-The five transmitted frames also show approximately 4 ms inter-frame pauses in a 1 MS/s URH capture:
-
-```text
-~4000 samples / 1,000,000 samples/sec
-≈ 4 ms
-```
-
-### Troubleshooting
-
-If URH displays an almost continuous carrier and decodes mostly `111111...`, first verify the ASK/OOK PA configuration.
-
-In particular, check:
+The known-good Tesla debugging work established:
 
 ```text
 PATABLE base = 0xDF2D
@@ -781,170 +1034,70 @@ PATABLE[0]   = 0xC0
 FREND0       = 0x11
 ```
 
-A valid USB `NIC_XMIT` transaction only confirms that the payload reached RFCat. It does not by itself prove that the CC1111 generated the correct over-the-air OOK waveform.
+Incorrect PA configuration can result in a carrier being transmitted without the expected OOK transitions.
 
-For waveform debugging, compare the WebUSB transmission against a known-good native RFCat transmission using identical SDR and URH settings.
+### 2-FSK
 
-## Running RFCat Web
+ASK/OOK-specific PA configuration should not be blindly applied to 2-FSK modes.
 
-Clone the repository and serve it over HTTP.
-
-For example:
-
-```bash
-git clone <repository-url>
-cd rfcat-web
-python3 -m http.server 8080
-```
-
-Then open:
-
-```text
-http://localhost:8080
-```
-
-in a Chromium-based browser with WebUSB support, such as desktop Chrome or Edge.
-
-Click:
-
-```text
-Connect YS1
-```
-
-and select the YARD Stick One.
-
-### GitHub Pages
-
-RFCat Web is a static browser application and can also be hosted using GitHub Pages.
-
-Configure GitHub Pages to deploy from the repository's main branch and root directory.
-
-WebUSB requires a secure context. GitHub Pages provides HTTPS, making it suitable for browser-based WebUSB access.
+LRS uses a separate 2-FSK configuration path.
 
 ---
 
-## WebUSB Notes
+## Current Status
 
-The YARD Stick One currently uses:
+Working:
 
-```text
-VID: 0x1D50
-PID: 0x605B
-```
+- WebUSB connection to YARD Stick One
+- RFCat system ping
+- Register peek/poke
+- Radio configuration
+- Radio configuration readback
+- Radio register dump
+- RX mode
+- TX mode
+- ASK/OOK transmission
+- Binary waveform TX
+- Optional Lowball RX configuration
+- LRS pager packet generation
+- LRS 2-FSK transmission
+- LRS Manchester encoding
+- LRS OTA verification with RTL-SDR/URH
+- Tesla 433.920 MHz configuration
+- Tesla 2500-baud ASK/OOK transmission
+- Tesla 42-byte frame generation
+- Tesla five-frame/210-byte TX construction
+- Tesla ASK/OOK PA configuration
+- Tesla OTA waveform verification against native RFCat
+- Experimental CAME-12 waveform generation
 
-RFCat communication uses:
+Experimental / continuing work:
 
-```text
-Bulk OUT: endpoint 5
-Bulk IN:  endpoint 0x85
-```
-
-Only one application should control the device at a time.
-
-Close or disconnect:
-
-- Python RFCat sessions
-- libusb applications
-- other RFCat Web tabs
-- other applications attempting to access the YARD Stick
-
-before connecting through WebUSB.
-
-Occasionally the initial RFCat ping may time out immediately after opening the USB device. Disconnecting/reconnecting currently recovers from this condition. Improving startup/retry handling is on the TODO list.
-
----
-
-## Project Structure
-
-The browser UI is intentionally kept separate from the RFCat transport and protocol encoders:
-
-```text
-app.js                    UI state and event wiring
-js/core/bytes.js          Byte/hex helpers
-js/rfcat/constants.js     RFCat commands, modes, supported USB IDs
-js/rfcat/device.js        WebUSB transport + RFCat/CC1111 device operations
-js/radio/registers.js     Named CC1111 register addresses
-js/radio/presets.js       Reusable radio configuration presets
-js/protocols/binary.js    Raw binary OOK packing
-js/protocols/came12.js    Experimental CAME-12 waveform encoder
-js/protocols/lrs.js       LRS pager packet encoder and checksum
-js/ui/log.js              DOM lookup and activity logging
-tests/                    Hardware-independent protocol/unit tests
-```
-
-Protocol encoders should remain pure functions: they accept data/options and return bytes/waveforms without accessing WebUSB or the DOM. This keeps them testable without radio hardware.
-
-### Tests
-
-The test suite uses Node's built-in test runner and has no package dependencies:
-
-```bash
-npm test
-```
-
-When adding a protocol encoder, add tests for its packet/waveform construction, expected length, byte packing, checksum where applicable, padding, and invalid inputs before wiring it into the transmitter UI.
+- CAME-12 logical pulse mapping
+- Additional protocol presets
+- Additional RX analysis tooling
+- Additional automated radio configuration tests
+- Additional SDR-based waveform regression testing
 
 ---
 
-## Development Status
+## Safety and Legal Notice
 
-RFCat Web is under active development.
+Radio transmission is regulated and frequency allocations vary by jurisdiction.
 
-Currently verified:
+Use RFCat Web only with:
 
-- [x] WebUSB device discovery
-- [x] RFCat USB framing
-- [x] System ping
-- [x] Register peek/poke
-- [x] Radio register dump
-- [x] Frequency configuration
-- [x] ASK/OOK modulation
-- [x] 2-FSK modulation
-- [x] Data-rate configuration
-- [x] Channel-bandwidth configuration
-- [x] CC1111 frequency-deviation configuration
-- [x] Sync configuration
-- [x] Manchester encoding
-- [x] Fixed/variable packet configuration
-- [x] CRC configuration
-- [x] Whitening configuration
-- [x] Address checking
-- [x] RX mode
-- [x] RFCat packet reception
-- [x] Lowball RX preset
-- [x] Hex transmission
-- [x] RFCat repeat/offset support
-- [x] Binary OOK waveform transmission
-- [x] ASK/OOK PA selection
-- [x] PATABLE inspection
-- [x] YARD Stick One TX amplifier control
-- [x] Experimental CAME-12 waveform generation
-- [x] SDR verification of ~320/640 µs CAME timing
-- [x] LRS pager packet encoder
-- [x] LRS restaurant/pager/alert controls
-- [x] LRS packet checksum generation
-- [x] LRS radio configuration
-- [x] LRS 2-FSK + Manchester transmission
-- [x] LRS over-the-air verification with RTL-SDR/URH
-- [x] Tesla Charger Port Opener
-- [ ] Automatic USB startup recovery
-- [ ] Persistent UI settings
-- [ ] Calibrated TX power control
-- [ ] Additional protocol encoders
-- [ ] Further CAME framing/polarity validation
+- frequencies you are legally permitted to transmit on,
+- devices and vehicles you own or have explicit authorization to test,
+- appropriate RF power levels,
+- appropriate test environments.
 
----
+Receiving or analyzing RF signals may also be subject to local laws and regulations.
 
-## Safety and Legal Use
-
-RFCat Web provides low-level access to RF hardware.
-
-Users are responsible for complying with applicable radio regulations and for transmitting only on frequencies, devices, and systems they are authorized to use.
-
-Protocol-analysis features are intended for development, interoperability research, laboratory experimentation, and testing of equipment under the user's control.
+The project is intended for RF experimentation, interoperability research, education, development, and authorized security testing.
 
 ---
 
 ## License
 
-See the repository license for details.
+See the repository license information for applicable terms.
