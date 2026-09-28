@@ -1,22 +1,25 @@
-export const PRESETS = Object.freeze({
-  came433: {
-    name: "CAME 433.92 MHz test",
-    frequencyMHz: 433.920,
-    modulation: 0x30,
-    dataRate: 3125,
-    bandwidthKHz: 53.571,
-    syncWord: "0000",
-    syncMode: 0,
-    lowball: false,
-  },
-  ook433Rx: {
-    name: "433.92 MHz OOK RX",
-    frequencyMHz: 433.920,
-    modulation: 0x30,
-    dataRate: 4800,
-    bandwidthKHz: 53.571,
-    syncWord: "0000",
-    syncMode: 0,
-    lowball: true,
-  },
-});
+export const RADIO_PRESETS = {
+    lrs: {
+        name: "LRS Pager",
+        frequency: 467_750_000,
+        modulation: 0,       // 2-FSK
+        dataRate: 625,
+        deviation: 15_000,
+        syncWord: 0x0000,
+        syncMode: 0,
+        manchester: true,
+        lowball: false,
+    },
+
+    came12: {
+        name: "CAME 12-bit",
+        frequency: 433_920_000,
+        modulation: 0x30,    // ASK/OOK
+        dataRate: 3125,
+        bandwidth: 53_571,
+        syncWord: 0x0000,
+        syncMode: 0,
+        manchester: false,
+        lowball: false,
+    },
+};

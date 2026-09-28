@@ -8,6 +8,7 @@ export const C = Object.freeze({
   SYS_PARTNUM: 0x8e,
   NIC_RECV: 0x01,
   NIC_XMIT: 0x02,
+  NIC_SET_AMP_MODE: 0x0a,
   RF_RX: 0x02,
   RF_TX: 0x03,
   RF_IDLE: 0x04,

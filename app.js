@@ -1,10 +1,12 @@
 // RFCat Web UI/event wiring. Hardware/protocol logic lives under js/.
+import { RADIO_PRESETS } from "./js/radio/presets.js";
 import { C } from "./js/rfcat/constants.js";
 import { R } from "./js/radio/registers.js";
 import { RFCatUSB } from "./js/rfcat/device.js";
 import { hex, parseHex } from "./js/core/bytes.js";
 import { encodeCame12 } from "./js/protocols/came12.js";
 import { parseBinarySymbols } from "./js/protocols/binary.js";
+import { encodeLrsPager } from "./js/protocols/lrs.js";
 import { $, log } from "./js/ui/log.js";
 
 const d = new RFCatUSB();
@@ -101,6 +103,80 @@ $("lengthmode").addEventListener("change", updatePacketControlState);
 $("addrcheck").addEventListener("change", updatePacketControlState);
 
 updatePacketControlState();
+
+function showRadioPreset(preset) {
+    $("freq").value =
+        (preset.frequency / 1_000_000).toFixed(3);
+
+    $("drate").value =
+        String(preset.dataRate);
+
+    $("mod").value =
+        String(preset.modulation);
+
+    $("sync").value =
+        preset.syncWord
+            .toString(16)
+            .padStart(4, "0")
+            .toUpperCase();
+
+    $("syncmode").value =
+        String(preset.syncMode);
+
+    $("lowball").checked =
+        Boolean(preset.lowball);
+
+    if (preset.bandwidth !== undefined) {
+        $("bw").value =
+            String(preset.bandwidth / 1000);
+    }
+}
+
+function getLrsAlert() {
+    const value = $("lrs-alert").value;
+    return value === "manual"
+        ? Number($("lrs-manual-alert").value)
+        : Number(value);
+}
+
+function updateLrsPreview() {
+    try {
+        const packet = encodeLrsPager({
+            restaurantId: $("lrs-rest-id").value,
+            pagerId: $("lrs-pager-id").value,
+            alertType: getLrsAlert(),
+        });
+        $("lrs-packet-preview").textContent = packet.hex.toUpperCase();
+    } catch (e) {
+        $("lrs-packet-preview").textContent = e.message;
+    }
+}
+
+function updateTxMode() {
+    const mode = $("txmode").value;
+    const isLrs = mode === "lrs";
+
+    $("lrs-options").hidden = !isLrs;
+    $("payload-row").hidden = isLrs;
+
+    if (RADIO_PRESETS[mode]) {
+        showRadioPreset(RADIO_PRESETS[mode]);
+    }
+
+    if (isLrs) {
+        updateLrsPreview();
+    }
+}
+
+$("txmode").addEventListener("change", updateTxMode);
+$("lrs-alert").addEventListener("change", () => {
+    $("lrs-manual-row").hidden = $("lrs-alert").value !== "manual";
+    updateLrsPreview();
+});
+for (const id of ["lrs-rest-id", "lrs-pager-id", "lrs-manual-alert"]) {
+    $(id).addEventListener("input", updateLrsPreview);
+}
+updateTxMode();
 
 async function refresh() {
     const c = await d.config();
@@ -390,6 +466,31 @@ $("transmit").onclick = async () => {
                     `${hex(b)} · ` +
                     `~${durationMs.toFixed(3)} ms @ ${rate} baud`,
             );
+        } else if (mode === "lrs") {
+            await d.mode(C.RF_IDLE);
+            await d.setFrequency(467_750_000);
+            await d.setModulation(0x00); // 2-FSK
+            await d.setSync(0x0000, 0);
+            const deviation = await d.setDeviation(15_000);
+            await d.setDataRate(625);
+            await d.setManchester(true);
+            const power = await d.setMaxPower();
+            await d.setAmpMode(true);
+
+            const encoded = encodeLrsPager({
+                restaurantId: $("lrs-rest-id").value,
+                pagerId: $("lrs-pager-id").value,
+                alertType: getLrsAlert(),
+            });
+            b = encoded.bytes;
+
+            log(
+                `LRS TX: restaurant ${encoded.restaurantId} · ` +
+                `pager ${encoded.pagerId} · alert ${encoded.alertType} · ` +
+                `467.750 MHz · 2-FSK · 625 baud · ` +
+                `${Math.round(deviation)} Hz deviation · Manchester · ` +
+                `PA 0x${power.toString(16).toUpperCase()} · ${b.length} bytes`,
+            );
         } else {
             b = parseHex($("payload").value);
 
@@ -401,10 +502,13 @@ $("transmit").onclick = async () => {
         if (b.length > 255) {
             throw new Error("TX payload cannot exceed 255 bytes");
         }
-        const pa = await d.peek(0xdf2e, 8);
-        log(`PATABLE: ${hex(pa)}`);
-        // Required for working ASK/OOK TX on our YS1.
-        await d.setTxPaPower();
+
+        if (mode !== "lrs") {
+            const pa = await d.peek(R.PATABLE, 8);
+            log(`PATABLE: ${hex(pa)}`);
+            // Required for working ASK/OOK TX on our YS1.
+            await d.setTxPaPower();
+        }
 
         await d.transmit(
             b,
@@ -413,6 +517,11 @@ $("transmit").onclick = async () => {
         );
 
         log(`TX ${b.length} bytes: ${hex(b)}`);
+
+        if (mode === "lrs") {
+            await d.mode(C.RF_IDLE);
+            await d.setAmpMode(false);
+        }
     } catch (e) {
         log(`ERROR: ${e.message}`);
     }

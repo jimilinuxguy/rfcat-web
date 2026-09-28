@@ -22,7 +22,9 @@ export class RFCatUSB extends EventTarget {
                 "WebUSB is unavailable. Use desktop Chrome/Edge over HTTPS or localhost.",
             );
 
-        this.device = await navigator.usb.requestDevice({ filters: SUPPORTED_DEVICES });
+        this.device = await navigator.usb.requestDevice({
+            filters: SUPPORTED_DEVICES,
+        });
 
         await this.device.open();
 
@@ -310,6 +312,87 @@ export class RFCatUSB extends EventTarget {
         await this.poke(R.MDMCFG2, new Uint8Array([v]));
     }
 
+    async setDeviation(deviationHz) {
+        const fxosc = 24_000_000;
+
+        let best = null;
+
+        // CC1111 DEVIATN:
+        // deviation = (8 + M) * 2^E * fXOSC / 2^17
+        for (let e = 0; e <= 7; e++) {
+            for (let m = 0; m <= 7; m++) {
+                const actual =
+                    ((8 + m) * Math.pow(2, e) * fxosc) / Math.pow(2, 17);
+
+                const error = Math.abs(actual - deviationHz);
+
+                if (!best || error < best.error) {
+                    best = {
+                        e,
+                        m,
+                        actual,
+                        error,
+                    };
+                }
+            }
+        }
+
+        const value = ((best.e & 0x07) << 4) | (best.m & 0x07);
+
+        await this.poke(
+            R.DEVIATN, // DEVIATN
+            new Uint8Array([value]),
+        );
+
+        return best.actual;
+    }
+
+    async setManchester(enabled) {
+        let v = (await this.peek(R.MDMCFG2))[0];
+        v = (v & ~0x08) | (enabled ? 0x08 : 0x00);
+        await this.poke(R.MDMCFG2, new Uint8Array([v]));
+    }
+
+    async setMaxPower() {
+        const c = await this.config();
+        const freq = c.freq;
+        const modulation = c.mod;
+
+        const power =
+            freq <= 400e6
+                ? 0xc2
+                : freq <= 464e6
+                  ? 0xc0
+                  : freq <= 900e6
+                    ? 0xc2
+                    : 0xc0;
+
+        const pa = new Uint8Array(8);
+
+        if (modulation === 0x30) {
+            pa[1] = power;
+            await this.poke(R.PATABLE, pa);
+            await this.setTxPaPower();
+        } else {
+            pa[0] = power;
+            await this.poke(R.PATABLE, pa);
+
+            let frend0 = (await this.peek(R.FREND0, 1))[0];
+            frend0 &= 0xf8;
+            await this.poke(R.FREND0, new Uint8Array([frend0]));
+        }
+
+        return power;
+    }
+
+    async setAmpMode(enabled) {
+        return this.send(
+            C.APP_NIC,
+            C.NIC_SET_AMP_MODE,
+            new Uint8Array([enabled ? 1 : 0]),
+        );
+    }
+
     async setSync(word, mode) {
         await this.poke(
             R.SYNC1,
@@ -499,4 +582,3 @@ export class RFCatUSB extends EventTarget {
         );
     }
 }
-

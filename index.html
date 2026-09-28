@@ -26,9 +26,64 @@
                         <option value="hex">Hex bytes</option>
                         <option value="binary">Binary OOK symbols</option>
                         <option value="came12">CAME 12-bit</option>
+                        <option value="lrs">LRS Pager</option>
                     </select>
+                    <div id="lrs-options" hidden>
+                        <label>
+                            Restaurant ID
+                            <input
+                                id="lrs-rest-id"
+                                type="number"
+                                min="0"
+                                max="255"
+                                value="1"
+                            >
+                        </label>
+
+                        <label>
+                            Pager ID
+                            <input
+                                id="lrs-pager-id"
+                                type="number"
+                                min="0"
+                                max="4095"
+                                value="1"
+                            >
+                        </label>
+
+                        <label>
+                            Alert
+                            <select id="lrs-alert">
+                                <option value="1">Flash 30 Seconds</option>
+                                <option value="2">Flash 5 Minutes</option>
+                                <option value="3">Flash / Beep 5×5</option>
+                                <option value="4">Beep 3 Times</option>
+                                <option value="5">Beep 5 Minutes</option>
+                                <option value="7">Glow / Vibrate 15 Times</option>
+                                <option value="10">Flash / Vibrate 1 Second</option>
+                                <option value="68">Beep 3 Times (68)</option>
+                                <option value="manual">Manual…</option>
+                            </select>
+                        </label>
+
+                        <label id="lrs-manual-row" hidden>
+                            Manual Alert
+                            <input
+                                id="lrs-manual-alert"
+                                type="number"
+                                min="0"
+                                max="255"
+                                value="1"
+                            >
+                        </label>
+
+                        <div>
+                            Packet:
+                            <code id="lrs-packet-preview">—</code>
+                        </div>
+                    </div>
                 </div><div class="actions"><button id="apply" class="primary">Apply configuration</button><button id="readcfg">Read radio</button><button id="idle">Idle</button><button id="rx">RX</button></div><div id="configSummary" class="summary">Connect a device to read its configuration.</div></section>
             <section class="card"><div class="title-row"><h2>Receiver</h2><div><button id="listen">Start listening</button><button id="clear">Clear</button></div></div><div class="stats"><span>RX events <b id="packets">0</b></span><span>Bytes <b id="bytes">0</b></span><span>RSSI <b id="rssi">—</b></span><span>LQI <b id="lqi">—</b></span><span>State <b id="rxstate">IDLE</b></span></div><p class="hint receiver-hint">With sync disabled, entries are raw RFCat receive buffers, not necessarily protocol packets.</p><div id="packetList" class="packets"><div class="empty">No packets captured.</div></div></section>
-            <section class="card"><h2>Transmit</h2><label>Payload (hex)<textarea id="payload" rows="4" placeholder="AA BB CC DD"></textarea></label><div class="grid small"><label>Repeat<input id="repeat" type="number" min="0" max="100" value="0"></label><label>Offset<input id="offset" type="number" min="0" value="0"></label></div><div class="actions"><button id="transmit" class="danger">Transmit</button></div><p class="hint">Transmit only on frequencies and devices you are authorized to use.</p></section>
+            <section class="card"><h2>Transmit</h2><label id="payload-row">Payload (hex)<textarea id="payload" rows="4" placeholder="AA BB CC DD"></textarea></label><div class="grid small"><label>Repeat<input id="repeat" type="number" min="0" max="100" value="0"></label><label>Offset<input id="offset" type="number" min="0" value="0"></label></div><div class="actions"><button id="transmit" class="danger">Transmit</button></div><p class="hint">Transmit only on frequencies and devices you are authorized to use.</p></section>
             <section class="card console"><div class="title-row"><h2>Activity</h2><button id="clearlog">Clear log</button></div><pre id="log"></pre></section>
         </main><footer>RFCat Web · WebUSB · CC1111 / YARD Stick One</footer><script type="module" src="app.js"></script></body></html>
