@@ -4,7 +4,7 @@ Browser-native control of RFCat-compatible CC1111 radios using WebUSB.
 
 RFCat Web provides a lightweight web interface for controlling devices such as the **Great Scott Gadgets YARD Stick One** directly from a Chromium-based browser without Python, libusb, or a local RFCat backend.
 
-The application implements RFCat's USB protocol directly in JavaScript and supports radio configuration, packet reception, raw ASK/OOK experimentation, and transmission.
+The application implements RFCat's USB protocol directly in JavaScript and supports radio configuration, packet reception, raw ASK/OOK experimentation, protocol-specific transmission, and SDR-assisted protocol analysis.
 
 > Only transmit on frequencies, devices, and systems you are authorized to use.
 
@@ -46,6 +46,15 @@ The UI supports configuration of:
 - Append RSSI/LQI status
 - Address checking
 - Device address
+
+The radio layer additionally supports:
+
+- CC1111 frequency deviation configuration
+- Manchester encoding
+- PATABLE configuration
+- TX PA selection
+- YARD Stick One amplifier control
+- Protocol-specific radio presets
 
 Radio configuration can also be read directly from the CC1111 and displayed in human-readable form.
 
@@ -119,6 +128,17 @@ F0 CC AA 55 0F
 
 This is useful for experimenting with pulse protocols where the CC1111 data rate is used as the waveform timing clock.
 
+### Protocol Encoders
+
+Protocol-specific TX modes can generate packets or waveforms from higher-level fields rather than requiring manually entered raw bytes.
+
+Current protocol support includes:
+
+- Experimental CAME-12 ASK/OOK waveform generation
+- LRS pager packet generation and 2-FSK transmission
+
+Protocol encoders are kept separate from the WebUSB transport so they can be tested independently of radio hardware.
+
 ---
 
 ## ASK/OOK Transmission
@@ -131,7 +151,7 @@ RFCat Web sets:
 FREND0.PA_POWER = 1
 ```
 
-immediately before transmission.
+immediately before ASK/OOK transmission.
 
 Without this setting, testing showed that the CC1111 could transmit what appeared to be a continuous carrier rather than the intended ASK/OOK bitstream.
 
@@ -155,20 +175,144 @@ over the air.
 
 ---
 
+## LRS Pager Transmission
+
+RFCat Web supports generation and transmission of LRS pager packets for protocol analysis and testing with equipment you own or are authorized to operate.
+
+Selecting **LRS Pager** exposes protocol-specific controls for:
+
+- Restaurant ID
+- Pager ID
+- Alert type
+- Manual alert value
+- Generated packet preview
+
+### LRS Radio Configuration
+
+The LRS transmitter automatically configures the YARD Stick One for:
+
+| Setting | Value |
+|---|---|
+| Frequency | 467.750 MHz |
+| Modulation | 2-FSK |
+| Data rate | 625 baud |
+| Frequency deviation | ~14.648 kHz |
+| Manchester encoding | Enabled |
+| Sync mode | Disabled |
+| CRC | Disabled |
+| Whitening | Disabled |
+
+The requested frequency deviation is 15 kHz. The nearest CC1111 `DEVIATN` configuration produces approximately 14.648 kHz.
+
+The LRS TX path is intentionally separate from the ASK/OOK PA configuration.
+
+For 2-FSK transmission, RFCat Web configures the appropriate PATABLE entry and enables the YARD Stick One amplifier for transmission. The amplifier is disabled again after transmission.
+
+### LRS Packet Format
+
+The current LRS pager packet format is:
+
+```text
+PREAMBLE | SYNC | RESTAURANT | STATION/PAGER | RESERVED | ALERT | CHECKSUM
+```
+
+The current fields are constructed as:
+
+```text
+Preamble:       AA AA AA
+Sync:           FC 2D
+Restaurant ID:  1 byte
+Station/Pager:  2 bytes
+Reserved:       5 bytes
+Alert:          1 byte
+Checksum:       1 byte
+```
+
+For example:
+
+```text
+Restaurant ID: 1
+Pager ID:      1
+Alert:         1
+```
+
+generates:
+
+```text
+AA AA AA FC 2D 01 00 01 00 00 00 00 00 01 2D
+```
+
+The final byte is the protocol checksum.
+
+### LRS Over-the-Air Verification
+
+LRS transmission has been independently verified using an RTL-SDR and Universal Radio Hacker (URH).
+
+A working URH configuration is:
+
+```text
+Center frequency:    467.750 MHz
+Sample rate:         1 MS/s
+Bandwidth:           200 kHz
+Modulation:          FSK
+Samples per symbol:  1600
+Bits per symbol:     1
+Encoding:            Manchester II
+```
+
+At a 1 MS/s sample rate and 625-baud logical data rate:
+
+```text
+1,000,000 / 625 = 1600 samples per logical bit
+```
+
+For the example packet above, repeated over-the-air captures decoded as:
+
+```text
+aaaaaafc2d0100010000000000012d
+aaaaaafc2d0100010000000000012d
+aaaaaafc2d0100010000000000012d
+aaaaaafc2d0100010000000000012d
+aaaaaafc2d0100010000000000012d
+```
+
+This is byte-for-byte identical to the data supplied to RFCat:
+
+```text
+AA AA AA FC 2D 01 00 01 00 00 00 00 00 01 2D
+```
+
+This verifies the complete transmission path:
+
+```text
+Web UI
+  → LRS packet encoder
+  → WebUSB RFCat transport
+  → YARD Stick One / CC1111
+  → 2-FSK + Manchester RF transmission
+  → RTL-SDR
+  → URH
+  → original packet bytes
+```
+
+---
+
 ## PATABLE
 
 The CC1111 PA table can be inspected directly.
 
-A currently observed configuration is:
+An observed ASK/OOK configuration is:
 
 ```text
 PATABLE:
 C0 00 00 00 00 00 00 00
 ```
 
-ASK/OOK transmission uses `FREND0.PA_POWER = 1` as required by RFCat's CC1111 configuration.
+ASK/OOK transmission uses `FREND0.PA_POWER = 1` as required by the RFCat-style CC1111 configuration.
 
-The PA configuration is still being investigated and should not be interpreted as a calibrated RF output-power control.
+The LRS 2-FSK configuration uses the appropriate non-OOK PA path instead of applying the ASK/OOK-specific `PA_POWER = 1` behavior.
+
+The PA configuration should not be interpreted as calibrated RF output-power control.
 
 ---
 
@@ -309,6 +453,8 @@ RFCat Web has been tested alongside:
 - inspectrum
 - rtl_433
 
+### CAME Analysis
+
 For CAME waveform analysis, a useful URH starting configuration is:
 
 ```text
@@ -326,6 +472,20 @@ At 1 MS/s, the relationship between samples and timing is particularly convenien
 320 samples ≈ 320 µs
 640 samples ≈ 640 µs
 960 samples ≈ 960 µs
+```
+
+### LRS Analysis
+
+For LRS pager analysis, a verified URH configuration is:
+
+```text
+Sample rate:       1 MS/s
+Frequency:         467.750 MHz
+Bandwidth:         200 kHz
+Modulation:        FSK
+Samples/Symbol:    1600
+Bits/Symbol:       1
+Encoding:          Manchester II
 ```
 
 Receiver threshold and gain should be adjusted for the local SDR setup.
@@ -381,8 +541,9 @@ SYS_PARTNUM = 0x8E
 ### NIC Commands
 
 ```text
-NIC_RECV = 0x01
-NIC_XMIT = 0x02
+NIC_RECV         = 0x01
+NIC_XMIT         = 0x02
+NIC_SET_AMP_MODE = 0x0A
 ```
 
 ### RF Modes
@@ -425,6 +586,15 @@ repeat = 0
 offset = 0
 ```
 
+An LRS transmission containing 15 RF bytes therefore uses:
+
+```text
+data_length = 15
+repeat      = configured repeat value
+offset      = configured offset value
+data        = generated LRS packet
+```
+
 ---
 
 ## Running RFCat Web
@@ -455,6 +625,14 @@ Connect YS1
 
 and select the YARD Stick One.
 
+### GitHub Pages
+
+RFCat Web is a static browser application and can also be hosted using GitHub Pages.
+
+Configure GitHub Pages to deploy from the repository's main branch and root directory.
+
+WebUSB requires a secure context. GitHub Pages provides HTTPS, making it suitable for browser-based WebUSB access.
+
 ---
 
 ## WebUSB Notes
@@ -480,11 +658,43 @@ Close or disconnect:
 - Python RFCat sessions
 - libusb applications
 - other RFCat Web tabs
-- SDR/radio software attempting to access the YARD Stick
+- other applications attempting to access the YARD Stick
 
 before connecting through WebUSB.
 
 Occasionally the initial RFCat ping may time out immediately after opening the USB device. Disconnecting/reconnecting currently recovers from this condition. Improving startup/retry handling is on the TODO list.
+
+---
+
+## Project Structure
+
+The browser UI is intentionally kept separate from the RFCat transport and protocol encoders:
+
+```text
+app.js                    UI state and event wiring
+js/core/bytes.js          Byte/hex helpers
+js/rfcat/constants.js     RFCat commands, modes, supported USB IDs
+js/rfcat/device.js        WebUSB transport + RFCat/CC1111 device operations
+js/radio/registers.js     Named CC1111 register addresses
+js/radio/presets.js       Reusable radio configuration presets
+js/protocols/binary.js    Raw binary OOK packing
+js/protocols/came12.js    Experimental CAME-12 waveform encoder
+js/protocols/lrs.js       LRS pager packet encoder and checksum
+js/ui/log.js              DOM lookup and activity logging
+tests/                    Hardware-independent protocol/unit tests
+```
+
+Protocol encoders should remain pure functions: they accept data/options and return bytes/waveforms without accessing WebUSB or the DOM. This keeps them testable without radio hardware.
+
+### Tests
+
+The test suite uses Node's built-in test runner and has no package dependencies:
+
+```bash
+npm test
+```
+
+When adding a protocol encoder, add tests for its packet/waveform construction, expected length, byte packing, checksum where applicable, padding, and invalid inputs before wiring it into the transmitter UI.
 
 ---
 
@@ -501,9 +711,12 @@ Currently verified:
 - [x] Radio register dump
 - [x] Frequency configuration
 - [x] ASK/OOK modulation
+- [x] 2-FSK modulation
 - [x] Data-rate configuration
 - [x] Channel-bandwidth configuration
+- [x] CC1111 frequency-deviation configuration
 - [x] Sync configuration
+- [x] Manchester encoding
 - [x] Fixed/variable packet configuration
 - [x] CRC configuration
 - [x] Whitening configuration
@@ -516,8 +729,15 @@ Currently verified:
 - [x] Binary OOK waveform transmission
 - [x] ASK/OOK PA selection
 - [x] PATABLE inspection
+- [x] YARD Stick One TX amplifier control
 - [x] Experimental CAME-12 waveform generation
-- [x] SDR verification of ~320/640 µs timing
+- [x] SDR verification of ~320/640 µs CAME timing
+- [x] LRS pager packet encoder
+- [x] LRS restaurant/pager/alert controls
+- [x] LRS packet checksum generation
+- [x] LRS radio configuration
+- [x] LRS 2-FSK + Manchester transmission
+- [x] LRS over-the-air verification with RTL-SDR/URH
 - [ ] Automatic USB startup recovery
 - [ ] Persistent UI settings
 - [ ] Calibrated TX power control
@@ -539,31 +759,3 @@ Protocol-analysis features are intended for development, interoperability resear
 ## License
 
 See the repository license for details.
-## Project Structure
-
-The browser UI is intentionally kept separate from the RFCat transport and protocol encoders:
-
-```text
-app.js                    UI state and event wiring
-js/core/bytes.js          Byte/hex helpers
-js/rfcat/constants.js     RFCat commands, modes, supported USB IDs
-js/rfcat/device.js        WebUSB transport + RFCat/CC1111 device operations
-js/radio/registers.js     Named CC1111 register addresses
-js/radio/presets.js       Reusable radio configuration presets
-js/protocols/binary.js    Raw binary OOK packing
-js/protocols/came12.js    Experimental CAME-12 waveform encoder
-js/ui/log.js              DOM lookup and activity logging
-tests/                    Hardware-independent protocol/unit tests
-```
-
-Protocol encoders should remain pure functions: they accept data/options and return bytes/waveforms without accessing WebUSB or the DOM. This keeps them testable without radio hardware.
-
-### Tests
-
-The test suite uses Node's built-in test runner and has no package dependencies:
-
-```bash
-npm test
-```
-
-When adding a protocol encoder, add tests for its expected waveform length, byte packing, padding, and invalid inputs before wiring it into the transmitter UI.
