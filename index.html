@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RFCat Web</title><link rel="stylesheet" href="styles.css"></head>
+<body><header><div><h1>RFCat Web</h1><p>Browser-native YARD Stick One control via WebUSB</p></div><div class="status"><span id="dot"></span><span id="status">Disconnected</span><button id="connect">Connect YS1</button></div></header>
+<main>
+<section class="card radio"><h2>Radio</h2><div class="grid">
+<label>Frequency (MHz)<input id="freq" type="number" step="0.001" value="433.920"></label>
+<label>Modulation<select id="mod"><option value="48">ASK / OOK</option><option value="0">2-FSK</option><option value="16">GFSK</option><option value="64">4-FSK</option><option value="112">MSK</option></select></label>
+<label>Data rate (baud)<input id="drate" type="number" value="4800"></label>
+<label>Channel BW (kHz)<input id="bw" type="number" value="101.5625" step="0.1"></label>
+<label>Sync word<input id="sync" value="D391" maxlength="4"></label>
+<label>Sync mode<select id="syncmode"><option value="0">None</option><option value="1" selected>15/16</option><option value="2">16/16</option><option value="3">30/32</option><option value="4">Carrier</option></select></label>
+</div><div class="actions"><button id="apply" class="primary">Apply configuration</button><button id="readcfg">Read radio</button><button id="idle">Idle</button><button id="rx">RX</button></div><div id="configSummary" class="summary">Connect a device to read its configuration.</div></section>
+<section class="card"><div class="title-row"><h2>Receiver</h2><div><button id="listen">Start listening</button><button id="clear">Clear</button></div></div><div class="stats"><span>Packets <b id="packets">0</b></span><span>Bytes <b id="bytes">0</b></span></div><div id="packetList" class="packets"><div class="empty">No packets captured.</div></div></section>
+<section class="card"><h2>Transmit</h2><label>Payload (hex)<textarea id="payload" rows="4" placeholder="AA BB CC DD"></textarea></label><div class="grid small"><label>Repeat<input id="repeat" type="number" min="0" max="100" value="0"></label><label>Offset<input id="offset" type="number" min="0" value="0"></label></div><div class="actions"><button id="transmit" class="danger">Transmit</button></div><p class="hint">Transmit only on frequencies and devices you are authorized to use.</p></section>
+<section class="card console"><div class="title-row"><h2>Activity</h2><button id="clearlog">Clear log</button></div><pre id="log"></pre></section>
+</main><footer>RFCat Web · WebUSB · CC1111 / YARD Stick One</footer><script type="module" src="app.js"></script></body></html>
