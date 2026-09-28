@@ -94,3 +94,146 @@ export function encodeLrsPager({
         checksum: crc,
     };
 }
+
+// ============================================================
+// Protocol definition
+// ============================================================
+
+const lrs = {
+    id: "lrs",
+
+    name: "LRS Pager",
+
+    description:
+        "LRS pager packet generator using 467.750 MHz 2-FSK with Manchester encoding.",
+
+    fields: [
+        {
+            id: "restaurantId",
+            label: "Restaurant ID",
+            type: "number",
+            min: 0,
+            max: 255,
+            value: 1,
+        },
+        {
+            id: "pagerId",
+            label: "Pager ID",
+            type: "number",
+            min: 0,
+            max: 4095,
+            value: 1,
+        },
+        {
+            id: "alertType",
+            label: "Alert type",
+            type: "select",
+            value: "1",
+            options: [
+                {
+                    value: "1",
+                    label: "1",
+                },
+                {
+                    value: "2",
+                    label: "2",
+                },
+                {
+                    value: "3",
+                    label: "3",
+                },
+            ],
+        },
+        {
+            id: "repeat",
+            label: "RFCat repeat",
+            type: "number",
+            min: 0,
+            max: 100,
+            value: 4,
+        },
+        {
+            id: "offset",
+            label: "RFCat offset",
+            type: "number",
+            min: 0,
+            value: 0,
+        },
+    ],
+
+    encode(values) {
+        const encoded = encodeLrsPager({
+            restaurantId: values.restaurantId,
+            pagerId: values.pagerId,
+            alertType: values.alertType,
+        });
+
+        return {
+            ...encoded,
+
+            summary:
+                `LRS TX: ` +
+                `restaurant ${encoded.restaurantId} · ` +
+                `pager ${encoded.pagerId} · ` +
+                `alert ${encoded.alertType} · ` +
+                `checksum ${encoded.checksum.toUpperCase()} · ` +
+                `${encoded.bytes.length} bytes`,
+        };
+    },
+
+    async configure(device) {
+        await device.mode(0x04);
+
+        // 467.750 MHz
+        await device.setFrequency(
+            467_750_000,
+        );
+
+        // 2-FSK
+        await device.setModulation(
+            0x00,
+        );
+
+        // 625 baud
+        await device.setDataRate(
+            625,
+        );
+
+        // ~15 kHz requested deviation.
+        await device.setDeviation(
+            15_000,
+        );
+
+        // No CC1111 sync detection.
+        // The LRS sync bytes are part of the packet itself.
+        await device.setSync(
+            0x0000,
+            0,
+        );
+
+        // LRS uses CC1111 Manchester encoding.
+        await device.setManchester(
+            true,
+        );
+
+        // Use the existing non-OOK PA setup.
+        await device.setMaxPower();
+    },
+
+    async transmit(device, encoded, values) {
+        await device.setAmpMode(true);
+
+        try {
+            await device.transmit(
+                encoded.bytes,
+                Number(values.repeat ?? 0),
+                Number(values.offset ?? 0),
+            );
+        } finally {
+            await device.mode(0x04);
+            await device.setAmpMode(false);
+        }
+    },
+};
+
+export default lrs;

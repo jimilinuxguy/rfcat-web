@@ -1,16 +1,38 @@
 // RFCat Web UI/event wiring. Hardware/protocol logic lives under js/.
-import { RADIO_PRESETS } from "./js/radio/presets.js";
 import { C } from "./js/rfcat/constants.js";
 import { R } from "./js/radio/registers.js";
 import { RFCatUSB } from "./js/rfcat/device.js";
-import { hex, parseHex } from "./js/core/bytes.js";
-import { encodeCame12 } from "./js/protocols/came12.js";
-import { parseBinarySymbols } from "./js/protocols/binary.js";
-import { encodeLrsPager } from "./js/protocols/lrs.js";
-import { encodeTeslaChargePort } from "./js/protocols/tesla.js";
+import { hex } from "./js/core/bytes.js";
 import { $, log } from "./js/ui/log.js";
 
+import { protocols, getProtocol } from "./js/protocols/index.js";
+
+import {
+    renderProtocolSelector,
+    renderProtocolFields,
+    getProtocolValues,
+} from "./js/ui/protocols.js";
+
 const d = new RFCatUSB();
+const protocolSelect = $("protocol");
+const protocolFields = $("protocol-fields");
+
+renderProtocolSelector(protocolSelect, protocols);
+
+function selectProtocol() {
+    const protocol = getProtocol(protocolSelect.value);
+
+    if (!protocol) {
+        protocolFields.replaceChildren();
+        return;
+    }
+
+    renderProtocolFields(protocolFields, protocol);
+}
+
+protocolSelect.addEventListener("change", selectProtocol);
+
+selectProtocol();
 
 let listening = false,
     pc = 0,
@@ -83,8 +105,16 @@ function setMonitor(on) {
 }
 
 function enabled(v) {
-    for (const id of ["apply", "readcfg", "idle", "rx", "listen", "transmit"])
+    for (const id of [
+        "apply",
+        "readcfg",
+        "idle",
+        "rx",
+        "listen",
+        "protocol-transmit",
+    ]) {
         $(id).disabled = !v;
+    }
 }
 
 enabled(false);
@@ -105,100 +135,6 @@ $("addrcheck").addEventListener("change", updatePacketControlState);
 
 updatePacketControlState();
 
-function showRadioPreset(preset) {
-    $("freq").value = (preset.frequency / 1_000_000).toFixed(3);
-
-    $("drate").value = String(preset.dataRate);
-
-    $("mod").value = String(preset.modulation);
-
-    $("sync").value = preset.syncWord
-        .toString(16)
-        .padStart(4, "0")
-        .toUpperCase();
-
-    $("syncmode").value = String(preset.syncMode);
-
-    $("lowball").checked = Boolean(preset.lowball);
-
-    if (preset.bandwidth !== undefined) {
-        $("bw").value = String(preset.bandwidth / 1000);
-    }
-}
-
-function getLrsAlert() {
-    const value = $("lrs-alert").value;
-    return value === "manual"
-        ? Number($("lrs-manual-alert").value)
-        : Number(value);
-}
-
-function updateLrsPreview() {
-    try {
-        const packet = encodeLrsPager({
-            restaurantId: $("lrs-rest-id").value,
-            pagerId: $("lrs-pager-id").value,
-            alertType: getLrsAlert(),
-        });
-        $("lrs-packet-preview").textContent = packet.hex.toUpperCase();
-    } catch (e) {
-        $("lrs-packet-preview").textContent = e.message;
-    }
-}
-function updateTeslaFrequency() {
-    const mhz = Number($("tesla-frequency").value);
-
-    $("freq").value = mhz;
-
-    log(`Tesla frequency selected: ${mhz.toFixed(3)} MHz`);
-}
-function updateTeslaPreview() {
-    try {
-        const encoded = encodeTeslaChargePort({
-            repeats: $("tesla-repeats").value,
-        });
-
-        $("tesla-packet-preview").textContent = hex(encoded.bytes);
-    } catch (e) {
-        $("tesla-packet-preview").textContent = e.message;
-    }
-}
-
-function updateTxMode() {
-    const mode = $("txmode").value;
-
-    const isLrs = mode === "lrs";
-    const isTesla = mode === "tesla";
-
-    $("lrs-options").hidden = !isLrs;
-    $("tesla-options").hidden = !isTesla;
-
-    // Protocol modes generate their own payload.
-    $("payload-row").hidden = isLrs || isTesla;
-
-    if (RADIO_PRESETS[mode]) {
-        showRadioPreset(RADIO_PRESETS[mode]);
-    }
-
-    if (isLrs) {
-        updateLrsPreview();
-    }
-
-    if (isTesla) {
-        updateTeslaPreview();
-        updateTeslaFrequency();
-    }
-}
-
-$("txmode").addEventListener("change", updateTxMode);
-$("lrs-alert").addEventListener("change", () => {
-    $("lrs-manual-row").hidden = $("lrs-alert").value !== "manual";
-    updateLrsPreview();
-});
-for (const id of ["lrs-rest-id", "lrs-pager-id", "lrs-manual-alert"]) {
-    $(id).addEventListener("input", updateLrsPreview);
-}
-updateTxMode();
 
 async function refresh() {
     const c = await d.config();
@@ -259,6 +195,45 @@ async function refresh() {
 
     return c;
 }
+$("protocol-transmit").onclick = async () => {
+    try {
+        if (!d.device?.opened) {
+            throw new Error("RFCat device is not connected");
+        }
+
+        const protocol = getProtocol(protocolSelect.value);
+
+        if (!protocol) {
+            throw new Error("No protocol selected");
+        }
+
+        const values = getProtocolValues(protocolFields, protocol);
+
+        const encoded = await protocol.encode(values);
+
+        if (!(encoded?.bytes instanceof Uint8Array)) {
+            throw new Error(`${protocol.name} did not return a Uint8Array`);
+        }
+
+        if (!encoded.bytes.length) {
+            throw new Error(`${protocol.name} generated an empty payload`);
+        }
+
+        if (protocol.configure) {
+            await protocol.configure(d, values);
+        }
+
+        if (encoded.summary) {
+            log(encoded.summary);
+        }
+
+        await protocol.transmit(d, encoded, values);
+
+        log(`TX ${encoded.bytes.length} bytes: ` + hex(encoded.bytes));
+    } catch (e) {
+        log(`Protocol TX error: ${e.message}`);
+    }
+};
 
 $("connect").onclick = async () => {
     try {
@@ -453,124 +428,6 @@ d.addEventListener("packet", (e) => {
     log(`RF RX ${b.length} bytes: ${hex(b)}`);
 });
 
-$("transmit").onclick = async () => {
-    try {
-        const mode = $("txmode").value;
-
-        let b;
-        if (mode === "came12") {
-            await d.setDataRate(3125);
-
-            const encoded = encodeCame12($("payload").value, {
-                repeats: 3,
-                gapT: 31,
-            });
-
-            b = encoded.bytes;
-
-            log(
-                `CAME-12 TX: ${encoded.code} · ` +
-                    `${encoded.repeats} bursts · ` +
-                    `${encoded.waveform.length} symbols · ` +
-                    `${b.length} bytes`,
-            );
-        } else if (mode === "binary") {
-            const parsed = parseBinarySymbols($("payload").value);
-
-            b = parsed.bytes;
-
-            const rate = Number($("drate").value);
-            const durationMs = (parsed.symbols / rate) * 1000;
-
-            log(
-                `OOK TX: ${parsed.symbols} symbols · ` +
-                    `${b.length} bytes · ` +
-                    `${hex(b)} · ` +
-                    `~${durationMs.toFixed(3)} ms @ ${rate} baud`,
-            );
-        } else if (mode === "lrs") {
-            await d.mode(C.RF_IDLE);
-            await d.setFrequency(467_750_000);
-            await d.setModulation(0x00); // 2-FSK
-            await d.setSync(0x0000, 0);
-            const deviation = await d.setDeviation(15_000);
-            await d.setDataRate(625);
-            await d.setManchester(true);
-            const power = await d.setMaxPower();
-            await d.setAmpMode(true);
-
-            const encoded = encodeLrsPager({
-                restaurantId: $("lrs-rest-id").value,
-                pagerId: $("lrs-pager-id").value,
-                alertType: getLrsAlert(),
-            });
-
-            log(
-                `LRS TX: restaurant ${encoded.restaurantId} · ` +
-                    `pager ${encoded.pagerId} · alert ${encoded.alertType} · ` +
-                    `467.750 MHz · 2-FSK · 625 baud · ` +
-                    `${Math.round(deviation)} Hz deviation · Manchester · ` +
-                    `PA 0x${power.toString(16).toUpperCase()} · ${b.length} bytes`,
-            );
-        } else if (mode === "tesla") {
-            const frequencyMHz = Number($("tesla-frequency").value);
-
-            // Configure the radio automatically for Tesla TX.
-            await d.mode(C.RF_IDLE);
-            await d.setFrequency(frequencyMHz * 1_000_000);
-            await d.setDataRate(2500);
-            await d.setModulation(0x30); // ASK/OOK
-            await d.setSync(0x0000, 0);
-            await d.setManchester(false);
-
-            const encoded = encodeTeslaChargePort({
-                repeats: $("tesla-repeats").value,
-            });
-
-            b = encoded.bytes;
-
-            log(
-                `Tesla TX: ` +
-                    `${frequencyMHz.toFixed(3)} MHz · ` +
-                    `ASK/OOK · 2500 baud · ` +
-                    `${encoded.repeats} frames · ` +
-                    `${encoded.frameLength} bytes/frame · ` +
-                    `${encoded.totalLength} bytes total`,
-            );
-            b = encoded.bytes;
-        } else {
-            b = parseHex($("payload").value);
-
-            if (!b.length) {
-                throw new Error("Enter a hex payload");
-            }
-        }
-
-        if (b.length > 255) {
-            throw new Error("TX payload cannot exceed 255 bytes");
-        }
-
-        if (mode === "tesla") {
-            await d.setTxPaPower(1);
-            await d.setAmpMode(true);
-        }
-
-        await d.transmit(
-            b,
-            Number($("repeat").value),
-            Number($("offset").value),
-        );
-
-        log(`TX ${b.length} bytes: ${hex(b)}`);
-
-        if (mode === "lrs" || mode === "tesla") {
-            await d.mode(C.RF_IDLE);
-            await d.setAmpMode(false);
-        }
-    } catch (e) {
-        log(`ERROR: ${e.message}`);
-    }
-};
 
 $("clear").onclick = () => {
     $("packetList").innerHTML =
@@ -582,10 +439,6 @@ $("clear").onclick = () => {
 };
 
 $("clearlog").onclick = () => ($("log").textContent = "");
-$("tesla-frequency").addEventListener("change", () => {
-    updateTeslaFrequency();
-});
-$("tesla-repeats").addEventListener("input", updateTeslaPreview);
 
 navigator.usb?.addEventListener("disconnect", (e) => {
     if (e.device === d.device) {

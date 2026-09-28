@@ -1,115 +1,403 @@
-
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RFCat Web</title><link rel="stylesheet" href="styles.css"></head>
-    <body><header><div><h1>RFCat Web</h1><p>Browser-native YARD Stick One control via WebUSB</p></div><div class="status"><span id="dot"></span><span id="status">Disconnected</span><button id="connect">Connect YS1</button></div></header>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1"
+        >
+
+        <title>RFCat Web</title>
+
+        <link
+            rel="stylesheet"
+            href="styles.css"
+        >
+    </head>
+
+    <body>
+        <header>
+            <div>
+                <h1>RFCat Web</h1>
+                <p>
+                    Browser-native YARD Stick One control via WebUSB
+                </p>
+            </div>
+
+            <div class="status">
+                <span id="dot"></span>
+                <span id="status">Disconnected</span>
+
+                <button id="connect">
+                    Connect YS1
+                </button>
+            </div>
+        </header>
+
         <main>
-            <section class="card radio"><h2>Radio</h2><div class="grid">
-                    <label>Frequency (MHz)<input id="freq" type="number" step="0.001" value="433.920"></label>
-                    <label>Modulation<select id="mod"><option value="48">ASK / OOK</option><option value="0">2-FSK</option><option value="16">GFSK</option><option value="64">4-FSK</option><option value="112">MSK</option></select></label>
-                    <label>Data rate (baud)<input id="drate" type="number" value="4800"></label>
-                    <label>Channel BW (kHz)<input id="bw" type="number" value="101.5625" step="0.1"></label>
-                    <label>Sync word<input id="sync" value="D391" maxlength="4"></label>
-                    <label>Sync mode<select id="syncmode"><option value="0">None</option><option value="1" selected>15/16</option><option value="2">16/16</option><option value="3">30/32</option><option value="4">Carrier</option></select></label>
-                    <label>Packet length mode<select id="lengthmode"><option value="fixed">Fixed</option><option value="variable" selected>Variable</option></select></label>
-                    <label><span id="pktlenlabel">Maximum packet length (bytes)</span><input id="pktlen" type="number" min="1" max="255" value="255"></label>
-                    <label>Address check<select id="addrcheck"><option value="0" selected>None</option><option value="1">No broadcast</option><option value="2">0x00 broadcast</option><option value="3">0x00 + 0xFF broadcast</option></select></label>
-                    <label>Device address (hex)<input id="deviceaddr" value="00" maxlength="2"></label>
-                    <label class="check"><input id="crc" type="checkbox"> CRC</label>
-                    <label class="check"><input id="whitening" type="checkbox"> Data whitening</label>
-                    <label class="check"><input id="appendstatus" type="checkbox" checked> Append RSSI/LQI status</label>
+
+            <!-- ==================================================
+             RADIO
+             ================================================== -->
+
+            <section class="card radio">
+                <h2>Radio</h2>
+
+                <div class="grid">
                     <label>
-                        <input type="checkbox" id="lowball">
+                        Frequency (MHz)
+
+                        <input
+                            id="freq"
+                            type="number"
+                            step="0.001"
+                            value="433.920"
+                        >
+                    </label>
+
+                    <label>
+                        Modulation
+
+                        <select id="mod">
+                            <option value="48">
+                                ASK / OOK
+                            </option>
+
+                            <option value="0">
+                                2-FSK
+                            </option>
+
+                            <option value="16">
+                                GFSK
+                            </option>
+
+                            <option value="64">
+                                4-FSK
+                            </option>
+
+                            <option value="112">
+                                MSK
+                            </option>
+                        </select>
+                    </label>
+
+                    <label>
+                        Data rate (baud)
+
+                        <input
+                            id="drate"
+                            type="number"
+                            value="4800"
+                        >
+                    </label>
+
+                    <label>
+                        Channel BW (kHz)
+
+                        <input
+                            id="bw"
+                            type="number"
+                            value="101.5625"
+                            step="0.1"
+                        >
+                    </label>
+
+                    <label>
+                        Sync word
+
+                        <input
+                            id="sync"
+                            value="D391"
+                            maxlength="4"
+                        >
+                    </label>
+
+                    <label>
+                        Sync mode
+
+                        <select id="syncmode">
+                            <option value="0">
+                                None
+                            </option>
+
+                            <option
+                                value="1"
+                                selected
+                            >
+                                15/16
+                            </option>
+
+                            <option value="2">
+                                16/16
+                            </option>
+
+                            <option value="3">
+                                30/32
+                            </option>
+
+                            <option value="4">
+                                Carrier
+                            </option>
+                        </select>
+                    </label>
+
+                    <label>
+                        Packet length mode
+
+                        <select id="lengthmode">
+                            <option value="fixed">
+                                Fixed
+                            </option>
+
+                            <option
+                                value="variable"
+                                selected
+                            >
+                                Variable
+                            </option>
+                        </select>
+                    </label>
+
+                    <label>
+                        <span id="pktlenlabel">
+                            Maximum packet length (bytes)
+                        </span>
+
+                        <input
+                            id="pktlen"
+                            type="number"
+                            min="1"
+                            max="255"
+                            value="255"
+                        >
+                    </label>
+
+                    <label>
+                        Address check
+
+                        <select id="addrcheck">
+                            <option
+                                value="0"
+                                selected
+                            >
+                                None
+                            </option>
+
+                            <option value="1">
+                                No broadcast
+                            </option>
+
+                            <option value="2">
+                                0x00 broadcast
+                            </option>
+
+                            <option value="3">
+                                0x00 + 0xFF broadcast
+                            </option>
+                        </select>
+                    </label>
+
+                    <label>
+                        Device address (hex)
+
+                        <input
+                            id="deviceaddr"
+                            value="00"
+                            maxlength="2"
+                        >
+                    </label>
+
+                    <label class="check">
+                        <input
+                            id="crc"
+                            type="checkbox"
+                        >
+
+                        CRC
+                    </label>
+
+                    <label class="check">
+                        <input
+                            id="whitening"
+                            type="checkbox"
+                        >
+
+                        Data whitening
+                    </label>
+
+                    <label class="check">
+                        <input
+                            id="appendstatus"
+                            type="checkbox"
+                            checked
+                        >
+
+                        Append RSSI/LQI status
+                    </label>
+
+                    <label class="check">
+                        <input
+                            id="lowball"
+                            type="checkbox"
+                        >
+
                         Lowball / raw OOK receive
                     </label>
-                    <label for="txmode">TX input</label>
-                    <select id="txmode">
-                        <option value="hex">Hex bytes</option>
-                        <option value="binary">Binary OOK symbols</option>
-                        <option value="came12">CAME 12-bit</option>
-                        <option value="lrs">LRS Pager</option>
-                        <option value="tesla">Tesla Charge Port</option>
-                    </select>
-                    <div id="lrs-options" hidden>
-                        <label>
-                            Restaurant ID
-                            <input
-                                id="lrs-rest-id"
-                                type="number"
-                                min="0"
-                                max="255"
-                                value="1"
-                            >
-                        </label>
+                </div>
 
-                        <label>
-                            Pager ID
-                            <input
-                                id="lrs-pager-id"
-                                type="number"
-                                min="0"
-                                max="4095"
-                                value="1"
-                            >
-                        </label>
+                <div class="actions">
+                    <button
+                        id="apply"
+                        class="primary"
+                    >
+                        Apply configuration
+                    </button>
 
-                        <label>
-                            Alert
-                            <select id="lrs-alert">
-                                <option value="1">Flash 30 Seconds</option>
-                                <option value="2">Flash 5 Minutes</option>
-                                <option value="3">Flash / Beep 5×5</option>
-                                <option value="4">Beep 3 Times</option>
-                                <option value="5">Beep 5 Minutes</option>
-                                <option value="7">Glow / Vibrate 15 Times</option>
-                                <option value="10">Flash / Vibrate 1 Second</option>
-                                <option value="68">Beep 3 Times (68)</option>
-                                <option value="manual">Manual…</option>
-                            </select>
-                        </label>
+                    <button id="readcfg">
+                        Read radio
+                    </button>
 
-                        <label id="lrs-manual-row" hidden>
-                            Manual Alert
-                            <input
-                                id="lrs-manual-alert"
-                                type="number"
-                                min="0"
-                                max="255"
-                                value="1"
-                            >
-                        </label>
+                    <button id="idle">
+                        Idle
+                    </button>
 
-                        <div>
-                            Packet:
-                            <code id="lrs-packet-preview">—</code>
-                        </div>
+                    <button id="rx">
+                        RX
+                    </button>
+                </div>
+
+                <div
+                    id="configSummary"
+                    class="summary"
+                >
+                    Connect a device to read its configuration.
+                </div>
+            </section>
+
+
+            <!-- ==================================================
+             RECEIVER
+             ================================================== -->
+
+            <section class="card">
+                <div class="title-row">
+                    <h2>Receiver</h2>
+
+                    <div>
+                        <button id="listen">
+                            Start listening
+                        </button>
+
+                        <button id="clear">
+                            Clear
+                        </button>
                     </div>
-                    <div id="tesla-options" hidden>
-                        <label>
-                            Tesla Frequency
-                            <select id="tesla-frequency">
-                                <option value="433.92" selected>433.920 MHz</option>
-                                <option value="315">315.000 MHz</option>
-                            </select>
-                        </label>
+                </div>
 
-                        <label>
-                            Repeats
-                            <input
-                                id="tesla-repeats"
-                                type="number"
-                                min="1"
-                                max="6"
-                                value="5"
-                            />
-                        </label>
+                <div class="stats">
+                    <span>
+                        RX events
+                        <b id="packets">0</b>
+                    </span>
 
-                        <label>
-                            Packet Preview
-                            <code id="tesla-packet-preview"></code>
-                        </label>
+                    <span>
+                        Bytes
+                        <b id="bytes">0</b>
+                    </span>
+
+                    <span>
+                        RSSI
+                        <b id="rssi">—</b>
+                    </span>
+
+                    <span>
+                        LQI
+                        <b id="lqi">—</b>
+                    </span>
+
+                    <span>
+                        State
+                        <b id="rxstate">IDLE</b>
+                    </span>
+                </div>
+
+                <p class="hint receiver-hint">
+                    With sync disabled, entries are raw RFCat
+                    receive buffers, not necessarily protocol packets.
+                </p>
+
+                <div
+                    id="packetList"
+                    class="packets"
+                >
+                    <div class="empty">
+                        No packets captured.
                     </div>
-                </div><div class="actions"><button id="apply" class="primary">Apply configuration</button><button id="readcfg">Read radio</button><button id="idle">Idle</button><button id="rx">RX</button></div><div id="configSummary" class="summary">Connect a device to read its configuration.</div></section>
-            <section class="card"><div class="title-row"><h2>Receiver</h2><div><button id="listen">Start listening</button><button id="clear">Clear</button></div></div><div class="stats"><span>RX events <b id="packets">0</b></span><span>Bytes <b id="bytes">0</b></span><span>RSSI <b id="rssi">—</b></span><span>LQI <b id="lqi">—</b></span><span>State <b id="rxstate">IDLE</b></span></div><p class="hint receiver-hint">With sync disabled, entries are raw RFCat receive buffers, not necessarily protocol packets.</p><div id="packetList" class="packets"><div class="empty">No packets captured.</div></div></section>
-            <section class="card"><h2>Transmit</h2><label id="payload-row">Payload (hex)<textarea id="payload" rows="4" placeholder="AA BB CC DD"></textarea></label><div class="grid small"><label>Repeat<input id="repeat" type="number" min="0" max="100" value="0"></label><label>Offset<input id="offset" type="number" min="0" value="0"></label></div><div class="actions"><button id="transmit" class="danger">Transmit</button></div><p class="hint">Transmit only on frequencies and devices you are authorized to use.</p></section>
-            <section class="card console"><div class="title-row"><h2>Activity</h2><button id="clearlog">Clear log</button></div><pre id="log"></pre></section>
-        </main><footer>RFCat Web · WebUSB · CC1111 / YARD Stick One</footer><script type="module" src="app.js"></script></body></html>
+                </div>
+            </section>
+
+
+            <!-- ==================================================
+             PROTOCOL TRANSMITTER
+             ================================================== -->
+
+            <section class="card">
+                <h2>Protocol Transmitter</h2>
+
+                <label>
+                    Protocol
+
+                    <select id="protocol"></select>
+                </label>
+
+                <!--
+                Protocol-specific controls are generated
+                automatically from js/protocols/*.js.
+            -->
+
+                <div id="protocol-fields"></div>
+
+                <div class="actions">
+                    <button
+                        id="protocol-transmit"
+                        class="danger"
+                    >
+                        Transmit
+                    </button>
+                </div>
+
+                <p class="hint">
+                    Transmit only on frequencies and devices
+                    you are authorized to use.
+                </p>
+            </section>
+
+
+            <!-- ==================================================
+             ACTIVITY LOG
+             ================================================== -->
+
+            <section class="card console">
+                <div class="title-row">
+                    <h2>Activity</h2>
+
+                    <button id="clearlog">
+                        Clear log
+                    </button>
+                </div>
+
+                <pre id="log"></pre>
+            </section>
+
+        </main>
+
+        <footer>
+            RFCat Web · WebUSB · CC1111 / YARD Stick One
+        </footer>
+
+        <script
+        type="module"
+        src="app.js"
+    ></script>
+    </body>
+</html>

@@ -567,9 +567,35 @@ export class RFCatUSB extends EventTarget {
         await this.poke(0xdf1b, new Uint8Array([value]));
     }
 
+    async configureAskOokPa() {
+        const pa = new Uint8Array([
+            0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ]);
+
+        await this.poke(R.PATABLE, pa);
+
+        let frend0 = (await this.peek(R.FREND0, 1))[0];
+
+        frend0 = (frend0 & 0xf8) | 0x01;
+
+        await this.poke(R.FREND0, new Uint8Array([frend0]));
+    }
+
     transmit(data, repeat = 0, offset = 0) {
-        if (data.length > 255)
-            throw new Error("MVP TX payload limit is 255 bytes");
+        if (!(data instanceof Uint8Array)) {
+            throw new TypeError("RFCat TX data must be a Uint8Array");
+        }
+
+        if (data.length === 0) {
+            throw new Error("RFCat TX payload cannot be empty");
+        }
+
+        if (data.length > 255) {
+            throw new RangeError(
+                `RFCat TX payload cannot exceed 255 bytes ` +
+                    `(received ${data.length})`,
+            );
+        }
 
         return this.send(
             C.APP_NIC,
