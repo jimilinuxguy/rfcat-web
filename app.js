@@ -7,6 +7,7 @@ import { hex, parseHex } from "./js/core/bytes.js";
 import { encodeCame12 } from "./js/protocols/came12.js";
 import { parseBinarySymbols } from "./js/protocols/binary.js";
 import { encodeLrsPager } from "./js/protocols/lrs.js";
+import { encodeTeslaChargePort } from "./js/protocols/tesla.js";
 import { $, log } from "./js/ui/log.js";
 
 const d = new RFCatUSB();
@@ -105,30 +106,23 @@ $("addrcheck").addEventListener("change", updatePacketControlState);
 updatePacketControlState();
 
 function showRadioPreset(preset) {
-    $("freq").value =
-        (preset.frequency / 1_000_000).toFixed(3);
+    $("freq").value = (preset.frequency / 1_000_000).toFixed(3);
 
-    $("drate").value =
-        String(preset.dataRate);
+    $("drate").value = String(preset.dataRate);
 
-    $("mod").value =
-        String(preset.modulation);
+    $("mod").value = String(preset.modulation);
 
-    $("sync").value =
-        preset.syncWord
-            .toString(16)
-            .padStart(4, "0")
-            .toUpperCase();
+    $("sync").value = preset.syncWord
+        .toString(16)
+        .padStart(4, "0")
+        .toUpperCase();
 
-    $("syncmode").value =
-        String(preset.syncMode);
+    $("syncmode").value = String(preset.syncMode);
 
-    $("lowball").checked =
-        Boolean(preset.lowball);
+    $("lowball").checked = Boolean(preset.lowball);
 
     if (preset.bandwidth !== undefined) {
-        $("bw").value =
-            String(preset.bandwidth / 1000);
+        $("bw").value = String(preset.bandwidth / 1000);
     }
 }
 
@@ -151,13 +145,36 @@ function updateLrsPreview() {
         $("lrs-packet-preview").textContent = e.message;
     }
 }
+function updateTeslaFrequency() {
+    const mhz = Number($("tesla-frequency").value);
+
+    $("freq").value = mhz;
+
+    log(`Tesla frequency selected: ${mhz.toFixed(3)} MHz`);
+}
+function updateTeslaPreview() {
+    try {
+        const encoded = encodeTeslaChargePort({
+            repeats: $("tesla-repeats").value,
+        });
+
+        $("tesla-packet-preview").textContent = hex(encoded.bytes);
+    } catch (e) {
+        $("tesla-packet-preview").textContent = e.message;
+    }
+}
 
 function updateTxMode() {
     const mode = $("txmode").value;
+
     const isLrs = mode === "lrs";
+    const isTesla = mode === "tesla";
 
     $("lrs-options").hidden = !isLrs;
-    $("payload-row").hidden = isLrs;
+    $("tesla-options").hidden = !isTesla;
+
+    // Protocol modes generate their own payload.
+    $("payload-row").hidden = isLrs || isTesla;
 
     if (RADIO_PRESETS[mode]) {
         showRadioPreset(RADIO_PRESETS[mode]);
@@ -165,6 +182,11 @@ function updateTxMode() {
 
     if (isLrs) {
         updateLrsPreview();
+    }
+
+    if (isTesla) {
+        updateTeslaPreview();
+        updateTeslaFrequency();
     }
 }
 
@@ -482,15 +504,40 @@ $("transmit").onclick = async () => {
                 pagerId: $("lrs-pager-id").value,
                 alertType: getLrsAlert(),
             });
-            b = encoded.bytes;
 
             log(
                 `LRS TX: restaurant ${encoded.restaurantId} · ` +
-                `pager ${encoded.pagerId} · alert ${encoded.alertType} · ` +
-                `467.750 MHz · 2-FSK · 625 baud · ` +
-                `${Math.round(deviation)} Hz deviation · Manchester · ` +
-                `PA 0x${power.toString(16).toUpperCase()} · ${b.length} bytes`,
+                    `pager ${encoded.pagerId} · alert ${encoded.alertType} · ` +
+                    `467.750 MHz · 2-FSK · 625 baud · ` +
+                    `${Math.round(deviation)} Hz deviation · Manchester · ` +
+                    `PA 0x${power.toString(16).toUpperCase()} · ${b.length} bytes`,
             );
+        } else if (mode === "tesla") {
+            const frequencyMHz = Number($("tesla-frequency").value);
+
+            // Configure the radio automatically for Tesla TX.
+            await d.mode(C.RF_IDLE);
+            await d.setFrequency(frequencyMHz * 1_000_000);
+            await d.setDataRate(2500);
+            await d.setModulation(0x30); // ASK/OOK
+            await d.setSync(0x0000, 0);
+            await d.setManchester(false);
+
+            const encoded = encodeTeslaChargePort({
+                repeats: $("tesla-repeats").value,
+            });
+
+            b = encoded.bytes;
+
+            log(
+                `Tesla TX: ` +
+                    `${frequencyMHz.toFixed(3)} MHz · ` +
+                    `ASK/OOK · 2500 baud · ` +
+                    `${encoded.repeats} frames · ` +
+                    `${encoded.frameLength} bytes/frame · ` +
+                    `${encoded.totalLength} bytes total`,
+            );
+            b = encoded.bytes;
         } else {
             b = parseHex($("payload").value);
 
@@ -503,11 +550,9 @@ $("transmit").onclick = async () => {
             throw new Error("TX payload cannot exceed 255 bytes");
         }
 
-        if (mode !== "lrs") {
-            const pa = await d.peek(R.PATABLE, 8);
-            log(`PATABLE: ${hex(pa)}`);
-            // Required for working ASK/OOK TX on our YS1.
-            await d.setTxPaPower();
+        if (mode === "tesla") {
+            await d.setTxPaPower(1);
+            await d.setAmpMode(true);
         }
 
         await d.transmit(
@@ -518,7 +563,7 @@ $("transmit").onclick = async () => {
 
         log(`TX ${b.length} bytes: ${hex(b)}`);
 
-        if (mode === "lrs") {
+        if (mode === "lrs" || mode === "tesla") {
             await d.mode(C.RF_IDLE);
             await d.setAmpMode(false);
         }
@@ -537,6 +582,10 @@ $("clear").onclick = () => {
 };
 
 $("clearlog").onclick = () => ($("log").textContent = "");
+$("tesla-frequency").addEventListener("change", () => {
+    updateTeslaFrequency();
+});
+$("tesla-repeats").addEventListener("input", updateTeslaPreview);
 
 navigator.usb?.addEventListener("disconnect", (e) => {
     if (e.device === d.device) {

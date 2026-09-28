@@ -15,7 +15,7 @@ export const R = Object.freeze({
   FSCAL2: 0xdf1d,
   TEST2: 0xdf23,
   TEST1: 0xdf24,
-  PATABLE: 0xdf2e,
+  PATABLE: 0xdf2d,
   LQI: 0xdf33,
   RSSI: 0xdf34,
   MARCSTATE: 0xdf3b,

@@ -597,6 +597,194 @@ data        = generated LRS packet
 
 ---
 
+## Tesla Charge Port Transmitter
+
+The Tesla transmitter implements the ASK/OOK waveform used by the original `TeslaPop.py` RFCat/YARD Stick One implementation.
+
+> **Use only with vehicles and RF systems you own or are authorized to test.**
+
+### Reference Configuration
+
+The original RFCat implementation configures the YARD Stick One with:
+
+```python
+d.setModeIDLE()
+d.setMdmModulation(MOD_ASK_OOK)
+d.setFreq(433920000)
+d.setMdmDRate(2500)
+d.setAmpMode(1)
+```
+
+The reference transmission sends the same 42-byte frame five times:
+
+```text
+15 55 55 51 59 4C B5 55
+52 D5 4B 4A D3 4C AB 4B
+15 94 CB 33 33 2D 54 B4
+56 9A 65 5A 48 AC C6 59
+99 99 69 A5 B2 B4 D4 2A
+D2 80
+```
+
+This produces a 210-byte transmit buffer:
+
+```text
+42 bytes × 5 frames = 210 bytes
+```
+
+The five frames are constructed by the Tesla encoder before transmission. The generic RFCat transmit repeat value should therefore remain `0`.
+
+### Radio Configuration
+
+The WebUSB implementation configures Tesla transmission as:
+
+| Setting | Value |
+|---|---|
+| Frequency | 433.920 MHz |
+| Modulation | ASK/OOK |
+| Data rate | 2500 baud |
+| Sync | Disabled |
+| Manchester | Disabled |
+| Frame size | 42 bytes |
+| Frames | 5 |
+| TX buffer | 210 bytes |
+| RFCat outer repeat | 0 |
+| External amplifier | Enabled during TX |
+
+The UI also provides a selectable 315 MHz option for authorized testing. The original `TeslaPop.py` reference uses **433.920 MHz**.
+
+### ASK/OOK PA Configuration
+
+Correct PA configuration is important for generating the OOK waveform.
+
+During development, an incorrect PATABLE address caused the transmitter to produce an almost continuously keyed carrier rather than the expected ASK/OOK pulse train.
+
+The CC1111 PATABLE base used by this project is:
+
+```js
+PATABLE: 0xdf2d
+```
+
+The known-good RFCat Tesla configuration showed:
+
+```text
+PATABLE[0] = 0xC0
+FREND0     = 0x11
+```
+
+The Tesla transmit path explicitly establishes the required ASK/OOK PA state before transmission.
+
+For example:
+
+```js
+async configureAskOokPa() {
+    const pa = new Uint8Array([
+        0xc0, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+    ]);
+
+    await this.poke(R.PATABLE, pa);
+
+    let frend0 = (await this.peek(R.FREND0, 1))[0];
+
+    // PA_POWER = 1 while preserving the remaining FREND0 bits.
+    frend0 = (frend0 & 0xf8) | 0x01;
+
+    await this.poke(R.FREND0, new Uint8Array([frend0]));
+}
+```
+
+The external YARD Stick One amplifier is then enabled immediately before transmission and disabled afterward.
+
+### Transmit Sequence
+
+The Tesla transmit path follows this sequence:
+
+```text
+RF_IDLE
+   ↓
+Set ASK/OOK modulation
+   ↓
+Set carrier frequency
+   ↓
+Set 2500 baud
+   ↓
+Configure ASK/OOK PATABLE
+   ↓
+Set FREND0 PA_POWER = 1
+   ↓
+Enable external amplifier
+   ↓
+Transmit 210-byte buffer
+   ↓
+RF_IDLE
+   ↓
+Disable external amplifier
+```
+
+Conceptually:
+
+```js
+await d.mode(C.RF_IDLE);
+
+await d.setModulation(0x30);
+await d.setFrequency(frequencyMHz * 1_000_000);
+await d.setDataRate(2500);
+
+await d.configureAskOokPa();
+
+await d.setAmpMode(true);
+
+await d.transmit(bytes, 0, 0);
+
+await d.mode(C.RF_IDLE);
+await d.setAmpMode(false);
+```
+
+### Waveform Verification
+
+The implementation was compared against the original Python/RFCat transmitter using Universal Radio Hacker (URH).
+
+For a 1 MS/s capture at 2500 baud:
+
+```text
+Samples per symbol = 1,000,000 / 2,500
+                   = 400
+```
+
+Recommended URH interpretation settings for this capture are therefore:
+
+```text
+Modulation:       ASK
+Bits/Symbol:      1
+Samples/Symbol:   400
+```
+
+The corrected WebUSB transmitter produces clearly separated ASK/OOK high/low transitions matching the structure produced by the native RFCat implementation.
+
+The five transmitted frames also show approximately 4 ms inter-frame pauses in a 1 MS/s URH capture:
+
+```text
+~4000 samples / 1,000,000 samples/sec
+≈ 4 ms
+```
+
+### Troubleshooting
+
+If URH displays an almost continuous carrier and decodes mostly `111111...`, first verify the ASK/OOK PA configuration.
+
+In particular, check:
+
+```text
+PATABLE base = 0xDF2D
+PATABLE[0]   = 0xC0
+FREND0       = 0x11
+```
+
+A valid USB `NIC_XMIT` transaction only confirms that the payload reached RFCat. It does not by itself prove that the CC1111 generated the correct over-the-air OOK waveform.
+
+For waveform debugging, compare the WebUSB transmission against a known-good native RFCat transmission using identical SDR and URH settings.
+
 ## Running RFCat Web
 
 Clone the repository and serve it over HTTP.
@@ -738,6 +926,7 @@ Currently verified:
 - [x] LRS radio configuration
 - [x] LRS 2-FSK + Manchester transmission
 - [x] LRS over-the-air verification with RTL-SDR/URH
+- [x] Tesla Charger Port Opener
 - [ ] Automatic USB startup recovery
 - [ ] Persistent UI settings
 - [ ] Calibrated TX power control

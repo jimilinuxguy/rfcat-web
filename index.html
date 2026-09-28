@@ -27,6 +27,7 @@
                         <option value="binary">Binary OOK symbols</option>
                         <option value="came12">CAME 12-bit</option>
                         <option value="lrs">LRS Pager</option>
+                        <option value="tesla">Tesla Charge Port</option>
                     </select>
                     <div id="lrs-options" hidden>
                         <label>
@@ -81,6 +82,31 @@
                             Packet:
                             <code id="lrs-packet-preview">—</code>
                         </div>
+                    </div>
+                    <div id="tesla-options" hidden>
+                        <label>
+                            Tesla Frequency
+                            <select id="tesla-frequency">
+                                <option value="433.92" selected>433.920 MHz</option>
+                                <option value="315">315.000 MHz</option>
+                            </select>
+                        </label>
+
+                        <label>
+                            Repeats
+                            <input
+                                id="tesla-repeats"
+                                type="number"
+                                min="1"
+                                max="6"
+                                value="5"
+                            />
+                        </label>
+
+                        <label>
+                            Packet Preview
+                            <code id="tesla-packet-preview"></code>
+                        </label>
                     </div>
                 </div><div class="actions"><button id="apply" class="primary">Apply configuration</button><button id="readcfg">Read radio</button><button id="idle">Idle</button><button id="rx">RX</button></div><div id="configSummary" class="summary">Connect a device to read its configuration.</div></section>
             <section class="card"><div class="title-row"><h2>Receiver</h2><div><button id="listen">Start listening</button><button id="clear">Clear</button></div></div><div class="stats"><span>RX events <b id="packets">0</b></span><span>Bytes <b id="bytes">0</b></span><span>RSSI <b id="rssi">—</b></span><span>LQI <b id="lqi">—</b></span><span>State <b id="rxstate">IDLE</b></span></div><p class="hint receiver-hint">With sync disabled, entries are raw RFCat receive buffers, not necessarily protocol packets.</p><div id="packetList" class="packets"><div class="empty">No packets captured.</div></div></section>
