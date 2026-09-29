@@ -67,8 +67,13 @@ const binary = {
     encode(values) {
         const encoded = parseBinarySymbols(values.symbols);
 
+        const waveform = String(values.symbols ?? "").replace(/\s+/g, "");
+
         return {
             ...encoded,
+            bits: waveform,
+            waveform,
+            modulation: "Raw binary / current radio settings",
 
             summary:
                 `Binary TX: ${encoded.symbols} symbols · ` +

@@ -1,3 +1,5 @@
+import { buildWaveformAnalysis } from "../encoding/waveform.js";
+
 // Experimental CAME-12 waveform encoder.
 // Kept pure so it can be tested without RF hardware.
 
@@ -133,8 +135,23 @@ const came12 = {
             },
         );
 
+        const analysis = buildWaveformAnalysis({
+            waveform: encoded.waveform.slice(0, encoded.meaningfulSymbols),
+            symbolRate: 3125,
+            label: "CAME 12-bit ASK/OOK",
+            requestedTimings: [
+                { name: "T", symbols: 1, requestedUs: 320 },
+                { name: "2T", symbols: 2, requestedUs: 640 },
+                { name: "Inter-burst gap", symbols: Number(values.gapT), requestedUs: Number(values.gapT) * 320 },
+            ],
+        });
+
         return {
             ...encoded,
+            bits: encoded.code,
+            waveform: encoded.waveform.slice(0, encoded.meaningfulSymbols),
+            analysis,
+            modulation: "ASK/OOK",
 
             summary:
                 `CAME-12 TX: ` +

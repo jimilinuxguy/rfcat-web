@@ -9,6 +9,14 @@ export function packWaveform(waveform) {
     return { bytes, waveform, symbols: waveform.length, padding };
 }
 
+
+export function bytesToBits(bytes) {
+    if (!(bytes instanceof Uint8Array)) throw new TypeError("Expected Uint8Array");
+    let bits = "";
+    for (const byte of bytes) bits += byte.toString(2).padStart(8, "0");
+    return bits;
+}
+
 /** Match the CC1111 data-rate calculation used by RFCatUSB.setDataRate(). */
 export function quantizeCc1111DataRate(requestedRate, crystalHz = 24_000_000) {
     const requested = Number(requestedRate);

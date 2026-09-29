@@ -1,3 +1,5 @@
+import { buildWaveformAnalysis, bytesToBits } from "../encoding/waveform.js";
+
 const TESLA_CHARGE_PORT_PACKET = new Uint8Array([
     0x15, 0x55, 0x55, 0x51, 0x59, 0x4c, 0xb5, 0x55, 0x52, 0xd5, 0x4b, 0x4a,
     0xd3, 0x4c, 0xab, 0x4b, 0x15, 0x94, 0xcb, 0x33, 0x33, 0x2d, 0x54, 0xb4,
@@ -72,8 +74,24 @@ const tesla = {
             repeats: Number(values.repeats),
         });
 
+        const waveform = bytesToBits(encoded.bytes);
+        const analysis = buildWaveformAnalysis({
+            waveform,
+            symbolRate: 2500,
+            label: "Tesla Charge Port ASK/OOK",
+            requestedTimings: [
+                { name: "RF symbol", symbols: 1, requestedUs: 400 },
+            ],
+        });
+
         return {
             ...encoded,
+            packetBytes: TESLA_CHARGE_PORT_PACKET,
+            bits: bytesToBits(TESLA_CHARGE_PORT_PACKET),
+            waveform,
+            padding: 0,
+            analysis,
+            modulation: "ASK/OOK",
 
             summary:
                 `Tesla TX: ` +

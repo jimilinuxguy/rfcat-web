@@ -1,3 +1,5 @@
+import { buildWaveformAnalysis, bytesToBits } from "../encoding/waveform.js";
+
 const PREAMBLE = "aaaaaa";
 const SYNC_WORD = "fc2d";
 const STATION_ID = "0";
@@ -168,8 +170,27 @@ const lrs = {
             alertType: values.alertType,
         });
 
+        const bits = bytesToBits(encoded.bytes);
+        let waveform = "";
+        for (const bit of bits) waveform += bit === "0" ? "01" : "10";
+        const analysis = buildWaveformAnalysis({
+            waveform,
+            symbolRate: 1250,
+            label: "LRS 2-FSK hardware Manchester",
+            requestedTimings: [
+                { name: "Manchester half-bit", symbols: 1, requestedUs: 800 },
+                { name: "Logical bit", symbols: 2, requestedUs: 1600 },
+            ],
+        });
+
         return {
             ...encoded,
+            packetBytes: encoded.bytes,
+            bits,
+            waveform,
+            padding: 0,
+            analysis,
+            modulation: "2-FSK · hardware Manchester · ±15 kHz",
 
             summary:
                 `LRS TX: ` +

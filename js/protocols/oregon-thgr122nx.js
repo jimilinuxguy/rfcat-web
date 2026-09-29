@@ -1,4 +1,5 @@
 import { encodeManchester } from "../encoding/manchester.js";
+import { buildWaveformAnalysis } from "../encoding/waveform.js";
 
 const SENSOR_ID = [0x1, 0xd, 0x2, 0x0];
 
@@ -261,8 +262,21 @@ const oregonThgr122nx = {
             batteryLow: Boolean(values.batteryLow),
         });
 
+        const analysis = buildWaveformAnalysis({
+            waveform: result.waveform,
+            symbolRate: 2048,
+            label: "Oregon THGR122NX Manchester ASK/OOK",
+            requestedTimings: [
+                { name: "Manchester half-bit", symbols: 1, requestedUs: 1_000_000 / 2048 },
+                { name: "Logical bit", symbols: 2, requestedUs: 1_000_000 / 1024 },
+            ],
+        });
+
         return {
             ...result,
+            bits: result.logicalBits,
+            analysis,
+            modulation: "ASK/OOK · Manchester",
 
             summary:
                 `THGR122NX TX: ` +
