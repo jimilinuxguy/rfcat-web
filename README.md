@@ -43,6 +43,7 @@ One.
   Schrader TPMS SMD3MA4         Source-derived; validation pending
   Schrader TPMS NIS315G3/3039   Source-derived; validation pending
   Schrader TPMS MRXBC5A4        Source-derived; validation pending
+  TouchTunes Remote  Source-derived; unit-tested; OTA validation pending
 
 The Schrader protocol UIs display sensor IDs and flags in hexadecimal so
 values correspond directly with typical `rtl_433` output.

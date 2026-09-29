@@ -9,6 +9,7 @@ import schraderMrxgg4 from "./schrader-mrxgg4.js";
 import schraderEg53ma4 from "./schrader-eg53ma4.js";
 import { schraderSmd3ma4, schraderNis315g3 } from "./schrader-smd3ma4.js";
 import schraderMrxbc5a4 from "./schrader-mrxbc5a4.js";
+import touchtunes from "./touchtunes.js";
 
 // During the migration we'll add these one at a time:
 // import lrs from "./lrs.js";
@@ -26,7 +27,8 @@ export const protocols = Object.freeze([
     schraderEg53ma4,
     schraderSmd3ma4,
     schraderNis315g3,
-    schraderMrxbc5a4
+    schraderMrxbc5a4,
+    touchtunes
 ]);
 
 export function getProtocol(id) {

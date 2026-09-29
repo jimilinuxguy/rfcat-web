@@ -31,6 +31,7 @@ documentation.
 -   [CAME 12-bit](protocols/came12.md) --- experimental OOK encoder.
 -   [Generic OOK/PWM](protocols/pwm.md) --- reusable configurable
     pulse-width encoder.
+-   [TouchTunes Remote](protocols/touchtunes.md) --- source-derived 433.92 MHz OOK remote encoder; brute-force and jamming functions intentionally excluded.
 
 ## Validation Levels
 
