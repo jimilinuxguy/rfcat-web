@@ -18,6 +18,8 @@ documentation.
     Schrader TPMS implementation using `rtl_433` decoder #60.
 -   [Schrader EG53MA4](protocols/schrader-eg53ma4.md) --- OTA-validated
     315 MHz Schrader TPMS implementation using `rtl_433` decoder #95.
+-   [Schrader SMD3MA4 / NIS315G3](protocols/schrader-smd3ma4.md) --- shared Subaru/Nissan wire format; source-derived, validation pending.
+-   [Schrader MRXBC5A4 / BMW](protocols/schrader-mrxbc5a4.md) --- BMW format and integrity logic; source-derived, validation pending.
 -   [Acurite 5n1](protocols/acurite-5n1.md) --- OTA validated with
     native `rtl_433` decoder and checksum verification.
 -   [Oregon Scientific THGR122NX](protocols/oregon-thgr122nx.md) ---

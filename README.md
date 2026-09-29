@@ -40,6 +40,9 @@ One.
   Acurite 5n1                   OTA validated with `rtl_433` checksum verification
   Schrader TPMS MRXGG4          OTA validated with `rtl_433` decoder #60
   Schrader TPMS EG53MA4         OTA validated with `rtl_433` decoder #95
+  Schrader TPMS SMD3MA4         Source-derived; validation pending
+  Schrader TPMS NIS315G3/3039   Source-derived; validation pending
+  Schrader TPMS MRXBC5A4        Source-derived; validation pending
 
 The Schrader protocol UIs display sensor IDs and flags in hexadecimal so
 values correspond directly with typical `rtl_433` output.
@@ -106,6 +109,8 @@ Protocol development also uses synthetic IQ samples and independent
 -   [Radio Configuration](docs/radio.md)
 -   [Schrader MRXGG4](docs/protocols/schrader-mrxgg4.md)
 -   [Schrader EG53MA4](docs/protocols/schrader-eg53ma4.md)
+-   [Schrader SMD3MA4 / NIS315G3](docs/protocols/schrader-smd3ma4.md)
+-   [Schrader MRXBC5A4 / BMW](docs/protocols/schrader-mrxbc5a4.md)
 -   [Acurite 5n1](docs/protocols/acurite-5n1.md)
 -   [Oregon Scientific THGR122NX](docs/protocols/oregon-thgr122nx.md)
 -   [LRS Pager](docs/protocols/lrs.md)
