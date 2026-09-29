@@ -1,139 +1,43 @@
 # RFCat Web
 
-Browser-native control of RFCat-compatible CC1111 radios using WebUSB.
+Browser-based WebUSB controller for RFCat-compatible CC1111 hardware such as the YARD Stick One.
 
-RFCat Web communicates directly with RFCat firmware from the browser and
-provides radio configuration, RX/TX controls, register inspection,
-reusable RF encoders, waveform analysis, and a modular protocol system.
-It is designed for devices such as the Great Scott Gadgets YARD Stick
-One.
+RFCat Web provides direct radio configuration, receive/transmit controls, waveform inspection, and a modular protocol system that keeps protocol-specific encoding and RF configuration out of the main application.
 
-> Use RF transmission features only with equipment and systems you own
-> or are explicitly authorized to test, and follow applicable spectrum
-> rules.
+## Protocols
 
-## Features
+Implemented protocol modules include CAME-12, Binary, LRS, Tesla charge-port test signaling, generic OOK/PWM, Oregon THGR122NX, Acurite 5n1, several Schrader TPMS formats, and TouchTunes / The Fonz.
 
--   Direct WebUSB RFCat communication
--   YARD Stick One / CC1111 radio control
--   Frequency, modulation, data-rate, bandwidth, deviation, sync, and
-    packet configuration
--   RX and TX modes
--   CC1111 register inspection and radio readback
--   External amplifier control
--   Modular protocol plugins with dynamically generated UI
--   Reusable PWM and Manchester encoders
--   RF waveform preview and timing analysis
--   Unit-tested protocol encoding
--   Zero-build ES-module architecture suitable for GitHub Pages
+### Validation status
 
-## Supported Protocols
+Protocol implementations have different validation levels. A synthetic validation means generated samples were checked against the expected decoder or source algorithm. OTA waveform validation additionally means a YARD Stick One transmission was independently captured and its timing/framing compared with the expected waveform.
 
-  Protocol                      Status
-  ----------------------------- ----------------------------------------------------
-  Binary                        Supported
-  Generic OOK/PWM               Supported
-  CAME 12-bit                   Experimental
-  LRS Pager                     OTA validated
-  Tesla Charge Port             Implemented / waveform validated
-  Oregon Scientific THGR122NX   Experimental
-  Acurite 5n1                   OTA validated with `rtl_433` checksum verification
-  Schrader TPMS MRXGG4          OTA validated with `rtl_433` decoder #60
-  Schrader TPMS EG53MA4         OTA validated with `rtl_433` decoder #95
-  Schrader TPMS SMD3MA4         Source-derived; validation pending
-  Schrader TPMS NIS315G3/3039   Source-derived; validation pending
-  Schrader TPMS MRXBC5A4        Source-derived; validation pending
-  TouchTunes Remote  Source-derived; unit-tested; OTA validation pending
+TouchTunes / The Fonz is **OTA waveform validated**. A YARD Stick One transmission captured with an RTL-SDR matched the expected preamble, 32-bit frame structure, variable-length OOK encoding, and approximately 566 µs base timing. Receiver interoperability with an actual TouchTunes jukebox has not been validated.
 
-The Schrader protocol UIs display sensor IDs and flags in hexadecimal so
-values correspond directly with typical `rtl_433` output.
+See [docs/README.md](docs/README.md) for protocol documentation.
 
-See [Protocol Documentation](docs/README.md#protocols) for
-implementation details.
+## Architecture
 
-## Quick Start
+Protocol implementations live under `js/protocols/`. Each protocol declares its own metadata, UI fields, encoder, radio configuration, and transmit behavior. `app.js` remains protocol-agnostic and the WebUSB/RFCat device layer remains hardware-focused.
 
-Serve the repository through HTTP/HTTPS. Do not open `index.html`
-directly with `file://`.
+Browser ES modules use explicit relative imports with `.js` extensions. The protocol registry is maintained explicitly in `js/protocols/index.js`, which keeps the project compatible with GitHub Pages without requiring a bundler.
 
-``` bash
+## Running locally
+
+Serve the repository from a local HTTP server:
+
+```bash
 python3 -m http.server 8080
 ```
 
-Then open:
+Then open the local server in a WebUSB-capable browser.
 
-``` text
-http://localhost:8080/
-```
+## Testing
 
-Connect the YARD Stick One using the **Connect** button and approve the
-WebUSB device prompt.
+Run the JavaScript test suite with the project's npm test command.
 
-## GitHub Pages
+Synthetic RF generators under `tools/` can create sample files for independent waveform/decoder analysis. Generated captures should be written under `tmp/`, which is excluded from version control.
 
-RFCat Web uses native browser ES modules and does not require a bundler.
+## Safety and authorization
 
-The entry script must be loaded as a module:
-
-``` html
-<script type="module" src="./app.js"></script>
-```
-
-Imports should use repository-relative paths and include the `.js`
-extension:
-
-``` javascript
-import { getProtocol } from "./js/protocols/index.js";
-```
-
-Avoid root-relative imports such as `/js/...`, because a GitHub Pages
-project site is normally served beneath the repository path.
-
-Import filename capitalization must exactly match the file on disk.
-
-## Tests
-
-Run the test suite with:
-
-``` bash
-npm test
-```
-
-Protocol development also uses synthetic IQ samples and independent
-`rtl_433` decoding where appropriate before OTA validation.
-
-## Documentation
-
--   [Documentation Index](docs/README.md)
--   [Developer Guide](DEVELOPER.md)
--   [RFCat USB Protocol](docs/rfcat-usb.md)
--   [Radio Configuration](docs/radio.md)
--   [Schrader MRXGG4](docs/protocols/schrader-mrxgg4.md)
--   [Schrader EG53MA4](docs/protocols/schrader-eg53ma4.md)
--   [Schrader SMD3MA4 / NIS315G3](docs/protocols/schrader-smd3ma4.md)
--   [Schrader MRXBC5A4 / BMW](docs/protocols/schrader-mrxbc5a4.md)
--   [Acurite 5n1](docs/protocols/acurite-5n1.md)
--   [Oregon Scientific THGR122NX](docs/protocols/oregon-thgr122nx.md)
--   [LRS Pager](docs/protocols/lrs.md)
--   [Tesla Charge Port](docs/protocols/tesla.md)
--   [CAME 12-bit](docs/protocols/came12.md)
--   [Generic OOK/PWM](docs/protocols/pwm.md)
-
-## Browser Support
-
-A browser with WebUSB support is required. Chromium-based browsers are
-the primary target.
-
-## Project Goals
-
-RFCat Web keeps hardware access isolated from protocol implementations,
-protocol implementations modular, waveform encoders reusable, protocol
-UI generic, and encoders independently testable.
-
-The project deliberately uses plain HTML, CSS, JavaScript modules,
-WebUSB, and lightweight tests rather than requiring a frontend build
-system.
-
-## License
-
-See the repository license for licensing terms.
+Transmit only on frequencies and equipment you are legally permitted to use. Protocol support is intended for development, interoperability testing, research, and equipment you own or are explicitly authorized to test.

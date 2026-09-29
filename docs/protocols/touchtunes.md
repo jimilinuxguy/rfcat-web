@@ -1,44 +1,108 @@
-# TouchTunes Remote — The Fonz
+# TouchTunes / The Fonz
 
-**Status:** source-derived; unit-tested; OTA validation pending.
+## Status
 
-This module ports the normal command-transmission encoder from `The_Fonz.py`. It intentionally does **not** implement the source's PIN brute-force or continuous-carrier jamming/EW functions. Use transmission only with a jukebox or test receiver you own or are authorized to control.
+**OTA waveform validated**
 
-## Source-derived frame
+The RFCat Web implementation ports the normal TouchTunes remote framing and transmit behavior from the supplied `The_Fonz.py` source into the project's protocol-module architecture.
 
-The source constructs a 32-bit logical frame:
+Receiver interoperability with an actual TouchTunes jukebox has **not** been validated.
+
+## RF configuration
+
+The source configures transmission as:
+
+- Frequency: **433.92 MHz**
+- Modulation: **ASK/OOK**
+- Data rate: **1766 symbols/sec**
+- Hardware preamble: disabled
+- Hardware sync: disabled
+
+A 1766-symbol/sec rate corresponds to a nominal base interval of approximately **566 µs**.
+
+## Frame construction
+
+The logical 32-bit frame consists of:
+
+1. Sync byte `0x5D`
+2. 8-bit PIN encoded least-significant bit first
+3. 8-bit command
+4. 8-bit command complement (`command ^ 0xFF`)
+
+The logical frame is converted into an OOK waveform using:
+
+- Logical `0` → `10`
+- Logical `1` → `1000`
+
+The complete transmitted waveform adds:
+
+- 16 HIGH base symbols
+- 8 LOW base symbols
+- encoded 32-bit frame
+- trailing `1000`
+
+## Example
+
+For PIN `0` and command `0x44` (`OK`), the underlying logical frame is:
 
 ```text
-0x5D | PIN LSB-first | command | command XOR 0xFF
+5D 00 44 BB
 ```
 
-Each logical bit is then converted directly to OOK symbols:
+The protocol module converts that frame into the variable-length OOK waveform before packing it for RFCat transmission.
 
-```text
-0 -> 10
-1 -> 1000
-```
+## OTA validation
 
-The RF waveform is wrapped as:
+Validation was performed in two stages.
 
-```text
-16 HIGH | 8 LOW | encoded 32-bit frame | 1000
-```
+First, the generator produced a synthetic CU8 waveform. Analysis measured a 566 µs base interval, 566 µs short LOW interval, 1698 µs long LOW interval, approximately 9061 µs preamble HIGH, and approximately 4528 µs preamble LOW.
 
-The source configures RFCat for 433.92 MHz ASK/OOK at a data rate of 1766 symbols/s, giving a base symbol period of about 566.25 µs.
+The same test frame was then transmitted over the air with a YARD Stick One and independently captured with an RTL-SDR.
 
-## UI
+| Signal component | Nominal / synthetic | OTA measured |
+| --- | ---: | ---: |
+| Base HIGH | ~566 µs | ~580 µs |
+| Short LOW (`0`) | ~566 µs | ~548 µs |
+| Long LOW (`1`) | ~1698 µs | ~1680 µs |
+| Preamble HIGH | ~9056 µs | ~9080 µs |
+| Preamble LOW | ~4528 µs | ~4500 µs |
+| Short-bit period | ~1132 µs | ~1128 µs |
+| Long-bit period | ~2264 µs | ~2260 µs |
 
-The protocol UI exposes the known remote PIN, command, and number of transmissions. The command selector preserves the command-byte table from the source.
+The OTA analyzer observed 19 short gaps and 13 long gaps, accounting for all 32 logical frame bits. The pulse/gap structure matched the synthetic waveform.
 
-## Validation
+This validates the RFCat Web encoder, waveform construction, CC1111 configuration, and OTA timing against the supplied source implementation.
 
-`tests/touchtunes.test.js` checks the frame layout, LSB-first PIN representation, command table, preamble/tail, and input validation.
+It does **not** establish receiver interoperability with an actual TouchTunes jukebox.
 
-`tools/generate-touchtunes-sample.mjs` generates a 1 Msps CU8 waveform for inspection:
+## Synthetic sample generation
+
+Generate the PIN `0`, command `0x44` test sample with:
 
 ```bash
 node tools/generate-touchtunes-sample.mjs 0 44
 ```
 
-The final two arguments are PIN (decimal) and command byte (hex).
+A generated 1 Msps CU8 capture can be inspected with:
+
+```bash
+rtl_433 -R 0 -A -vvv -r tmp/touchtunes/touchtunes_pin0_cmd44_1Msps.cu8
+```
+
+Because this protocol uses variable-length OOK symbols (`10` and `1000`), rtl_433's automatic analyzer may describe it as generic PWM and display an unhelpful decoded `codes` value. The pulse and gap distributions are the useful validation output.
+
+## OTA analysis
+
+For authorized hardware testing, an RTL-SDR can independently observe the transmitted waveform at 433.92 MHz:
+
+```bash
+rtl_433 -R 0 -A -vvv -f 433.92M
+```
+
+The expected waveform contains approximately 566 µs base timing, approximately 1698 µs long LOW intervals, and the approximately 9.06 ms / 4.53 ms HIGH/LOW preamble.
+
+## Scope
+
+The RFCat Web module implements explicit user-selected PIN and command transmission for authorized testing. It does not implement the source program's PIN brute-force or continuous-carrier jamming functionality.
+
+Transmit only to equipment you own or are explicitly authorized to test.

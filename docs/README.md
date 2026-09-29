@@ -1,52 +1,33 @@
-# RFCat Web Documentation
+# RFCat Web Protocol Documentation
 
-This directory contains detailed RFCat Web engineering and protocol
-documentation.
+This directory contains implementation and validation notes for RFCat Web protocol modules.
 
-## Internals
+## Protocol documentation
 
--   [Developer Guide](../DEVELOPER.md) --- architecture, plugin model,
-    ES modules, testing, waveform analysis, and adding protocols.
--   [RFCat USB Protocol](rfcat-usb.md) --- browser-to-RFCat framing and
-    commands.
--   [Radio Configuration](radio.md) --- CC1111 radio configuration,
-    ASK/OOK PA setup, RX notes, Lowball, and data-rate quantization.
+- [Schrader MRXGG4](protocols/schrader-mrxgg4.md) — TPMS implementation with OTA validation.
+- [Schrader EG53MA4](protocols/schrader-eg53ma4.md) — TPMS implementation with OTA validation.
+- [Schrader SMD3MA4 / 3039](protocols/schrader-smd3ma4.md) — shared Schrader/Subaru/Nissan-family wire format implementation.
+- [Schrader MRXBC5A4](protocols/schrader-mrxbc5a4.md) — BMW-family TPMS implementation and synthetic validation tooling.
+- [TouchTunes / The Fonz](protocols/touchtunes.md) — OTA waveform-validated 433.92 MHz ASK/OOK remote protocol implementation.
 
-## Protocols
+## Validation terminology
 
--   [Schrader MRXGG4](protocols/schrader-mrxgg4.md) --- OTA-validated
-    Schrader TPMS implementation using `rtl_433` decoder #60.
--   [Schrader EG53MA4](protocols/schrader-eg53ma4.md) --- OTA-validated
-    315 MHz Schrader TPMS implementation using `rtl_433` decoder #95.
--   [Schrader SMD3MA4 / NIS315G3](protocols/schrader-smd3ma4.md) --- shared Subaru/Nissan wire format; source-derived, validation pending.
--   [Schrader MRXBC5A4 / BMW](protocols/schrader-mrxbc5a4.md) --- BMW format and integrity logic; source-derived, validation pending.
--   [Acurite 5n1](protocols/acurite-5n1.md) --- OTA validated with
-    native `rtl_433` decoder and checksum verification.
--   [Oregon Scientific THGR122NX](protocols/oregon-thgr122nx.md) ---
-    experimental weather-sensor implementation.
--   [LRS Pager](protocols/lrs.md) --- packet format and OTA validation
-    notes.
--   [Tesla Charge Port](protocols/tesla.md) --- fixed ASK/OOK waveform
-    implementation for authorized interoperability testing.
--   [CAME 12-bit](protocols/came12.md) --- experimental OOK encoder.
--   [Generic OOK/PWM](protocols/pwm.md) --- reusable configurable
-    pulse-width encoder.
--   [TouchTunes Remote](protocols/touchtunes.md) --- source-derived 433.92 MHz OOK remote encoder; brute-force and jamming functions intentionally excluded.
+**Structural implementation** means the encoder was implemented from the available protocol/source description.
 
-## Validation Levels
+**Synthetic validation** means generated RF samples were independently inspected or decoded to verify packet construction and timing.
 
-Protocol documents use these broad statuses:
+**OTA waveform validated** means the implementation was transmitted by the target RFCat hardware and independently captured with another receiver. The captured waveform was compared with the expected framing and timing.
 
--   **Supported** --- implementation and unit tests are available.
--   **Experimental** --- implementation exists but receiver
-    interoperability is not fully established.
--   **Synthetic validated** --- generated samples decode through an
-    independent decoder, but an RF transmission has not yet been
-    independently received.
--   **OTA validated** --- an independently captured over-the-air
-    transmission has been decoded or otherwise matched against the
-    expected protocol.
+**Receiver validated** should only be used when an intended real receiver/device has accepted the generated transmission.
 
-Protocol documentation records known-good test vectors, timing
-observations, and RF-specific fixes so implementation decisions do not
-have to be rediscovered later.
+These distinctions are intentional. OTA waveform validation demonstrates that the radio emitted the intended signal but does not, by itself, establish interoperability with every real receiver.
+
+## Synthetic captures
+
+Protocol-specific generators under `tools/` write disposable RF captures under `tmp/`. These captures are useful for regression analysis with tools such as rtl_433 without requiring repeated live transmissions.
+
+## Adding a protocol
+
+A protocol module should own its metadata, fields, validation, encoder, RF configuration, transmit behavior, and optional preview information. Add the module to the explicit registry in `js/protocols/index.js` and add tests and protocol documentation where appropriate.
+
+Protocol-specific logic should not be added to `app.js` or the RFCat device abstraction.
