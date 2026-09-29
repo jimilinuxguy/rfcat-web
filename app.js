@@ -4,6 +4,7 @@ import { R } from "./js/radio/registers.js";
 import { RFCatUSB } from "./js/rfcat/device.js";
 import { hex } from "./js/core/bytes.js";
 import { $, log } from "./js/ui/log.js";
+import { renderWaveformPreview, clearWaveformPreview } from "./js/ui/waveform.js";
 
 import { protocols, getProtocol } from "./js/protocols/index.js";
 
@@ -16,6 +17,7 @@ import {
 const d = new RFCatUSB();
 const protocolSelect = $("protocol");
 const protocolFields = $("protocol-fields");
+const waveformPreview = $("waveform-preview");
 
 renderProtocolSelector(protocolSelect, protocols);
 
@@ -28,7 +30,31 @@ function selectProtocol() {
     }
 
     renderProtocolFields(protocolFields, protocol);
+    updateProtocolPreview();
 }
+
+let previewGeneration = 0;
+
+async function updateProtocolPreview() {
+    const generation = ++previewGeneration;
+    const protocol = getProtocol(protocolSelect.value);
+    if (!protocol) return clearWaveformPreview(waveformPreview);
+
+    try {
+        const values = getProtocolValues(protocolFields, protocol);
+        const encoded = await protocol.encode(values);
+        if (generation !== previewGeneration) return;
+        renderWaveformPreview(waveformPreview, encoded);
+    } catch (e) {
+        if (generation !== previewGeneration) return;
+        clearWaveformPreview(waveformPreview);
+        waveformPreview.textContent = `Preview unavailable: ${e.message}`;
+    }
+}
+
+protocolFields.addEventListener("input", updateProtocolPreview);
+protocolFields.addEventListener("change", updateProtocolPreview);
+window.addEventListener("resize", () => updateProtocolPreview());
 
 protocolSelect.addEventListener("change", selectProtocol);
 

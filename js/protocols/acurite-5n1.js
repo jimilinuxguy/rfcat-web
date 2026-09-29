@@ -1,3 +1,5 @@
+import { buildWaveformAnalysis } from "../encoding/waveform.js";
+
 const MSG_WIND_TEMP_HUMIDITY = 0x38;
 
 /*
@@ -249,6 +251,21 @@ export function encodeAcurite5n1Rf(bytes) {
         rfBytes[i / 8] = parseInt(padded.slice(i, i + 8), 2);
     }
 
+    const analysis = buildWaveformAnalysis({
+        waveform,
+        symbolRate: 9_800,
+        label: "Acurite 5n1 OOK/PWM",
+        requestedTimings: [
+            { name: "0 HIGH", symbols: 2, requestedUs: 204 },
+            { name: "0 LOW", symbols: 4, requestedUs: 408 },
+            { name: "1 HIGH", symbols: 4, requestedUs: 408 },
+            { name: "1 LOW", symbols: 2, requestedUs: 204 },
+            { name: "Sync HIGH", symbols: 6, requestedUs: 620 },
+            { name: "Sync LOW", symbols: 6, requestedUs: 596 },
+            { name: "Inter-frame LOW", symbols: 20, requestedUs: 2192 },
+        ],
+    });
+
     return {
         bytes: rfBytes,
         packetBytes: bytes,
@@ -256,6 +273,7 @@ export function encodeAcurite5n1Rf(bytes) {
         waveform,
         symbols: waveform.length,
         padding,
+        analysis,
     };
 }
 const acurite5n1 = {
@@ -351,6 +369,8 @@ const acurite5n1 = {
             bits: rf.bits,
             waveform: rf.waveform,
             symbols: rf.symbols,
+            padding: rf.padding,
+            analysis: rf.analysis,
 
             summary:
                 `Acurite 5n1 TX: ` +

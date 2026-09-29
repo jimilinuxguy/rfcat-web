@@ -123,3 +123,9 @@ with a measured/read-back value around:
 ```
 
 This is expected.
+
+## Waveform Timing Analysis
+
+`js/encoding/waveform.js` mirrors the CC1111 data-rate quantization used by `RFCatUSB.setDataRate()`. This allows the browser to preview the actual representable symbol rate and pulse timing before transmission without accessing the radio.
+
+The RF Waveform Preview compares requested pulse durations with durations produced by the quantized CC1111 symbol period. These values are predictions from the same register calculation and should still be independently measured with an SDR when validating a new protocol.

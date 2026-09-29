@@ -349,3 +349,13 @@ Use:
 -   `docs/README.md` as the documentation index.
 -   `docs/protocols/*.md` for protocol research, packet layouts, RF
     timing, test vectors, and validation notes.
+
+## RF Waveform Preview
+
+Protocols that return both `waveform` and `analysis` receive a live pre-transmit waveform preview in the browser.
+
+`js/encoding/waveform.js` provides hardware-independent helpers for waveform packing, run analysis, CC1111 data-rate quantization, pulse timing, and timing-error calculation. `js/ui/waveform.js` owns visualization only.
+
+A protocol can attach analysis metadata with `buildWaveformAnalysis()` without touching WebUSB. The preview displays the logical packet/bits when available, RF symbol count, quantized CC1111 symbol rate, symbol period, duration, payload size, padding, a waveform trace, and desired-versus-actual timing.
+
+This keeps the design rule intact: protocol encoding and timing analysis are pure functions; device configuration remains in `js/rfcat/device.js`.

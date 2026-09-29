@@ -1,6 +1,7 @@
 import {
     encodeOokPwm,
 } from "../encoding/pwm.js";
+import { buildWaveformAnalysis } from "../encoding/waveform.js";
 
 
 function parseTiming(value, name) {
@@ -125,8 +126,23 @@ const pwm = {
             },
         );
 
+        const requestedRate = Number(values.symbolRate);
+        const requestedPeriodUs = 1_000_000 / requestedRate;
+        const analysis = buildWaveformAnalysis({
+            waveform: result.waveform,
+            symbolRate: requestedRate,
+            label: "Generic OOK/PWM",
+            requestedTimings: [
+                { name: "0 HIGH", symbols: zero[0], requestedUs: zero[0] * requestedPeriodUs },
+                { name: "0 LOW", symbols: zero[1], requestedUs: zero[1] * requestedPeriodUs },
+                { name: "1 HIGH", symbols: one[0], requestedUs: one[0] * requestedPeriodUs },
+                { name: "1 LOW", symbols: one[1], requestedUs: one[1] * requestedPeriodUs },
+            ],
+        });
+
         return {
             ...result,
+            analysis,
 
             summary:
                 `PWM TX: ${result.bits.length} bits · ` +
