@@ -5,6 +5,8 @@ import tesla from "./tesla.js";
 import pwm from "./pwm.js";
 import oregonThgr122nx from "./oregon-thgr122nx.js";
 import acurite5n1 from "./acurite-5n1.js";
+import schraderMrxgg4 from "./schrader-mrxgg4.js";
+import schraderEg53ma4 from "./schrader-eg53ma4.js";
 
 // During the migration we'll add these one at a time:
 // import lrs from "./lrs.js";
@@ -17,7 +19,9 @@ export const protocols = Object.freeze([
     tesla,
     pwm,
     oregonThgr122nx,
-    acurite5n1
+    acurite5n1,
+    schraderMrxgg4,
+    schraderEg53ma4
 ]);
 
 export function getProtocol(id) {
