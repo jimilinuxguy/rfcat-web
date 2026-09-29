@@ -4,3 +4,46 @@
 
 /* RF waveform preview */
 .waveform-card{grid-column:1/-1}.preview-badge{font:10px/1 "SFMono-Regular",Consolas,monospace;letter-spacing:.08em;color:#59a6ff;border:1px solid #31577f;border-radius:999px;padding:5px 8px}.waveform-preview{margin-top:16px}.empty-preview{min-height:90px;display:grid;place-items:center;color:#566579;border:1px dashed #2c394b;border-radius:8px}.waveform-stats{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:12px}.waveform-stats div{background:#090e15;border:1px solid #202b3a;border-radius:7px;padding:9px}.waveform-stats span{display:block;color:#66758a;font-size:10px}.waveform-stats strong{display:block;margin-top:4px;font:12px "SFMono-Regular",Consolas,monospace;color:#c9d8ea}.waveform-line{margin:7px 0;display:grid;grid-template-columns:90px 1fr;gap:8px;align-items:start}.waveform-line span{color:#66758a;font-size:11px}.waveform-line code{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#c9d8ea;font:11px "SFMono-Regular",Consolas,monospace}.waveform-canvas{display:block;width:100%;height:180px;background:#070b10;border:1px solid #202b3a;border-radius:8px;margin-top:12px}.waveform-caption{color:#66758a;font-size:10px;margin:6px 0 12px}.timing-table{width:100%;border-collapse:collapse;font:11px "SFMono-Regular",Consolas,monospace}.timing-table th,.timing-table td{text-align:right;padding:7px 8px;border-bottom:1px solid #202b3a}.timing-table th:first-child,.timing-table td:first-child{text-align:left}.timing-table th{color:#66758a;font-weight:500}.timing-table td{color:#c9d8ea}@media(max-width:800px){.waveform-stats{grid-template-columns:repeat(3,1fr)}}@media(max-width:520px){.waveform-stats{grid-template-columns:repeat(2,1fr)}.timing-table{font-size:9px}}
+
+
+/* Stable RF waveform preview layout */
+.waveform-preview {
+    height: 540px;
+    min-height: 540px;
+    overflow: hidden;
+}
+.waveform-stats {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    min-height: 64px;
+}
+.waveform-stats strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.waveform-line {
+    grid-template-columns: 90px minmax(0, 1fr);
+    height: 24px;
+    min-height: 24px;
+    overflow: hidden;
+}
+.waveform-canvas {
+    height: 180px;
+    min-height: 180px;
+    max-height: 180px;
+}
+.timing-table {
+    table-layout: fixed;
+}
+@media (max-width: 800px) {
+    .waveform-preview {
+        height: 600px;
+        min-height: 600px;
+    }
+}
+@media (max-width: 520px) {
+    .waveform-preview {
+        height: 650px;
+        min-height: 650px;
+    }
+}

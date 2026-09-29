@@ -52,9 +52,25 @@ async function updateProtocolPreview() {
     }
 }
 
-protocolFields.addEventListener("input", updateProtocolPreview);
+function debounce(fn, delay = 100) {
+    let timer = null;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+    };
+}
+
+const updateProtocolPreviewDebounced = debounce(updateProtocolPreview, 100);
+
+// Text/number input can fire on every keystroke. Debounce those redraws so
+// editing a value does not continuously rebuild the preview and shift layout.
+protocolFields.addEventListener("input", updateProtocolPreviewDebounced);
+// Selects, checkboxes, and committed edits should update immediately.
 protocolFields.addEventListener("change", updateProtocolPreview);
-window.addEventListener("resize", () => updateProtocolPreview());
+
+// The canvas is responsive, but a resize can emit many events in quick
+// succession. Re-render once the resize settles.
+window.addEventListener("resize", debounce(updateProtocolPreview, 100));
 
 protocolSelect.addEventListener("change", selectProtocol);
 
