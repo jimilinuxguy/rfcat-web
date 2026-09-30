@@ -4,6 +4,26 @@ Browser-based WebUSB controller for RFCat-compatible CC1111 hardware such as the
 
 RFCat Web provides direct radio configuration, receive/transmit controls, protocol-aware decoding, waveform inspection, IPython export, and a modular protocol system that keeps protocol-specific encoding and RF configuration out of the main application.
 
+## Screenshots
+
+### Radio configuration
+
+Configure the CC1111 radio directly from the browser.
+
+![RFCat Web radio configuration](docs/images/radio-configuration.png)
+
+### Receiver and protocol transmitter
+
+Receive raw or decoded RF traffic and transmit supported protocols.
+
+![RFCat Web receiver and protocol transmitter](docs/images/receiver-transmitter.png)
+
+### RF waveform preview
+
+Inspect encoded RF symbols, packet data, symbol timing, and the generated waveform before transmission.
+
+![RFCat Web RF waveform preview](docs/images/waveform-preview.png)
+
 ## Features
 
 RFCat Web currently supports:
