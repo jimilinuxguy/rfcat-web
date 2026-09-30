@@ -40,8 +40,11 @@
              RADIO
              ================================================== -->
 
-            <section class="card radio">
-                <h2>Radio</h2>
+            <details class="card radio collapsible" open>
+                <summary class="section-summary">
+                    <span>Radio</span>
+                    <span class="summary-note">CC1111 configuration</span>
+                </summary>
 
                 <div class="grid">
                     <label>
@@ -272,7 +275,7 @@
                 >
                     Connect a device to read its configuration.
                 </div>
-            </section>
+            </details>
 
 
             <!-- ==================================================
@@ -357,6 +360,41 @@
 
 
             <!-- ==================================================
+             OOK PULSE ANALYZER
+             ================================================== -->
+
+            <details class="card pulse-analyzer-card collapsible">
+                <summary class="section-summary">
+                    <span>OOK Pulse Analyzer</span>
+                    <span class="summary-note">Raw OOK timing tools</span>
+                </summary>
+                <div class="section-body">
+                <div class="title-row tool-row">
+                    <span class="section-kicker">Pulse capture</span>
+                    <div>
+                        <button id="pulse-clear">Clear pulses</button>
+                        <button id="pulse-export">Export JSON</button>
+                    </div>
+                </div>
+
+                <p class="hint pulse-hint">
+                    Analyzes HIGH/LOW runs from raw receive bytes using the configured data rate as the sampling clock. For asynchronous OOK work, enable Lowball / raw OOK receive and disable sync.
+                </p>
+
+                <div class="pulse-stats">
+                    <div><span>Runs</span><strong id="pulse-count">0</strong></div>
+                    <div><span>Duration</span><strong id="pulse-duration">—</strong></div>
+                    <div><span>Base pulse</span><strong id="pulse-base">—</strong></div>
+                    <div><span>Sample period</span><strong id="pulse-sample">—</strong></div>
+                </div>
+
+                <canvas id="pulse-canvas" class="pulse-canvas" height="180"></canvas>
+                <div id="pulse-distribution" class="pulse-distribution">No pulse data captured.</div>
+                </div>
+            </details>
+
+
+            <!-- ==================================================
              PROTOCOL TRANSMITTER
              ================================================== -->
 
@@ -414,32 +452,36 @@
              RF WAVEFORM PREVIEW
              ================================================== -->
 
-            <section class="card waveform-card">
-                <div class="title-row">
-                    <h2>RF Waveform Preview</h2>
+            <details class="card waveform-card collapsible">
+                <summary class="section-summary">
+                    <span>RF Waveform Preview</span>
                     <span class="preview-badge">PRE-TX</span>
-                </div>
+                </summary>
+                <div class="section-body">
                 <div id="waveform-preview" class="waveform-preview empty-preview">
                     Change protocol values to preview the generated RF waveform.
                 </div>
-            </section>
+                </div>
+            </details>
 
 
             <!-- ==================================================
              ACTIVITY LOG
              ================================================== -->
 
-            <section class="card console">
-                <div class="title-row">
-                    <h2>Activity</h2>
-
-                    <button id="clearlog">
-                        Clear log
-                    </button>
+            <details class="card console collapsible" open>
+                <summary class="section-summary">
+                    <span>Activity</span>
+                    <span class="summary-note">Device and protocol log</span>
+                </summary>
+                <div class="section-body">
+                    <div class="title-row tool-row">
+                        <span class="section-kicker">Session log</span>
+                        <button id="clearlog">Clear log</button>
+                    </div>
+                    <pre id="log"></pre>
                 </div>
-
-                <pre id="log"></pre>
-            </section>
+            </details>
 
         </main>
 
