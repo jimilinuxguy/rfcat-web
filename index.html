@@ -282,7 +282,7 @@
              RECEIVER
              ================================================== -->
 
-            <section class="card">
+            <section class="card receiver-card">
                 <div class="title-row">
                     <h2>Receiver</h2>
 
@@ -359,6 +359,8 @@
             </section>
 
 
+            <div class="rx-tx-tools">
+
             <!-- ==================================================
              OOK PULSE ANALYZER
              ================================================== -->
@@ -398,40 +400,47 @@
              PROTOCOL TRANSMITTER
              ================================================== -->
 
-            <section class="card">
-                <h2>Protocol Transmitter</h2>
+            <details class="card transmitter-card collapsible">
+                <summary class="section-summary">
+                    <span>Protocol Transmitter</span>
+                    <span class="summary-note">TX protocol options</span>
+                </summary>
 
-                <label>
-                    Protocol
+                <div class="section-body">
+                    <label>
+                        Protocol
 
-                    <select id="protocol"></select>
-                </label>
+                        <select id="protocol"></select>
+                    </label>
 
-                <!--
-                Protocol-specific controls are generated
-                automatically from js/protocols/*.js.
-            -->
+                    <!--
+                    Protocol-specific controls are generated
+                    automatically from js/protocols/*.js.
+                    -->
 
-                <div id="protocol-fields"></div>
+                    <div id="protocol-fields"></div>
 
-                <div class="actions">
-                    <button
-                        id="protocol-transmit"
-                        class="danger"
-                    >
-                        Transmit
-                    </button>
+                    <div class="actions">
+                        <button
+                            id="protocol-transmit"
+                            class="danger"
+                        >
+                            Transmit
+                        </button>
 
-                    <button id="protocol-export-ipython">
-                        Export IPython
-                    </button>
+                        <button id="protocol-export-ipython">
+                            Export IPython
+                        </button>
+                    </div>
+
+                    <p class="hint">
+                        Transmit only on frequencies and devices
+                        you are authorized to use.
+                    </p>
                 </div>
+            </details>
 
-                <p class="hint">
-                    Transmit only on frequencies and devices
-                    you are authorized to use.
-                </p>
-            </section>
+            </div>
 
 
             <dialog id="ipython-export-dialog" class="export-dialog">
