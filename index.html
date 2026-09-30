@@ -364,6 +364,10 @@
                     >
                         Transmit
                     </button>
+
+                    <button id="protocol-export-ipython">
+                        Export IPython
+                    </button>
                 </div>
 
                 <p class="hint">
@@ -372,6 +376,20 @@
                 </p>
             </section>
 
+
+            <dialog id="ipython-export-dialog" class="export-dialog">
+                <div class="title-row">
+                    <h2>IPython Export</h2>
+                    <button id="ipython-export-close" aria-label="Close">Close</button>
+                </div>
+                <p class="hint">
+                    This reproduces the selected protocol's current TX configuration and payload using RFCat/rflib.
+                </p>
+                <textarea id="ipython-export-code" class="export-code" readonly spellcheck="false"></textarea>
+                <div class="actions">
+                    <button id="ipython-export-copy" class="primary">Copy</button>
+                </div>
+            </dialog>
 
             <!-- ==================================================
              RF WAVEFORM PREVIEW

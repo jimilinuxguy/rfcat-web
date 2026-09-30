@@ -5,6 +5,7 @@ import { RFCatUSB } from "./js/rfcat/device.js";
 import { hex } from "./js/core/bytes.js";
 import { $, log } from "./js/ui/log.js";
 import { renderWaveformPreview, clearWaveformPreview } from "./js/ui/waveform.js";
+import { exportProtocolToIPython } from "./js/export/ipython.js";
 
 import { protocols, getProtocol } from "./js/protocols/index.js";
 
@@ -237,6 +238,39 @@ async function refresh() {
 
     return c;
 }
+$("protocol-export-ipython").onclick = async () => {
+    try {
+        const protocol = getProtocol(protocolSelect.value);
+        if (!protocol) throw new Error("No protocol selected");
+
+        const values = getProtocolValues(protocolFields, protocol);
+        const encoded = await protocol.encode(values);
+
+        if (!(encoded?.bytes instanceof Uint8Array) || !encoded.bytes.length) {
+            throw new Error(`${protocol.name} generated no TX payload`);
+        }
+
+        const code = await exportProtocolToIPython(protocol, values, encoded);
+        $("ipython-export-code").value = code;
+        $("ipython-export-dialog").showModal();
+    } catch (e) {
+        log(`IPython export error: ${e.message}`);
+    }
+};
+
+$("ipython-export-close").onclick = () => $("ipython-export-dialog").close();
+
+$("ipython-export-copy").onclick = async () => {
+    try {
+        await navigator.clipboard.writeText($("ipython-export-code").value);
+        $("ipython-export-copy").textContent = "Copied";
+        setTimeout(() => { $("ipython-export-copy").textContent = "Copy"; }, 1200);
+    } catch (e) {
+        $("ipython-export-code").select();
+        log(`Clipboard unavailable: ${e.message}`);
+    }
+};
+
 $("protocol-transmit").onclick = async () => {
     try {
         if (!d.device?.opened) {

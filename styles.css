@@ -47,3 +47,7 @@
         min-height: 650px;
     }
 }
+
+
+/* IPython TX export */
+.export-dialog{width:min(860px,calc(100vw - 32px));border:1px solid #334258;border-radius:13px;background:#0f1621;color:#e7edf5;padding:20px;box-shadow:0 24px 80px #000a}.export-dialog::backdrop{background:#0009;backdrop-filter:blur(3px)}.export-dialog h2{margin:0}.export-code{height:min(58vh,520px);margin-top:14px;resize:vertical;font:12px/1.55 "SFMono-Regular",Consolas,monospace;white-space:pre;tab-size:4}
