@@ -6,6 +6,7 @@ import { hex } from "./js/core/bytes.js";
 import { $, log } from "./js/ui/log.js";
 import { renderWaveformPreview, clearWaveformPreview } from "./js/ui/waveform.js";
 import { exportProtocolToIPython } from "./js/export/ipython.js";
+import { decodeRxPacket, decoderProtocols, splitRxStatus } from "./js/rx/decode.js";
 
 import { protocols, getProtocol } from "./js/protocols/index.js";
 
@@ -21,6 +22,15 @@ const protocolFields = $("protocol-fields");
 const waveformPreview = $("waveform-preview");
 
 renderProtocolSelector(protocolSelect, protocols);
+
+const rxProtocolSelect = $("rx-protocol");
+for (const protocol of decoderProtocols(protocols)) {
+    const option = document.createElement("option");
+    option.value = protocol.id;
+    option.textContent = protocol.name;
+    rxProtocolSelect.append(option);
+}
+const rxCaptures = [];
 
 function selectProtocol() {
     const protocol = getProtocol(protocolSelect.value);
@@ -470,46 +480,116 @@ $("listen").onclick = async () => {
     }
 };
 
+function rxCaptureVisible(capture) {
+    const filter = $("rx-filter").value;
+    if (filter === "decoded") return !!capture.decoded && !capture.decoded.error;
+    if (filter === "unknown") return !capture.decoded || !!capture.decoded.error;
+    return true;
+}
+
+function applyRxFilter() {
+    for (const el of $("packetList").querySelectorAll(".packet")) {
+        const capture = rxCaptures[Number(el.dataset.captureIndex)];
+        el.classList.toggle("filtered", !capture || !rxCaptureVisible(capture));
+    }
+}
+
+$("rx-filter").addEventListener("change", applyRxFilter);
+
+$("rx-export").onclick = () => {
+    if (!rxCaptures.length) return log("No RX captures to export");
+    const data = rxCaptures.map(({ bytes, ...capture }) => ({ ...capture, hex: hex(bytes) }));
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `rfcat-rx-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+};
+
 d.addEventListener("packet", (e) => {
     if (!listening) return;
 
-    const b = e.detail;
+    const received = e.detail;
+    const status = splitRxStatus(received, $("appendstatus").checked);
+    const b = status.payload;
+    const decoded = decodeRxPacket(b, rxProtocolSelect.value, {
+        frequencyHz: Number($("freq").value) * 1e6,
+        dataRate: Number($("drate").value),
+        rssi: status.rssi,
+        lqi: status.lqi,
+        crcOk: status.crcOk,
+    }, protocols);
 
     pc++;
-
     bc += b.length;
-
     $("packets").textContent = pc;
-
     $("bytes").textContent = bc;
+    if (status.rssi != null) $("rssi").textContent = `${status.rssi.toFixed(1)} dBm`;
+    if (status.lqi != null) $("lqi").textContent = String(status.lqi);
 
-    const empty = $(".empty");
+    const capture = {
+        timestamp: new Date().toISOString(),
+        bytes: b,
+        rssi: status.rssi,
+        lqi: status.lqi,
+        crcOk: status.crcOk,
+        decoder: decoded?.protocol?.id ?? null,
+        protocol: decoded?.protocol?.name ?? null,
+        summary: decoded?.summary ?? null,
+        fields: decoded?.fields ?? null,
+        error: decoded?.error ?? null,
+    };
+    const captureIndex = rxCaptures.push(capture) - 1;
 
-    if (empty) empty.remove();
-
+    $("packetList").querySelector(".empty")?.remove();
     const el = document.createElement("div");
-
     el.className = "packet";
+    el.dataset.captureIndex = String(captureIndex);
 
-    el.innerHTML =
-        `\<div class="meta">` +
-        `${new Date().toLocaleTimeString()} · ${b.length} bytes` +
-        `\</div>` +
-        `\<div class="hex">\</div>`;
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent = `${new Date().toLocaleTimeString()} · ${b.length} bytes` +
+        (status.rssi != null ? ` · ${status.rssi.toFixed(1)} dBm · LQI ${status.lqi}${status.crcOk ? " · CRC OK" : ""}` : "");
+    el.append(meta);
 
-    el.querySelector(".hex").textContent = hex(b);
+    if (decoded?.error) {
+        const error = document.createElement("div");
+        error.className = "rx-error";
+        error.textContent = `${decoded.protocol.name}: ${decoded.error}`;
+        el.append(error);
+    } else if (decoded) {
+        const result = document.createElement("div");
+        result.className = "decoded";
+        const strong = document.createElement("strong");
+        strong.textContent = decoded.protocol.name;
+        result.append(strong, document.createTextNode(decoded.summary ? ` · ${decoded.summary}` : ""));
+        el.append(result);
+        if (decoded.fields) {
+            const fields = document.createElement("div");
+            fields.className = "rx-fields";
+            fields.textContent = Object.entries(decoded.fields).map(([k, v]) => `${k}=${v}`).join(" · ");
+            el.append(fields);
+        }
+    }
 
+    const raw = document.createElement("div");
+    raw.className = "hex";
+    raw.textContent = hex(b);
+    el.append(raw);
+    el.classList.toggle("filtered", !rxCaptureVisible(capture));
     $("packetList").prepend(el);
 
-    log(`RF RX ${b.length} bytes: ${hex(b)}`);
+    log(`RF RX ${b.length} bytes${decoded?.protocol ? ` · ${decoded.protocol.name}` : ""}: ${hex(b)}`);
 });
-
 
 $("clear").onclick = () => {
     $("packetList").innerHTML =
         '\<div class="empty">No packets captured.\</div>';
 
     pc = bc = 0;
+    rxCaptures.length = 0;
 
     $("packets").textContent = $("bytes").textContent = "0";
 };

@@ -14,6 +14,14 @@ Protocol implementations have different validation levels. A synthetic validatio
 
 TouchTunes / The Fonz is **OTA waveform validated**. A YARD Stick One transmission captured with an RTL-SDR matched the expected preamble, 32-bit frame structure, variable-length OOK encoding, and approximately 566 µs base timing. Receiver interoperability with an actual TouchTunes jukebox has not been validated.
 
+## Receiver and decoders
+
+The receiver supports **Raw**, **Auto**, and protocol-specific decode modes. Protocol modules can opt into RX by implementing a `decode(bytes, context)` hook. Unknown traffic remains available as raw captures, and CC1111 appended RSSI/LQI status bytes are separated from the protocol payload before decoding.
+
+CAME-12 is the first protocol with an RX decoder. It has been validated over the air between two YARD Stick One devices using compatible CC1111 packet framing. The current receiver is packet-engine based, so physical asynchronous OOK remotes may require a future pulse-oriented receive path rather than the same packet boundaries used by RFCat-generated transmissions.
+
+See [Receiver and Protocol Decoders](docs/receiver-decoders.md) for RX behavior, decoder development, framing notes, and the known-good CAME test setup.
+
 See [docs/README.md](docs/README.md) for protocol documentation.
 
 ## Architecture

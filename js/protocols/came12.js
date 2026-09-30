@@ -73,6 +73,33 @@ export function encodeCame12(
 }
 
 
+export function decodeCame12(bytes) {
+    if (!(bytes instanceof Uint8Array) || bytes.length < 5) return null;
+    const bits = [...bytes].map((b) => b.toString(2).padStart(8, "0")).join("");
+
+    // CAME-12 encodes each logical bit as three OOK symbols:
+    // 0 => 100, 1 => 110. Search bit alignments because raw RFCat
+    // buffers do not guarantee that a frame begins at byte offset zero.
+    for (let start = 0; start + 36 <= bits.length; start++) {
+        let code = "";
+        let valid = true;
+        for (let i = 0; i < 12; i++) {
+            const symbol = bits.slice(start + i * 3, start + i * 3 + 3);
+            if (symbol === "100") code += "0";
+            else if (symbol === "110") code += "1";
+            else { valid = false; break; }
+        }
+        if (valid) {
+            return {
+                fields: { code, hex: `0x${parseInt(code, 2).toString(16).toUpperCase().padStart(3, "0")}` },
+                summary: `Code ${code} · 0x${parseInt(code, 2).toString(16).toUpperCase().padStart(3, "0")}`,
+                bitOffset: start,
+            };
+        }
+    }
+    return null;
+}
+
 // ============================================================
 // Protocol definition
 // ============================================================
@@ -124,6 +151,10 @@ const came12 = {
             value: 0,
         },
     ],
+
+    decode(bytes) {
+        return decodeCame12(bytes);
+    },
 
     encode(values) {
         const encoded = encodeCame12(

@@ -294,6 +294,25 @@
                     </div>
                 </div>
 
+                <div class="receiver-controls">
+                    <label>
+                        Decode
+                        <select id="rx-protocol">
+                            <option value="raw">Raw</option>
+                            <option value="auto" selected>Auto</option>
+                        </select>
+                    </label>
+                    <label>
+                        Show
+                        <select id="rx-filter">
+                            <option value="all" selected>All captures</option>
+                            <option value="decoded">Decoded only</option>
+                            <option value="unknown">Unknown only</option>
+                        </select>
+                    </label>
+                    <button id="rx-export">Export JSON</button>
+                </div>
+
                 <div class="stats">
                     <span>
                         RX events

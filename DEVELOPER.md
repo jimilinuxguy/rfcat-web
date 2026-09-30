@@ -91,6 +91,7 @@ const protocol = {
     encode(values) {},
     async configure(device, values) {},
     async transmit(device, encoded, values) {},
+    decode(bytes, context) {}, // optional RX support
 };
 
 export default protocol;
@@ -183,6 +184,16 @@ FREND0       = 0x11
 
 An earlier off-by-one PATABLE address produced an incorrect nearly
 continuous carrier, so keep the register definition centralized.
+
+## Receiver Decoders
+
+The receiver pipeline is protocol-agnostic. `js/rx/decode.js` handles decoder selection and CC1111 appended-status separation, while individual protocol modules own protocol recognition and field extraction.
+
+A protocol participates in **Auto** and protocol-specific RX modes by implementing `decode(bytes, context)`. Return `null` for a normal non-match. Successful results may contain `summary`, `fields`, and protocol-specific metadata. Auto decoders should validate strong protocol invariants to avoid claiming unrelated traffic.
+
+The current receive path uses the CC1111 packet engine. Packet length, sync configuration, modulation, data rate, and related radio settings can determine whether RFCat delivers a complete buffer at all. Decoder success does not remove that framing requirement. For asynchronous OOK remotes, a future pulse-oriented RX path may be needed when real transmitters do not map cleanly to CC1111 packet boundaries.
+
+See `docs/receiver-decoders.md` for the decoder contract and CAME-12 RX validation notes.
 
 ## RX Rule
 
