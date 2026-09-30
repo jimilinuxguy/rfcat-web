@@ -10,6 +10,7 @@ import schraderEg53ma4 from "./schrader-eg53ma4.js";
 import { schraderSmd3ma4, schraderNis315g3 } from "./schrader-smd3ma4.js";
 import schraderMrxbc5a4 from "./schrader-mrxbc5a4.js";
 import touchtunes from "./touchtunes.js";
+import continuousCarrier from "./continuous-carrier.js";
 
 // During the migration we'll add these one at a time:
 // import lrs from "./lrs.js";
@@ -28,8 +29,18 @@ export const protocols = Object.freeze([
     schraderSmd3ma4,
     schraderNis315g3,
     schraderMrxbc5a4,
-    touchtunes
-]);
+    touchtunes,
+    
+].sort((a, b) =>
+    a.name.localeCompare(
+        b.name,
+        undefined,
+        {
+            sensitivity: "base",
+            numeric: true,
+        },
+    )
+));
 
 export function getProtocol(id) {
     return protocols.find((protocol) => protocol.id === id) ?? null;

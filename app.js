@@ -4,9 +4,16 @@ import { R } from "./js/radio/registers.js";
 import { RFCatUSB } from "./js/rfcat/device.js";
 import { hex } from "./js/core/bytes.js";
 import { $, log } from "./js/ui/log.js";
-import { renderWaveformPreview, clearWaveformPreview } from "./js/ui/waveform.js";
+import {
+    renderWaveformPreview,
+    clearWaveformPreview,
+} from "./js/ui/waveform.js";
 import { exportProtocolToIPython } from "./js/export/ipython.js";
-import { decodeRxPacket, decoderProtocols, splitRxStatus } from "./js/rx/decode.js";
+import {
+    decodeRxPacket,
+    decoderProtocols,
+    splitRxStatus,
+} from "./js/rx/decode.js";
 
 import { protocols, getProtocol } from "./js/protocols/index.js";
 
@@ -188,7 +195,6 @@ $("addrcheck").addEventListener("change", updatePacketControlState);
 
 updatePacketControlState();
 
-
 async function refresh() {
     const c = await d.config();
 
@@ -248,20 +254,34 @@ async function refresh() {
 
     return c;
 }
+
 $("protocol-export-ipython").onclick = async () => {
     try {
         const protocol = getProtocol(protocolSelect.value);
-        if (!protocol) throw new Error("No protocol selected");
+
+        if (!protocol) {
+            throw new Error("No protocol selected");
+        }
 
         const values = getProtocolValues(protocolFields, protocol);
+
         const encoded = await protocol.encode(values);
 
-        if (!(encoded?.bytes instanceof Uint8Array) || !encoded.bytes.length) {
+        /*
+         * Packet protocols require a payload.
+         * Direct protocols do not.
+         */
+        if (
+            protocol.txMode !== "direct" &&
+            (!(encoded?.bytes instanceof Uint8Array) || !encoded.bytes.length)
+        ) {
             throw new Error(`${protocol.name} generated no TX payload`);
         }
 
         const code = await exportProtocolToIPython(protocol, values, encoded);
+
         $("ipython-export-code").value = code;
+
         $("ipython-export-dialog").showModal();
     } catch (e) {
         log(`IPython export error: ${e.message}`);
@@ -274,7 +294,9 @@ $("ipython-export-copy").onclick = async () => {
     try {
         await navigator.clipboard.writeText($("ipython-export-code").value);
         $("ipython-export-copy").textContent = "Copied";
-        setTimeout(() => { $("ipython-export-copy").textContent = "Copy"; }, 1200);
+        setTimeout(() => {
+            $("ipython-export-copy").textContent = "Copy";
+        }, 1200);
     } catch (e) {
         $("ipython-export-code").select();
         log(`Clipboard unavailable: ${e.message}`);
@@ -297,25 +319,37 @@ $("protocol-transmit").onclick = async () => {
 
         const encoded = await protocol.encode(values);
 
-        if (!(encoded?.bytes instanceof Uint8Array)) {
-            throw new Error(`${protocol.name} did not return a Uint8Array`);
-        }
+        /*
+         * Normal protocols require packet bytes.
+         *
+         * Direct protocols perform their own TX operation
+         * and therefore don't require a packet payload.
+         */
+        if (protocol.txMode !== "direct") {
+            if (!(encoded?.bytes instanceof Uint8Array)) {
+                throw new Error(`${protocol.name} did not return a Uint8Array`);
+            }
 
-        if (!encoded.bytes.length) {
-            throw new Error(`${protocol.name} generated an empty payload`);
+            if (!encoded.bytes.length) {
+                throw new Error(`${protocol.name} generated an empty payload`);
+            }
         }
 
         if (protocol.configure) {
             await protocol.configure(d, values);
         }
 
-        if (encoded.summary) {
+        if (encoded?.summary) {
             log(encoded.summary);
         }
 
-        await protocol.transmit(d, encoded, values);
+        const result = await protocol.transmit(d, encoded, values);
 
-        log(`TX ${encoded.bytes.length} bytes: ` + hex(encoded.bytes));
+        if (protocol.txMode === "direct") {
+            log(result?.summary ?? `${protocol.name} transmission complete`);
+        } else {
+            log(`TX ${encoded.bytes.length} bytes: ` + hex(encoded.bytes));
+        }
     } catch (e) {
         log(`Protocol TX error: ${e.message}`);
     }
@@ -482,8 +516,10 @@ $("listen").onclick = async () => {
 
 function rxCaptureVisible(capture) {
     const filter = $("rx-filter").value;
-    if (filter === "decoded") return !!capture.decoded && !capture.decoded.error;
-    if (filter === "unknown") return !capture.decoded || !!capture.decoded.error;
+    if (filter === "decoded")
+        return !!capture.decoded && !capture.decoded.error;
+    if (filter === "unknown")
+        return !capture.decoded || !!capture.decoded.error;
     return true;
 }
 
@@ -498,8 +534,13 @@ $("rx-filter").addEventListener("change", applyRxFilter);
 
 $("rx-export").onclick = () => {
     if (!rxCaptures.length) return log("No RX captures to export");
-    const data = rxCaptures.map(({ bytes, ...capture }) => ({ ...capture, hex: hex(bytes) }));
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const data = rxCaptures.map(({ bytes, ...capture }) => ({
+        ...capture,
+        hex: hex(bytes),
+    }));
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -514,19 +555,25 @@ d.addEventListener("packet", (e) => {
     const received = e.detail;
     const status = splitRxStatus(received, $("appendstatus").checked);
     const b = status.payload;
-    const decoded = decodeRxPacket(b, rxProtocolSelect.value, {
-        frequencyHz: Number($("freq").value) * 1e6,
-        dataRate: Number($("drate").value),
-        rssi: status.rssi,
-        lqi: status.lqi,
-        crcOk: status.crcOk,
-    }, protocols);
+    const decoded = decodeRxPacket(
+        b,
+        rxProtocolSelect.value,
+        {
+            frequencyHz: Number($("freq").value) * 1e6,
+            dataRate: Number($("drate").value),
+            rssi: status.rssi,
+            lqi: status.lqi,
+            crcOk: status.crcOk,
+        },
+        protocols,
+    );
 
     pc++;
     bc += b.length;
     $("packets").textContent = pc;
     $("bytes").textContent = bc;
-    if (status.rssi != null) $("rssi").textContent = `${status.rssi.toFixed(1)} dBm`;
+    if (status.rssi != null)
+        $("rssi").textContent = `${status.rssi.toFixed(1)} dBm`;
     if (status.lqi != null) $("lqi").textContent = String(status.lqi);
 
     const capture = {
@@ -550,8 +597,11 @@ d.addEventListener("packet", (e) => {
 
     const meta = document.createElement("div");
     meta.className = "meta";
-    meta.textContent = `${new Date().toLocaleTimeString()} · ${b.length} bytes` +
-        (status.rssi != null ? ` · ${status.rssi.toFixed(1)} dBm · LQI ${status.lqi}${status.crcOk ? " · CRC OK" : ""}` : "");
+    meta.textContent =
+        `${new Date().toLocaleTimeString()} · ${b.length} bytes` +
+        (status.rssi != null
+            ? ` · ${status.rssi.toFixed(1)} dBm · LQI ${status.lqi}${status.crcOk ? " · CRC OK" : ""}`
+            : "");
     el.append(meta);
 
     if (decoded?.error) {
@@ -564,12 +614,19 @@ d.addEventListener("packet", (e) => {
         result.className = "decoded";
         const strong = document.createElement("strong");
         strong.textContent = decoded.protocol.name;
-        result.append(strong, document.createTextNode(decoded.summary ? ` · ${decoded.summary}` : ""));
+        result.append(
+            strong,
+            document.createTextNode(
+                decoded.summary ? ` · ${decoded.summary}` : "",
+            ),
+        );
         el.append(result);
         if (decoded.fields) {
             const fields = document.createElement("div");
             fields.className = "rx-fields";
-            fields.textContent = Object.entries(decoded.fields).map(([k, v]) => `${k}=${v}`).join(" · ");
+            fields.textContent = Object.entries(decoded.fields)
+                .map(([k, v]) => `${k}=${v}`)
+                .join(" · ");
             el.append(fields);
         }
     }
@@ -581,7 +638,9 @@ d.addEventListener("packet", (e) => {
     el.classList.toggle("filtered", !rxCaptureVisible(capture));
     $("packetList").prepend(el);
 
-    log(`RF RX ${b.length} bytes${decoded?.protocol ? ` · ${decoded.protocol.name}` : ""}: ${hex(b)}`);
+    log(
+        `RF RX ${b.length} bytes${decoded?.protocol ? ` · ${decoded.protocol.name}` : ""}: ${hex(b)}`,
+    );
 });
 
 $("clear").onclick = () => {

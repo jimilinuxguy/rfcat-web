@@ -384,7 +384,43 @@ export class RFCatUSB extends EventTarget {
 
         return power;
     }
+    async startContinuousCarrier() {
+        /*
+         * Put the radio into IDLE before changing packet
+         * engine configuration.
+         */
+        await this.mode(C.RF_IDLE);
 
+        /*
+         * PKTCTRL0.PKT_FORMAT = 2
+         *
+         * CC1111 random TX mode continuously supplies data
+         * to the modulator without using normal FIFO packet
+         * transmission.
+         */
+        let pktctrl0 = (await this.peek(R.PKTCTRL0, 1))[0];
+
+        pktctrl0 = (pktctrl0 & ~0x30) | 0x20;
+
+        await this.poke(R.PKTCTRL0, new Uint8Array([pktctrl0]));
+
+        /*
+         * Enter continuous TX.
+         */
+        await this.mode(C.RF_TX);
+    }
+
+    async stopContinuousCarrier() {
+        /*
+         * Leave TX immediately.
+         */
+        await this.mode(C.RF_IDLE);
+
+        /*
+         * Disable the YARD Stick One RF amplifier.
+         */
+        await this.setAmpMode(false);
+    }
     async setAmpMode(enabled) {
         return this.send(
             C.APP_NIC,
