@@ -6,6 +6,8 @@ import {
     POCSAG_PREAMBLE_BITS,
     buildPocsagAddressCodeword,
     buildPocsagAlert,
+    buildJtechLegacyAlert,
+    JTECH_LEGACY,
 } from "../js/protocols/pocsag.js";
 
 function hasEvenParity(word) {
@@ -56,4 +58,31 @@ test("POCSAG validates capcode and function", () => {
     assert.throws(() => buildPocsagAddressCodeword(-1, 0), /capcode/);
     assert.throws(() => buildPocsagAddressCodeword(0x200000, 0), /capcode/);
     assert.throws(() => buildPocsagAddressCodeword(1, 4), /function/);
+});
+
+test("JTECH legacy mode reproduces activate_all.py reference framing", () => {
+    const out = buildJtechLegacyAlert(79992);
+    assert.equal(out.bits.length, 664);
+    assert.equal(out.bytes.length, 83);
+    assert.equal(out.bits.slice(0, 576), JTECH_LEGACY.preamble);
+    assert.equal(out.bits.slice(576, 577), "1");
+    assert.equal(out.bits.slice(577, 609), JTECH_LEGACY.sync);
+    assert.equal(out.bits.slice(609, 612), "111");
+    assert.equal(out.bits.slice(612, 652), JTECH_LEGACY.pagers["79992"]);
+    assert.equal(out.bits.slice(652), "001100110011");
+});
+
+test("JTECH legacy mode preserves both reference pager bit strings", () => {
+    assert.equal(
+        buildJtechLegacyAlert(79984).pagerBits,
+        "1101100011110001110110001100001010110011",
+    );
+    assert.equal(
+        buildJtechLegacyAlert(79992).pagerBits,
+        "1101100011110000111011111010010001010111",
+    );
+});
+
+test("JTECH legacy mode rejects capcodes not present in reference script", () => {
+    assert.throws(() => buildJtechLegacyAlert(1), /79984 and 79992/);
 });
