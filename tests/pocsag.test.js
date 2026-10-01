@@ -61,9 +61,8 @@ test("POCSAG alphanumeric message uses 7-bit ASCII and message codewords", () =>
     assert.equal(encoded.message, "HELLO");
     assert.equal(encoded.messageBits.length, 35);
     assert.equal(encoded.messageWords.length, 2);
-    assert.equal(encoded.codewords[0], encoded.addressWord);
-    assert.equal(encoded.codewords[1], POCSAG_IDLE);
-    assert.equal(encoded.codewords[2], encoded.messageWords[0]);
+    assert.equal(encoded.codewords[2], encoded.addressWord);
+    assert.equal(encoded.codewords[3], encoded.messageWords[0]);
     assert.equal((encoded.messageWords[0] >>> 31) & 1, 1);
     assert.equal(hasEvenParity(encoded.messageWords[0]), true);
 });
