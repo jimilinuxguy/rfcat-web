@@ -201,7 +201,7 @@ const pocsag = {
             label: "Invert transmitted polarity (CC1111)",
             visibleWhen: { field: "profile", values: ["generic"] },
             type: "checkbox",
-            value: true,
+            value: false,
         },
         { id: "repeat", label: "RFCat repeat", type: "number", min: 0, max: 100, value: 0 },
         { id: "offset", label: "RFCat offset", type: "number", min: 0, value: 0 },
