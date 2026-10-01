@@ -66,7 +66,7 @@ const pocsagReference = {
         },
     ],
 
-    txMode: "direct",
+    analysisOnly: true,
 
     encode(values) {
         const text = String(values.word ?? "").trim().replace(/^0x/i, "");
