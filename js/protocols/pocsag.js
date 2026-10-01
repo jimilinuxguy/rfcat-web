@@ -258,6 +258,15 @@ const pocsag = {
     },
 
     async transmit(device, encoded, values) {
+        await device.setPacketConfig({
+            lengthMode: "fixed",
+            packetLength: encoded.bytes.length,
+            crc: false,
+            whitening: false,
+            appendStatus: false,
+            addressCheck: 0,
+            deviceAddress: 0,
+        });
         await device.logTxDiagnostics?.("POCSAG PRE-TX");
         await device.setAmpMode(true);
         try {
