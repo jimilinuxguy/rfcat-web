@@ -188,6 +188,7 @@ export function buildPocsagAlert({
 const pocsag = {
     id: "pocsag",
     name: "POCSAG Pager",
+    menuGroup: "Restaurant Pagers",
     description:
         "Explicit-capcode POCSAG alert generator with a JTECH reference RF preset.",
 
