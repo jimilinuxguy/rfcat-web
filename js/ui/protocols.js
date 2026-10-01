@@ -27,6 +27,12 @@ export function renderProtocolFields(container, protocol) {
         const label = document.createElement("label");
 
         label.textContent = field.label;
+        label.dataset.protocolFieldWrapper = field.id;
+
+        if (field.visibleWhen) {
+            label.dataset.visibleWhenField = field.visibleWhen.field;
+            label.dataset.visibleWhenValues = field.visibleWhen.values.join(",");
+        }
 
         let input;
 
@@ -97,6 +103,22 @@ export function renderProtocolFields(container, protocol) {
         label.appendChild(input);
         container.appendChild(label);
     }
+
+    const updateVisibility = () => {
+        for (const label of container.querySelectorAll("[data-visible-when-field]")) {
+            const controller = container.querySelector(
+                `[data-protocol-field="${label.dataset.visibleWhenField}"]`,
+            );
+            const allowed = (label.dataset.visibleWhenValues ?? "").split(",");
+            label.hidden = !controller || !allowed.includes(String(controller.value));
+        }
+    };
+
+    for (const input of container.querySelectorAll("[data-protocol-field]")) {
+        input.addEventListener("change", updateVisibility);
+    }
+
+    updateVisibility();
 }
 
 export function getProtocolValues(container, protocol) {

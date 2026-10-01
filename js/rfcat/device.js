@@ -367,15 +367,15 @@ export class RFCatUSB extends EventTarget {
                     ? 0xc2
                     : 0xc0;
 
-        const pa = new Uint8Array(8);
-
         if (modulation === 0x30) {
-            pa[1] = power;
-            await this.poke(R.PATABLE, pa);
+            // RFCat ASK/OOK uses PA_TABLE1 and PA_POWER=1.
+            await this.poke(R.PA_TABLE0, new Uint8Array([0x00]));
+            await this.poke(R.PA_TABLE1, new Uint8Array([power]));
             await this.setTxPaPower();
         } else {
-            pa[0] = power;
-            await this.poke(R.PATABLE, pa);
+            // RFCat FSK/MSK uses PA_TABLE0 and PA_POWER=0.
+            await this.poke(R.PA_TABLE0, new Uint8Array([power]));
+            await this.poke(R.PA_TABLE1, new Uint8Array([0x00]));
 
             let frend0 = (await this.peek(R.FREND0, 1))[0];
             frend0 &= 0xf8;
@@ -615,6 +615,42 @@ export class RFCatUSB extends EventTarget {
         frend0 = (frend0 & 0xf8) | 0x01;
 
         await this.poke(R.FREND0, new Uint8Array([frend0]));
+    }
+
+    async logTxDiagnostics(label = "TX") {
+        const c = await this.config();
+        const r = c.raw;
+        const deviatn = r[0x15];
+        const devE = (deviatn >> 4) & 0x07;
+        const devM = deviatn & 0x07;
+        const deviation =
+            ((8 + devM) * (2 ** devE) * 24_000_000) / (2 ** 17);
+        const manchester = !!(r[0x0e] & 0x08);
+
+        log(
+            `${label} RADIO: ` +
+            `${(c.freq / 1e6).toFixed(6)} MHz · ` +
+            `${c.rate.toFixed(1)} baud · ` +
+            `${(deviation / 1000).toFixed(3)} kHz deviation · ` +
+            `mod 0x${c.mod.toString(16).padStart(2, "0")} · ` +
+            `Manchester ${manchester ? "on" : "off"} · ` +
+            `sync ${c.sync.toString(16).padStart(4, "0").toUpperCase()} mode ${c.syncMode} · ` +
+            `${c.lengthMode} packet ${c.packetLength} bytes · ` +
+            `PKTCTRL0 0x${c.pktctrl0.toString(16).padStart(2, "0")} · ` +
+            `PKTCTRL1 0x${c.pktctrl1.toString(16).padStart(2, "0")} · ` +
+            `MARCSTATE 0x${c.marc.toString(16).padStart(2, "0")}`,
+        );
+
+        log(
+            `${label} REGS: MDMCFG4=0x${r[0x0c].toString(16).padStart(2, "0")} ` +
+            `MDMCFG3=0x${r[0x0d].toString(16).padStart(2, "0")} ` +
+            `MDMCFG2=0x${r[0x0e].toString(16).padStart(2, "0")} ` +
+            `DEVIATN=0x${r[0x15].toString(16).padStart(2, "0")} ` +
+            `FREND0=0x${r[0x1b].toString(16).padStart(2, "0")} ` +
+            `PATABLE0=0x${r[0x2e].toString(16).padStart(2, "0")}`,
+        );
+
+        return c;
     }
 
     transmit(data, repeat = 0, offset = 0) {
