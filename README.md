@@ -6,7 +6,7 @@ RFCat Web provides direct radio configuration, receive/transmit controls, wavefo
 
 ## Protocols
 
-Implemented protocol modules include CAME-12, Binary, LRS, Tesla charge-port test signaling, generic OOK/PWM, Oregon THGR122NX, Acurite 5n1, several Schrader TPMS formats, and TouchTunes / The Fonz.
+Implemented protocol modules include CAME-12, Binary, LRS, Tesla charge-port test signaling, generic OOK/PWM, Oregon THGR122NX, Acurite 5n1, several Schrader TPMS formats, and TouchTunes / The Fonz. A non-transmitting POCSAG reference/inspector is also available for framing and capture analysis.
 
 ### Validation status
 
