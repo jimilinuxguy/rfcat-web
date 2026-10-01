@@ -242,6 +242,7 @@ const lrs = {
     },
 
     async transmit(device, encoded, values) {
+        await device.logTxDiagnostics?.("LRS PRE-TX");
         await device.setAmpMode(true);
 
         try {
