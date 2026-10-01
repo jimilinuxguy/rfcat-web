@@ -110,7 +110,9 @@ export function renderProtocolFields(container, protocol) {
                 `[data-protocol-field="${label.dataset.visibleWhenField}"]`,
             );
             const allowed = (label.dataset.visibleWhenValues ?? "").split(",");
-            label.hidden = !controller || !allowed.includes(String(controller.value));
+            const visible = controller && allowed.includes(String(controller.value));
+            label.hidden = !visible;
+            label.style.display = visible ? "" : "none";
         }
     };
 
