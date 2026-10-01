@@ -11,7 +11,6 @@ import { schraderSmd3ma4, schraderNis315g3 } from "./schrader-smd3ma4.js";
 import schraderMrxbc5a4 from "./schrader-mrxbc5a4.js";
 import touchtunes from "./touchtunes.js";
 import continuousCarrier from "./continuous-carrier.js";
-import pocsagReference from "./pocsag-reference.js";
 import pocsag from "./pocsag.js";
 
 // During the migration we'll add these one at a time:
@@ -32,7 +31,6 @@ export const protocols = Object.freeze([
     schraderNis315g3,
     schraderMrxbc5a4,
     touchtunes,
-    pocsagReference,
     pocsag,
     
 ].sort((a, b) =>
