@@ -12,6 +12,7 @@ import schraderMrxbc5a4 from "./schrader-mrxbc5a4.js";
 import touchtunes from "./touchtunes.js";
 import continuousCarrier from "./continuous-carrier.js";
 import pocsagReference from "./pocsag-reference.js";
+import pocsag from "./pocsag.js";
 
 // During the migration we'll add these one at a time:
 // import lrs from "./lrs.js";
@@ -32,6 +33,7 @@ export const protocols = Object.freeze([
     schraderMrxbc5a4,
     touchtunes,
     pocsagReference,
+    pocsag,
     
 ].sort((a, b) =>
     a.name.localeCompare(
