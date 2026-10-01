@@ -1,13 +1,26 @@
 export function renderProtocolSelector(select, protocols) {
     select.replaceChildren();
 
+    const groups = new Map();
+
     for (const protocol of protocols) {
         const option = document.createElement("option");
-
         option.value = protocol.id;
         option.textContent = protocol.name;
 
-        select.appendChild(option);
+        if (!protocol.menuGroup) {
+            select.appendChild(option);
+            continue;
+        }
+
+        let group = groups.get(protocol.menuGroup);
+        if (!group) {
+            group = document.createElement("optgroup");
+            group.label = protocol.menuGroup;
+            groups.set(protocol.menuGroup, group);
+            select.appendChild(group);
+        }
+        group.appendChild(option);
     }
 }
 
