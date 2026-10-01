@@ -33,6 +33,8 @@ export function createIPythonRecorder() {
         },
         async setMaxPower() { add("d.setMaxPower()"); },
         async setAmpMode(enabled) { add(`d.setAmpMode(${enabled ? "True" : "False"})`); },
+        async setPacketConfig() {},
+        async logTxDiagnostics() {},
         async configureAskOokPa() {
             add("# RFCat Web known-good ASK/OOK PA setup");
             add(`d.poke(0xDF2D, ${pyBytes(new Uint8Array([0xc0, 0, 0, 0, 0, 0, 0, 0]))})`);
