@@ -367,15 +367,15 @@ export class RFCatUSB extends EventTarget {
                     ? 0xc2
                     : 0xc0;
 
-        const pa = new Uint8Array(8);
-
         if (modulation === 0x30) {
-            pa[1] = power;
-            await this.poke(R.PATABLE, pa);
+            // RFCat ASK/OOK uses PA_TABLE1 and PA_POWER=1.
+            await this.poke(R.PA_TABLE0, new Uint8Array([0x00]));
+            await this.poke(R.PA_TABLE1, new Uint8Array([power]));
             await this.setTxPaPower();
         } else {
-            pa[0] = power;
-            await this.poke(R.PATABLE, pa);
+            // RFCat FSK/MSK uses PA_TABLE0 and PA_POWER=0.
+            await this.poke(R.PA_TABLE0, new Uint8Array([power]));
+            await this.poke(R.PA_TABLE1, new Uint8Array([0x00]));
 
             let frend0 = (await this.peek(R.FREND0, 1))[0];
             frend0 &= 0xf8;
