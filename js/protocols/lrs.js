@@ -105,6 +105,7 @@ const lrs = {
     id: "lrs",
 
     name: "LRS Pager",
+    menuGroup: "Restaurant Pagers",
 
     description:
         "LRS pager packet generator using 467.750 MHz 2-FSK with Manchester encoding.",
