@@ -111,19 +111,60 @@ export function buildJtechLegacyAlert(capcode) {
     };
 }
 
+export function buildPocsagMessageCodeword(payload20) {
+    payload20 = Number(payload20);
+    if (!Number.isInteger(payload20) || payload20 < 0 || payload20 > 0xfffff) {
+        throw new Error("POCSAG message payload must be a 20-bit integer");
+    }
+    const data = 0x100000 + payload20;
+    return addEvenParity((data * 0x400) + pocsagBch(data));
+}
+
+function encodeAlphanumericBits(message) {
+    const text = String(message ?? "");
+    if (!text.length) return "";
+    if ([...text].some((char) => char.charCodeAt(0) > 0x7f)) {
+        throw new Error("POCSAG alphanumeric messages support 7-bit ASCII only");
+    }
+    return [...text].map((char) =>
+        char.charCodeAt(0).toString(2).padStart(7, "0").split("").reverse().join("")
+    ).join("");
+}
+
 export function buildPocsagAlert({
     capcode,
     functionBits = 0,
+    message = "",
     inverted = false,
 }) {
     capcode = Number(capcode);
     const addressWord = buildPocsagAddressCodeword(capcode, functionBits);
     const frame = capcode & 7;
-    const codewords = Array(16).fill(POCSAG_IDLE >>> 0);
-    codewords[frame * 2] = addressWord;
+    const messageBits = encodeAlphanumericBits(message);
+    const messageWords = [];
+    for (let offset = 0; offset < messageBits.length; offset += 20) {
+        const chunk = messageBits.slice(offset, offset + 20).padEnd(20, "0");
+        messageWords.push(buildPocsagMessageCodeword(parseInt(chunk, 2)));
+    }
+
+    const firstAddressIndex = frame * 2;
+    const requiredSlots = firstAddressIndex + 1 + messageWords.length;
+    const batchCount = Math.max(1, Math.ceil(requiredSlots / 16));
+    if (batchCount > 2) {
+        throw new Error("POCSAG message is too long for the CC1111 fixed packet limit");
+    }
+
+    const codewords = Array(batchCount * 16).fill(POCSAG_IDLE >>> 0);
+    codewords[firstAddressIndex] = addressWord;
+    messageWords.forEach((word, index) => {
+        codewords[firstAddressIndex + 1 + index] = word;
+    });
 
     const preamble = "10".repeat(POCSAG_PREAMBLE_BITS / 2);
-    const batch = wordToBits(POCSAG_SYNC) + codewords.map(wordToBits).join("");
+    let batch = "";
+    for (let index = 0; index < codewords.length; index += 16) {
+        batch += wordToBits(POCSAG_SYNC) + codewords.slice(index, index + 16).map(wordToBits).join("");
+    }
     const normalBits = preamble + batch;
     const bits = inverted ? invertBits(normalBits) : normalBits;
 
@@ -136,6 +177,10 @@ export function buildPocsagAlert({
         frame,
         addressWord,
         codewords,
+        message: String(message ?? ""),
+        messageBits,
+        messageWords,
+        batchCount,
         inverted: Boolean(inverted),
     };
 }
@@ -197,6 +242,14 @@ const pocsag = {
             ],
         },
         {
+            id: "message",
+            label: "Alphanumeric Message",
+            type: "text",
+            value: "",
+            placeholder: "Optional 7-bit ASCII message",
+            visibleWhen: { field: "profile", values: ["generic"] },
+        },
+        {
             id: "inverted",
             label: "Invert transmitted polarity (CC1111)",
             visibleWhen: { field: "profile", values: ["generic"] },
@@ -214,6 +267,7 @@ const pocsag = {
             : buildPocsagAlert({
                 capcode: values.capcode,
                 functionBits: values.functionBits,
+                message: values.message,
                 inverted: values.inverted,
             });
 
@@ -236,7 +290,7 @@ const pocsag = {
             summary: encoded.legacyJtech
                 ? `JTECH legacy TX: reference capcode ${encoded.capcode} · 512 baud · ${encoded.bytes.length} bytes`
                 : `POCSAG TX: capcode ${encoded.capcode} · frame ${encoded.frame} · ` +
-                  `function ${encoded.functionBits} · ${baud} baud · ` +
+                  `function ${encoded.functionBits} · ${encoded.message ? `${encoded.message.length} char message · ` : ""}${baud} baud · ` +
                   `${encoded.inverted ? "inverted" : "normal"} polarity · ` +
                   `${encoded.bytes.length} bytes`,
         };
