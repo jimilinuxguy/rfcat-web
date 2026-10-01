@@ -50,7 +50,7 @@ const jtech = {
         await device.logTxDiagnostics?.("JTECH PRE-TX");
         await device.setAmpMode(true);
         try { await device.transmit(encoded.bytes, Number(values.repeat ?? 0), Number(values.offset ?? 0)); }
-        finally { await device.mode(0x04); await device.setAmpMode(false); }
+        finally { await device.setAmpMode(false); }
     },
 };
 export default jtech;
