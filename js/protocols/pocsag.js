@@ -309,7 +309,6 @@ const pocsag = {
                 Number(values.offset ?? 0),
             );
         } finally {
-            await device.mode(0x04);
             await device.setAmpMode(false);
         }
     },
