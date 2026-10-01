@@ -59,7 +59,22 @@ The JTECH reference script places the complementary sync bit pattern in its raw 
 
 RFCat Web therefore provides an explicit **Invert transmitted polarity** option. Inversion applies to the complete generated POCSAG stream.
 
-The reference script also contains hard-coded 40-bit pager strings for capcodes 79984 and 79992. Those strings are not treated as ordinary 32-bit POCSAG codewords here. Their extra framing/alignment should be understood and captured independently before adding a compatibility encoder for them.
+## JTECH legacy compatibility
+
+The **JTECH legacy activate_all.py compatibility** profile reproduces the reference script's raw 664-bit transmit stream for its two explicitly documented pager selections:
+
+```text
+576-bit alternating preamble
+1-bit pad
+0x832DEA27 complementary sync representation
+3-bit pad
+40-bit reference pager field
+12-bit 0011 / 0011 / 0011 payload
+```
+
+The supported reference capcodes are **79984** and **79992**. No other capcodes are synthesized in this mode because the relationship between the script's 40-bit pager field and a general POCSAG address has not been established. This keeps legacy compatibility bit-for-bit with the published reference instead of guessing at undocumented framing.
+
+This compatibility mode uses 512 baud, 2-FSK, 4.5 kHz requested deviation, and disabled hardware sync, matching the script. Frequency remains explicit.
 
 ## Reference / Inspector
 
@@ -75,6 +90,7 @@ Automated tests cover:
 - complete one-batch frame length
 - inverted sync/polarity
 - capcode and function validation
+- exact JTECH legacy 664-bit layout for both published reference capcodes
 
 Hardware validation is still required. Before marking this OTA validated, capture a YARD Stick One transmission with an independent SDR and compare bit rate, polarity, deviation, preamble, sync, and generated address codeword.
 
