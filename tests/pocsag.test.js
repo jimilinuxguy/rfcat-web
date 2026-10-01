@@ -5,6 +5,7 @@ import {
     POCSAG_IDLE,
     POCSAG_PREAMBLE_BITS,
     buildPocsagAddressCodeword,
+    buildPocsagMessageCodeword,
     buildPocsagAlert,
     buildJtechLegacyAlert,
     JTECH_LEGACY,
@@ -52,6 +53,36 @@ test("POCSAG inverted polarity complements the complete bitstream", () => {
         inverted.bits,
         normal.bits.replace(/[01]/g, (bit) => bit === "0" ? "1" : "0"),
     );
+});
+
+
+test("POCSAG alphanumeric message uses 7-bit ASCII and message codewords", () => {
+    const encoded = buildPocsagAlert({ capcode: 1, message: "HELLO" });
+    assert.equal(encoded.message, "HELLO");
+    assert.equal(encoded.messageBits.length, 35);
+    assert.equal(encoded.messageWords.length, 2);
+    assert.equal(encoded.codewords[2], encoded.addressWord);
+    assert.equal(encoded.codewords[3], encoded.messageWords[0]);
+    assert.equal((encoded.messageWords[0] >>> 31) & 1, 1);
+    assert.equal(hasEvenParity(encoded.messageWords[0]), true);
+});
+
+test("POCSAG message codeword sets message flag with BCH and parity", () => {
+    const word = buildPocsagMessageCodeword(0x12345);
+    assert.equal((word >>> 31) & 1, 1);
+    assert.equal(hasEvenParity(word), true);
+});
+
+test("POCSAG alphanumeric message can continue into a second batch", () => {
+    const encoded = buildPocsagAlert({ capcode: 7, message: "ABCDEFGHIJKLMNOPQRST" });
+    assert.equal(encoded.batchCount, 2);
+    assert.equal(encoded.bits.length, 576 + (2 * (32 + 16 * 32)));
+    assert.equal(encoded.bits.slice(576 + 544, 576 + 576), "01111100110100100001010111011000");
+});
+
+test("POCSAG alphanumeric validation rejects non-ASCII and oversized messages", () => {
+    assert.throws(() => buildPocsagAlert({ capcode: 1, message: "café" }), /7-bit ASCII/);
+    assert.throws(() => buildPocsagAlert({ capcode: 7, message: "A".repeat(100) }), /too long/);
 });
 
 test("POCSAG validates capcode and function", () => {
