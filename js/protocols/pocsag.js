@@ -5,6 +5,18 @@ export const POCSAG_IDLE = 0x7a89c197;
 export const POCSAG_PREAMBLE_BITS = 576;
 export const POCSAG_BCH_POLY = 0x769;
 
+export const JTECH_LEGACY = Object.freeze({
+    preamble: "10".repeat(288),
+    pad1: "1",
+    sync: "10000011001011011110101000100111",
+    pad2: "111",
+    payload: "0011".repeat(3),
+    pagers: Object.freeze({
+        "79984": "1101100011110001110110001100001010110011",
+        "79992": "1101100011110000111011111010010001010111",
+    }),
+});
+
 function wordToBits(word) {
     return (word >>> 0).toString(2).padStart(32, "0");
 }
@@ -70,6 +82,35 @@ export function buildPocsagAddressCodeword(capcode, functionBits = 0) {
     return addEvenParity(codeword31);
 }
 
+export function buildJtechLegacyAlert(capcode) {
+    const key = String(Number(capcode));
+    const pagerBits = JTECH_LEGACY.pagers[key];
+
+    if (!pagerBits) {
+        throw new Error("JTECH legacy compatibility supports reference capcodes 79984 and 79992 only");
+    }
+
+    const bits =
+        JTECH_LEGACY.preamble +
+        JTECH_LEGACY.pad1 +
+        JTECH_LEGACY.sync +
+        JTECH_LEGACY.pad2 +
+        pagerBits +
+        JTECH_LEGACY.payload;
+
+    return {
+        bytes: bitsToBytes(bits),
+        bits,
+        normalBits: bits,
+        capcode: Number(capcode),
+        pagerBits,
+        frame: null,
+        functionBits: null,
+        inverted: false,
+        legacyJtech: true,
+    };
+}
+
 export function buildPocsagAlert({
     capcode,
     functionBits = 0,
@@ -114,6 +155,7 @@ const pocsag = {
             options: [
                 { value: "generic", label: "Generic POCSAG" },
                 { value: "jtech-reference", label: "JTECH reference RF settings" },
+                { value: "jtech-legacy", label: "JTECH legacy activate_all.py compatibility" },
             ],
         },
         { id: "frequency", label: "Frequency (Hz)", type: "number", min: 1, value: 457600000 },
@@ -153,13 +195,16 @@ const pocsag = {
     ],
 
     encode(values) {
-        const encoded = buildPocsagAlert({
-            capcode: values.capcode,
-            functionBits: values.functionBits,
-            inverted: values.inverted,
-        });
+        const profile = String(values.profile ?? "generic");
+        const encoded = profile === "jtech-legacy"
+            ? buildJtechLegacyAlert(values.capcode)
+            : buildPocsagAlert({
+                capcode: values.capcode,
+                functionBits: values.functionBits,
+                inverted: values.inverted,
+            });
 
-        const baud = Number(values.baud ?? 512);
+        const baud = profile === "jtech-legacy" ? 512 : Number(values.baud ?? 512);
         const analysis = buildWaveformAnalysis({
             waveform: encoded.bits,
             symbolRate: baud,
@@ -175,11 +220,12 @@ const pocsag = {
             waveform: encoded.bits,
             analysis,
             modulation: "2-FSK",
-            summary:
-                `POCSAG TX: capcode ${encoded.capcode} · frame ${encoded.frame} · ` +
-                `function ${encoded.functionBits} · ${baud} baud · ` +
-                `${encoded.inverted ? "inverted" : "normal"} polarity · ` +
-                `${encoded.bytes.length} bytes`,
+            summary: encoded.legacyJtech
+                ? `JTECH legacy TX: reference capcode ${encoded.capcode} · 512 baud · ${encoded.bytes.length} bytes`
+                : `POCSAG TX: capcode ${encoded.capcode} · frame ${encoded.frame} · ` +
+                  `function ${encoded.functionBits} · ${baud} baud · ` +
+                  `${encoded.inverted ? "inverted" : "normal"} polarity · ` +
+                  `${encoded.bytes.length} bytes`,
         };
     },
 
@@ -197,8 +243,9 @@ const pocsag = {
 
         // The public JTECH reference script uses 512 baud and 4.5 kHz deviation.
         // Keep these as profile defaults, not claims about every JTECH installation.
-        const configuredBaud = profile === "jtech-reference" ? 512 : baud;
-        const configuredDeviation = profile === "jtech-reference" ? 4500 : deviation;
+        const isJtech = profile === "jtech-reference" || profile === "jtech-legacy";
+        const configuredBaud = isJtech ? 512 : baud;
+        const configuredDeviation = isJtech ? 4500 : deviation;
 
         await device.mode(0x04);
         await device.setFrequency(Number(values.frequency));
