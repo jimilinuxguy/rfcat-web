@@ -154,7 +154,6 @@ const pocsag = {
             value: "generic",
             options: [
                 { value: "generic", label: "Generic POCSAG" },
-                { value: "jtech-reference", label: "JTECH reference RF settings" },
                 { value: "jtech-legacy", label: "JTECH Restaurant Pagers" },
             ],
         },
@@ -175,19 +174,19 @@ const pocsag = {
             label: "Baud",
             type: "select",
             value: "512",
-            visibleWhen: { field: "profile", values: ["generic", "jtech-reference"] },
+            visibleWhen: { field: "profile", values: ["generic"] },
             options: [
                 { value: "512", label: "512" },
                 { value: "1200", label: "1200" },
                 { value: "2400", label: "2400" },
             ],
         },
-        { id: "deviation", label: "Deviation (Hz)", type: "number", min: 1, value: 4500, visibleWhen: { field: "profile", values: ["generic", "jtech-reference"] } },
-        { id: "capcode", label: "Capcode", type: "number", min: 0, max: 2097151, value: 1, visibleWhen: { field: "profile", values: ["generic", "jtech-reference"] } },
+        { id: "deviation", label: "Deviation (Hz)", type: "number", min: 1, value: 4500, visibleWhen: { field: "profile", values: ["generic"] } },
+        { id: "capcode", label: "Capcode", type: "number", min: 0, max: 2097151, value: 1, visibleWhen: { field: "profile", values: ["generic"] } },
         {
             id: "functionBits",
             label: "Function",
-            visibleWhen: { field: "profile", values: ["generic", "jtech-reference"] },
+            visibleWhen: { field: "profile", values: ["generic"] },
             type: "select",
             value: "0",
             options: [
@@ -200,7 +199,7 @@ const pocsag = {
         {
             id: "inverted",
             label: "Invert transmitted polarity (CC1111)",
-            visibleWhen: { field: "profile", values: ["generic", "jtech-reference"] },
+            visibleWhen: { field: "profile", values: ["generic"] },
             type: "checkbox",
             value: true,
         },
@@ -257,7 +256,7 @@ const pocsag = {
 
         // The public JTECH reference script uses 512 baud and 4.5 kHz deviation.
         // Keep these as profile defaults, not claims about every JTECH installation.
-        const isJtech = profile === "jtech-reference" || profile === "jtech-legacy";
+        const isJtech = profile === "jtech-legacy";
         const configuredBaud = isJtech ? 512 : baud;
         const configuredDeviation = isJtech ? 4500 : deviation;
 
