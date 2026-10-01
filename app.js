@@ -299,6 +299,10 @@ $("protocol-transmit").onclick = async () => {
 
         const encoded = await protocol.encode(values);
 
+        if (protocol.analysisOnly) {
+            throw new Error(`${protocol.name} is analysis-only and cannot transmit`);
+        }
+
         if (!(encoded?.bytes instanceof Uint8Array)) {
             throw new Error(`${protocol.name} did not return a Uint8Array`);
         }
