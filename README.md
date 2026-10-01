@@ -6,11 +6,13 @@ RFCat Web provides direct radio configuration, receive/transmit controls, wavefo
 
 ## Protocols
 
-Implemented protocol modules include CAME-12, Binary, LRS, Tesla charge-port test signaling, generic OOK/PWM, Oregon THGR122NX, Acurite 5n1, several Schrader TPMS formats, and TouchTunes / The Fonz. A non-transmitting POCSAG reference/inspector is also available for framing and capture analysis.
+Implemented protocol modules include CAME-12, Binary, LRS, Tesla charge-port test signaling, generic OOK/PWM, Oregon THGR122NX, Acurite 5n1, several Schrader TPMS formats, TouchTunes / The Fonz, and POCSAG. POCSAG includes explicit-capcode address alerts, 512/1200/2400 baud support, configurable polarity, a JTECH reference RF preset, and a separate non-transmitting framing inspector.
 
 ### Validation status
 
 Protocol implementations have different validation levels. A synthetic validation means generated samples were checked against the expected decoder or source algorithm. OTA waveform validation additionally means a YARD Stick One transmission was independently captured and its timing/framing compared with the expected waveform.
+
+POCSAG TX is **synthetically tested but not yet OTA/device validated**. The JTECH profile follows the public reference script's 512-baud / 4.5-kHz-deviation RF settings while keeping frequency and transmit polarity explicit.
 
 TouchTunes / The Fonz is **OTA waveform validated**. A YARD Stick One transmission captured with an RTL-SDR matched the expected preamble, 32-bit frame structure, variable-length OOK encoding, and approximately 566 µs base timing. Receiver interoperability with an actual TouchTunes jukebox has not been validated.
 
