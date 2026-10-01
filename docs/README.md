@@ -63,6 +63,7 @@ protocols/came12.md
 protocols/lrs.md
 protocols/oregon-thgr122nx.md
 protocols/pwm.md
+protocols/pocsag.md
 protocols/schrader-eg53ma4.md
 protocols/schrader-mrxgg4.md
 protocols/tesla.md
