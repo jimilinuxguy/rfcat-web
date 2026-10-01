@@ -155,18 +155,18 @@ const pocsag = {
             options: [
                 { value: "generic", label: "Generic POCSAG" },
                 { value: "jtech-reference", label: "JTECH reference RF settings" },
-                { value: "jtech-legacy", label: "JTECH legacy activate_all.py compatibility" },
+                { value: "jtech-legacy", label: "JTECH Restaurant Pagers" },
             ],
         },
         { id: "frequency", label: "Frequency (Hz)", type: "number", min: 1, value: 457600000 },
         {
             id: "legacyReference",
-            label: "JTECH legacy reference",
+            label: "JTECH Restaurant Pager",
             type: "select",
             value: "79984",
             options: [
-                { value: "79984", label: "Reference 79984 (pager_notlost)" },
-                { value: "79992", label: "Reference 79992 (pager_all)" },
+                { value: "79984", label: "79984 (Not Lost)" },
+                { value: "79992", label: "79992 (All)" },
             ],
             visibleWhen: { field: "profile", values: ["jtech-legacy"] },
         },
