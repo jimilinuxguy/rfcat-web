@@ -258,6 +258,7 @@ const pocsag = {
     },
 
     async transmit(device, encoded, values) {
+        await device.logTxDiagnostics?.("POCSAG PRE-TX");
         await device.setAmpMode(true);
         try {
             await device.transmit(
