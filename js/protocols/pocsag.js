@@ -160,21 +160,34 @@ const pocsag = {
         },
         { id: "frequency", label: "Frequency (Hz)", type: "number", min: 1, value: 457600000 },
         {
+            id: "legacyReference",
+            label: "JTECH legacy reference",
+            type: "select",
+            value: "79984",
+            options: [
+                { value: "79984", label: "Reference 79984 (pager_notlost)" },
+                { value: "79992", label: "Reference 79992 (pager_all)" },
+            ],
+            visibleWhen: { field: "profile", values: ["jtech-legacy"] },
+        },
+        {
             id: "baud",
             label: "Baud",
             type: "select",
             value: "512",
+            visibleWhen: { field: "profile", values: ["generic", "jtech-reference"] },
             options: [
                 { value: "512", label: "512" },
                 { value: "1200", label: "1200" },
                 { value: "2400", label: "2400" },
             ],
         },
-        { id: "deviation", label: "Deviation (Hz)", type: "number", min: 1, value: 4500 },
-        { id: "capcode", label: "Capcode", type: "number", min: 0, max: 2097151, value: 1 },
+        { id: "deviation", label: "Deviation (Hz)", type: "number", min: 1, value: 4500, visibleWhen: { field: "profile", values: ["generic", "jtech-reference"] } },
+        { id: "capcode", label: "Capcode", type: "number", min: 0, max: 2097151, value: 1, visibleWhen: { field: "profile", values: ["generic", "jtech-reference"] } },
         {
             id: "functionBits",
             label: "Function",
+            visibleWhen: { field: "profile", values: ["generic", "jtech-reference"] },
             type: "select",
             value: "0",
             options: [
@@ -187,6 +200,7 @@ const pocsag = {
         {
             id: "inverted",
             label: "Invert transmitted polarity (CC1111)",
+            visibleWhen: { field: "profile", values: ["generic", "jtech-reference"] },
             type: "checkbox",
             value: true,
         },
@@ -197,7 +211,7 @@ const pocsag = {
     encode(values) {
         const profile = String(values.profile ?? "generic");
         const encoded = profile === "jtech-legacy"
-            ? buildJtechLegacyAlert(values.capcode)
+            ? buildJtechLegacyAlert(values.legacyReference)
             : buildPocsagAlert({
                 capcode: values.capcode,
                 functionBits: values.functionBits,
