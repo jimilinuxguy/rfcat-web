@@ -833,9 +833,16 @@ function renderCaptureCompare() {
     body.innerHTML = "";
     const { maxLength, changed } = compareByteRows(captures.map(({ capture }) => capture));
 
+    const status = document.createElement("div");
+    status.className = `rx-compare-status ${changed.size === 0 ? "identical" : "different"}`;
+    status.textContent = changed.size === 0
+        ? "✓ Identical captures"
+        : `△ ${changed.size} byte${changed.size === 1 ? "" : "s"} differ`;
+    body.append(status);
+
     const summary = document.createElement("div");
     summary.className = "rx-compare-summary";
-    summary.textContent = `${captures.length} captures · ${changed.size} changing byte position${changed.size === 1 ? "" : "s"} · max ${maxLength} bytes`;
+    summary.textContent = `${captures.length} captures · max ${maxLength} bytes`;
     body.append(summary);
 
     const bytes = document.createElement("div");
