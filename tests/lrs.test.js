@@ -43,6 +43,26 @@ test("LRS RX decodes oversampled Manchester with clock jitter", () => {
 });
 
 
+test("LRS RX decodes AA-synchronized live payload", () => {
+    const encoded = encodeLrsPager({ restaurantId: 1, pagerId: 1, alertType: 1 });
+    // Hardware sync consumes the first AA AA and returns the remaining 13 bytes.
+    const payload = encoded.bytes.slice(2);
+    assert.equal(payload.length, 13);
+    assert.equal(payload[0], 0xaa);
+    assert.equal(payload[1], 0xfc);
+    assert.equal(payload[2], 0x2d);
+
+    const decoded = decodeLrsPager(payload);
+    assert.ok(decoded);
+    assert.deepEqual(decoded.fields, {
+        restaurantId: 1,
+        stationId: 0,
+        pagerId: 1,
+        alertType: 1,
+        checksum: 0x2d,
+    });
+});
+
 test("LRS RX decodes hardware-sync payload without preamble or sync bytes", () => {
     const encoded = encodeLrsPager({ restaurantId: 42, pagerId: 0xabc, alertType: 3 });
     const payload = encoded.bytes.slice(5);
