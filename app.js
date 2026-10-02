@@ -878,12 +878,14 @@ d.addEventListener("packet", (e) => {
         crcOk: status.crcOk,
     }, protocols);
 
-    // Raw LRS acquisition can span several 64-byte RFCat buffers. Those are
-    // transport chunks, not pager events. Keep accumulating silently until the
-    // decoder recovers one checksum-valid 15-byte LRS frame, then surface one
-    // protocol event and start a fresh rolling window.
-    if (decodeMode === "lrs" && decoded?.protocol?.id !== "lrs") return;
-    if (decodeMode === "lrs") lrsRolling = new Uint8Array();
+    // Raw LRS acquisition can span several 64-byte RFCat buffers. Once the
+    // cadence gate sees a real OTA burst, surface the transport chunk even if
+    // timing recovery has not yet produced a checksum-valid LRS frame. This
+    // keeps RF noise suppressed without hiding genuine LRS transmissions from
+    // Captured, and gives us the exact bytes needed to improve the decoder.
+    if (decodeMode === "lrs" && decoded?.protocol?.id === "lrs") {
+        lrsRolling = new Uint8Array();
+    }
 
     const fingerprint = pocsagFingerprint(decoded);
     const duplicatePocsag = fingerprint != null && fingerprint === lastPocsagFingerprint;
