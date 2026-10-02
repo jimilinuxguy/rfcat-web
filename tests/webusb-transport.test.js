@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-globalThis.document = {\n    getElementById() { return null; },\n};\n\nconst { RFCatUSB } = await import("../js/rfcat/device.js");
+globalThis.document = {
+    getElementById() { return null; },
+};
+
+const { RFCatUSB } = await import("../js/rfcat/device.js");
 
 function responseFrame(app, cmd, payload = []) {
     return new Uint8Array([0x40, app, cmd, payload.length & 0xff, payload.length >> 8, ...payload]);
