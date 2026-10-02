@@ -1,12 +1,12 @@
 # POCSAG Pager
 
-**Status: implemented and synthetically tested; OTA/device interoperability not yet validated**
+**Status: POCSAG512 TX and RX OTA validated with YARD Stick One hardware**
 
-RFCat Web includes both a POCSAG transmitter and a non-transmitting reference/inspector for authorized paging-system development and interoperability testing.
+RFCat Web includes a generic POCSAG transmitter and receiver for authorized paging-system development and interoperability testing.
 
 ## Transmitter
 
-The transmitter builds a standard address-only POCSAG alert from an explicit capcode and function value. It does not discover, enumerate, or sweep capcodes.
+The transmitter builds POCSAG pages from an explicit capcode and function value. It does not discover, enumerate, or sweep capcodes.
 
 Implemented framing:
 
@@ -18,30 +18,22 @@ Idle codeword:   0x7A89C197
 Address BCH:     BCH(31,21), generator 0x769
 Parity:          even
 Rates:           512 / 1200 / 2400 baud
+Messages:        optional 7-bit ASCII alphanumeric
 ```
 
-The capcode's low three bits select one of eight frames. The address codeword is placed in the first codeword position of that frame and the remaining positions are filled with idle codewords.
+The capcode's low three bits select one of eight frames. Address and message codewords are BCH/parity encoded and unused positions are filled with idle codewords. Messages may extend into a second batch subject to the CC1111 255-byte packet limit.
 
-Current TX support is deliberately limited to address/function alerts. Numeric and alphanumeric message codewords are not yet implemented.
+TX fields include frequency, baud, deviation, capcode, function, optional alphanumeric message, polarity, repeat count, and RFCat offset.
+
+Repeat handling is performed host-side because RFCat firmware repeat behavior is not relied upon. A repeat count of 0 transmits once; a repeat count of 4 performs five separate NIC_XMIT operations.
 
 ## RF configuration
 
-Generic POCSAG exposes frequency, baud rate, deviation, function, polarity, RFCat repeat, and offset.
+Generic POCSAG uses 2-FSK with hardware sync disabled. Frequency, baud, and deviation are explicit.
 
-The **JTECH reference RF settings** profile is based on the public `jtech_pager/activate_all.py` research script. That script configures:
+The known-good POCSAG512 validation used a requested 4.5 kHz deviation. The CC1111 DEVIATN register is 0xDF11; correcting this mapping was required for the transmitted deviation to match the requested value closely enough for clean decoding.
 
-```text
-2-FSK
-512 baud
-4.5 kHz requested deviation
-hardware sync disabled
-```
-
-Its example frequency is 457.600 MHz, but the script accepts frequency as a command-line argument. RFCat Web therefore keeps frequency explicit rather than treating 457.600 MHz as universal.
-
-The 4.5 kHz deviation is likewise a reference-script setting, not a claim that every JTECH model or installation uses that deviation.
-
-## Polarity and the JTECH reference
+## Polarity
 
 Normal POCSAG sync is:
 
@@ -50,49 +42,74 @@ Normal POCSAG sync is:
 01111100110100100001010111011000
 ```
 
-The JTECH reference script places the complementary sync bit pattern in its raw stream:
+RFCat Web provides an explicit TX polarity inversion option. The receiver detects both normal and inverted streams automatically.
+
+## Receiver
+
+The Receiver panel includes a dedicated **POCSAG Receiver** preset with:
 
 ```text
-0x832DEA27
-10000011001011011110101000100111
+Frequency: configurable
+Baud:      512 / 1200 / 2400
 ```
 
-RFCat Web therefore provides an explicit **Invert transmitted polarity** option. Inversion applies to the complete generated POCSAG stream.
-
-## JTECH legacy compatibility
-
-The **JTECH legacy activate_all.py compatibility** profile reproduces the reference script's raw 664-bit transmit stream for its two explicitly documented pager selections:
+Starting the preset configures the CC1111 for the validated receive path:
 
 ```text
-576-bit alternating preamble
-1-bit pad
-0x832DEA27 complementary sync representation
-3-bit pad
-40-bit reference pager field
-12-bit 0011 / 0011 / 0011 payload
+Modulation:          2-FSK
+Requested deviation: 4.5 kHz
+Channel bandwidth:   93.75 kHz
+Hardware sync:       disabled
+Packet length:       fixed 255 bytes
+CRC:                 off
+Whitening:           off
+Append status:       off
+Address check:       none
 ```
 
-The supported reference capcodes are **79984** and **79992**. No other capcodes are synthesized in this mode because the relationship between the script's 40-bit pager field and a general POCSAG address has not been established. This keeps legacy compatibility bit-for-bit with the published reference instead of guessing at undocumented framing.
+The software decoder searches the received bitstream for POCSAG sync, detects normal or inverted polarity, validates BCH/parity codewords, corrects a single bad bit per codeword when possible, extracts capcode/function, and decodes 7-bit alphanumeric messages.
 
-This compatibility mode uses 512 baud, 2-FSK, 4.5 kHz requested deviation, and disabled hardware sync, matching the script. Frequency remains explicit.
+Because RFCat delivers fixed 255-byte receive buffers in the validated setup, the browser keeps a 1020-byte rolling POCSAG buffer. This allows a sync/page crossing an RFCat receive boundary to be decoded. Consecutive duplicate results rediscovered from that rolling window are suppressed.
 
-## Reference / Inspector
+### Known-good OTA RX test
 
-The separate **POCSAG Reference / Inspector** remains non-transmitting. It can inspect a 32-bit hexadecimal word, display its bits, classify its high-level address/message form, report even parity, and show normal or inverted representation.
+A YARD Stick One receiver was validated with:
+
+```text
+Frequency:           467.750 MHz
+Baud:                512
+Modulation:          2-FSK
+Requested deviation: 4.5 kHz
+Channel bandwidth:   93.75 kHz
+Hardware sync:       disabled
+Packet length:       fixed 255 bytes
+```
+
+A live transmission decoded as capcode 1, function 3, message `hello`, inverted polarity, with zero corrected bits.
+
+This validates the tested YARD Stick One/RFCat Web receive path. It is not a claim that every paging installation uses 467.750 MHz or these exact RF parameters.
+
+## JTECH reference compatibility
+
+The separate JTECH protocol reproduces the public reference script's fixed 664-bit streams for the two documented selections, 79984 and 79992. Those fixed patterns were independently captured and matched the expected waveform.
+
+JTECH compatibility remains intentionally limited to those two published reference patterns. RFCat Web does not infer undocumented 40-bit fields or provide capcode scanning/enumeration.
 
 ## Validation
 
-Automated tests cover:
+Automated coverage includes:
 
-- standard sync, idle, and preamble constants
-- BCH/parity address generation
-- capcode-to-frame placement
-- complete one-batch frame length
-- inverted sync/polarity
-- capcode and function validation
-- exact JTECH legacy 664-bit layout for both published reference capcodes
+- POCSAG constants, BCH/parity, frame placement, and message encoding
+- normal and inverted polarity
+- 512/1200/2400 configuration validation
+- alert-only and alphanumeric RX decoding
+- single-bit RX correction
+- rejection of unrelated bytes
+- decoding a page spanning 255-byte receive chunks
+- host-side repeat behavior
+- fixed JTECH reference waveforms
 
-Hardware validation is still required. Before marking this OTA validated, capture a YARD Stick One transmission with an independent SDR and compare bit rate, polarity, deviation, preamble, sync, and generated address codeword.
+POCSAG512 TX and RX have additionally been tested OTA with YARD Stick One hardware. Higher POCSAG rates remain implemented and synthetically covered but should be independently OTA-validated before being described as hardware validated.
 
 ## Scope
 

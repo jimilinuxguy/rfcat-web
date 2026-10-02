@@ -24,7 +24,9 @@ This document covers:
 - CC1111 RSSI/LQI appended status bytes
 - Packet framing
 - CAME-12 RX
-- Known-good two-YARD-Stick validation
+- POCSAG RX and the dedicated receiver preset
+- Rolling receive-buffer decoding
+- Known-good OTA validation setups
 - Decoder development
 
 ### RFCat USB
@@ -62,11 +64,14 @@ protocols/acurite-5n1.md
 protocols/came12.md
 protocols/lrs.md
 protocols/oregon-thgr122nx.md
-protocols/pwm.md
 protocols/pocsag.md
+protocols/pwm.md
 protocols/schrader-eg53ma4.md
+protocols/schrader-mrxbc5a4.md
 protocols/schrader-mrxgg4.md
+protocols/schrader-smd3ma4.md
 protocols/tesla.md
+protocols/touchtunes.md
 ```
 
 Other protocol implementations may exist in `js/protocols/` before a dedicated protocol document is added.
