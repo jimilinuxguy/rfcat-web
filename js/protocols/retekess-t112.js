@@ -85,7 +85,7 @@ export function decodeRetekessT112(bytes) {
 }
 
 const protocol = {
- id:"retekess-t112", name:"Retekess T112", menuGroup:"Restaurant Pagers",
+ id:"retekess-t112", name:"Retekess T112", menuGroup:"Restaurant Pagers", decoderGroup:"Retekess",
  description:"Retekess T112 24-bit OOK: 13-bit system ID, 10-bit pager ID, cancel flag.",
  rxPreset:{frequency:433_920_000,dataRate:9090.909,bandwidth:93_750,modulation:0x30,syncWord:0x0000,syncMode:0,manchester:false,lengthMode:"fixed",packetLength:255,crc:false,whitening:false,appendStatus:false,addressCheck:0,deviceAddress:0,lowball:true},
  decode(bytes){return decodeRetekessT112(bytes);},

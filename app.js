@@ -25,12 +25,46 @@ const waveformPreview = $("waveform-preview");
 renderProtocolSelector(protocolSelect, protocols);
 
 const rxProtocolSelect = $("rx-protocol");
-for (const protocol of decoderProtocols(protocols)) {
+const rxProtocolModel = $("rx-protocol-model");
+const rxProtocolModelLabel = $("rx-protocol-model-label");
+const rxDecoders = decoderProtocols(protocols);
+const rxDecoderGroups = new Map();
+
+for (const protocol of rxDecoders) {
+    if (protocol.decoderGroup) {
+        if (!rxDecoderGroups.has(protocol.decoderGroup)) rxDecoderGroups.set(protocol.decoderGroup, []);
+        rxDecoderGroups.get(protocol.decoderGroup).push(protocol);
+        continue;
+    }
     const option = document.createElement("option");
     option.value = protocol.id;
     option.textContent = protocol.name;
     rxProtocolSelect.append(option);
 }
+for (const group of rxDecoderGroups.keys()) {
+    const option = document.createElement("option");
+    option.value = `group:${group}`;
+    option.textContent = group;
+    rxProtocolSelect.append(option);
+}
+
+function selectedRxProtocolId() {
+    return rxProtocolSelect.value.startsWith("group:") ? rxProtocolModel.value : rxProtocolSelect.value;
+}
+
+function renderRxProtocolModel() {
+    const group = rxProtocolSelect.value.startsWith("group:") ? rxProtocolSelect.value.slice(6) : null;
+    const models = group ? rxDecoderGroups.get(group) ?? [] : [];
+    rxProtocolModel.replaceChildren();
+    for (const protocol of models) {
+        const option = document.createElement("option");
+        option.value = protocol.id;
+        option.textContent = protocol.name.startsWith(`${group} `) ? protocol.name.slice(group.length + 1) : protocol.name;
+        rxProtocolModel.append(option);
+    }
+    rxProtocolModelLabel.hidden = models.length === 0;
+}
+renderRxProtocolModel();
 const rxCaptures = [];
 let pulseRuns = [];
 let pocsagRolling = new Uint8Array();
@@ -539,11 +573,16 @@ async function configureProtocolReceiver(protocol) {
     log(`${protocol.name} RX started: ${(preset.frequency / 1e6).toFixed(3)} MHz · ${preset.dataRate} baud · ${(preset.bandwidth / 1e3).toFixed(3)} kHz BW · raw OOK`);
 }
 
-rxProtocolSelect.addEventListener("change", () => {
-    const protocol = getProtocol(rxProtocolSelect.value);
+function applySelectedRxProtocol() {
+    const protocol = getProtocol(selectedRxProtocolId());
     if (!protocol?.rxPreset || !d.device) return;
     configureProtocolReceiver(protocol).catch((e) => log(`${protocol.name} RX error: ${e.message}`));
+}
+rxProtocolSelect.addEventListener("change", () => {
+    renderRxProtocolModel();
+    applySelectedRxProtocol();
 });
+rxProtocolModel.addEventListener("change", applySelectedRxProtocol);
 
 async function configurePocsagReceiver() {
     const frequencyMHz = Number($("pocsag-rx-frequency").value);
@@ -588,6 +627,7 @@ async function configurePocsagReceiver() {
     $("addrcheck").value = "0";
     $("lowball").checked = false;
     rxProtocolSelect.value = "pocsag";
+    renderRxProtocolModel();
     updatePacketControlState();
     resetPocsagRolling();
 
@@ -766,7 +806,7 @@ d.addEventListener("packet", (e) => {
     const status = splitRxStatus(received, $("appendstatus").checked);
     const b = status.payload;
     appendPulseBytes(b);
-    const decodeMode = rxProtocolSelect.value;
+    const decodeMode = selectedRxProtocolId();
     const decodeBytes = decodeMode === "pocsag"
         ? (pocsagRolling = appendRollingBytes(pocsagRolling, b))
         : decodeMode === "retekess-t112"
