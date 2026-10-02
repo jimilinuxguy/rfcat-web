@@ -553,7 +553,7 @@ export class RFCatUSB extends EventTarget {
     }
 
     async dumpRadioRegisters() {
-        const regs = await this.peek(0xdf00, 0x3e);
+        const regs = await this.peek(R.SYNC1, 0x3e);
 
         const lines = [];
 
@@ -561,7 +561,7 @@ export class RFCatUSB extends EventTarget {
             const chunk = regs.slice(i, i + 16);
 
             lines.push(
-                `0x${(0xdf00 + i).toString(16).toUpperCase()}: ` +
+                `0x${(R.SYNC1 + i).toString(16).toUpperCase()}: ` +
                     [...chunk]
 
                         .map((x) =>
@@ -576,33 +576,32 @@ export class RFCatUSB extends EventTarget {
     }
 
     async lowball() {
-        // Exact register changes observed from RFCat d.lowball()
+        // Match upstream RFCat lowball() defaults semantically:
+        // fixed 250-byte packets, CRC/FEC/whitening off, 0xAAAA sync,
+        // PQT=0, and carrier-sense sync mode.
+        await this.poke(R.PKTLEN, new Uint8Array([250]));
 
-        // on the working YARD Stick One configuration.
+        let pktctrl0 = (await this.peek(R.PKTCTRL0))[0];
+        pktctrl0 &= ~0x47; // WHITE_DATA=0, CRC_EN=0, LENGTH_CONFIG=fixed
+        await this.poke(R.PKTCTRL0, new Uint8Array([pktctrl0]));
 
-        const writes = [
-            [0xdf00, 0xaa],
+        let mdmcfg1 = (await this.peek(R.MDMCFG1))[0];
+        mdmcfg1 &= ~0x80; // FEC_EN=0
+        await this.poke(R.MDMCFG1, new Uint8Array([mdmcfg1]));
 
-            [0xdf01, 0xaa],
+        await this.poke(R.SYNC1, new Uint8Array([0xaa, 0xaa]));
 
-            [0xdf02, 0xfa],
+        let pktctrl1 = (await this.peek(R.PKTCTRL1))[0];
+        pktctrl1 &= 0x1f; // PQT=0, preserve APPEND_STATUS/ADR_CHK
+        await this.poke(R.PKTCTRL1, new Uint8Array([pktctrl1]));
 
-            [0xdf03, 0x00],
-
-            [0xdf0e, 0x34],
-
-            [0xdf38, 0x00],
-
-            [0xdf3a, 0xc5],
-        ];
-
-        for (const [addr, value] of writes) {
-            await this.poke(addr, new Uint8Array([value]));
-        }
+        let mdmcfg2 = (await this.peek(R.MDMCFG2))[0];
+        mdmcfg2 = (mdmcfg2 & ~0x07) | 0x04; // SYNCM_CARRIER
+        await this.poke(R.MDMCFG2, new Uint8Array([mdmcfg2]));
     }
 
     async config() {
-        const b = await this.peek(0xdf00, 0x3e);
+        const b = await this.peek(R.SYNC1, 0x3e);
 
         const num = (b[9] << 16) | (b[10] << 8) | b[11],
             freq = num / (0x10000 / 1e6 / 24);
@@ -653,12 +652,12 @@ export class RFCatUSB extends EventTarget {
     }
 
     async setTxPaPower() {
-        const frend0 = (await this.peek(0xdf1b, 1))[0];
+        const frend0 = (await this.peek(R.FREND0, 1))[0];
 
         // Match RFCat: PA_POWER = 1 while preserving the other FREND0 bits.
         const value = (frend0 & 0xf8) | 0x01;
 
-        await this.poke(0xdf1b, new Uint8Array([value]));
+        await this.poke(R.FREND0, new Uint8Array([value]));
     }
 
     async configureAskOokPa() {
