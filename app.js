@@ -284,6 +284,14 @@ $("ipython-export-copy").onclick = async () => {
 };
 
 $("protocol-transmit").onclick = async () => {
+    const transmitButton = $("protocol-transmit");
+
+    if (transmitButton.disabled) {
+        return;
+    }
+
+    transmitButton.disabled = true;
+
     try {
         if (!d.device?.opened) {
             throw new Error("RFCat device is not connected");
@@ -324,6 +332,8 @@ $("protocol-transmit").onclick = async () => {
         log(`TX ${encoded.bytes.length} bytes: ` + hex(encoded.bytes));
     } catch (e) {
         log(`Protocol TX error: ${e.message}`);
+    } finally {
+        transmitButton.disabled = false;
     }
 };
 
