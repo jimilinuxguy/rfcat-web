@@ -97,35 +97,81 @@ export function encodeLrsPager({
     };
 }
 
-export function decodeLrsPager(bytes) {
+function parseLrsFrame(frame) {
+    if (frame.length !== 15 ||
+        frame[0] !== 0xaa || frame[1] !== 0xaa || frame[2] !== 0xaa ||
+        frame[3] !== 0xfc || frame[4] !== 0x2d) return null;
+    let sum = 0;
+    for (let i = 0; i < 14; i++) sum += frame[i];
+    if ((sum % 255) !== frame[14]) return null;
+    if (frame.slice(8, 13).some((value) => value !== 0)) return null;
+    const restaurantId = frame[5];
+    const stationId = frame[6] >>> 4;
+    const pagerId = ((frame[6] & 0x0f) << 8) | frame[7];
+    const alertType = frame[13];
+    return {
+        fields: { restaurantId, stationId, pagerId, alertType, checksum: frame[14] },
+        summary: `restaurant ${restaurantId} · station ${stationId} · pager ${pagerId} · alert ${alertType} · checksum ${frame[14].toString(16).padStart(2, "0").toUpperCase()}`,
+    };
+}
+
+function rawBits(bytes) {
+    let out = "";
+    for (const byte of bytes) out += byte.toString(2).padStart(8, "0");
+    return out;
+}
+
+function decodeManchesterSamples(bits, phase, inverted = false, samplesPerChip = 4) {
+    let decoded = "";
+    const chip = (at) => {
+        let ones = 0;
+        for (let i = 0; i < samplesPerChip; i++) ones += bits[at + i] === "1" ? 1 : 0;
+        const value = ones * 2 >= samplesPerChip ? "1" : "0";
+        return inverted ? (value === "1" ? "0" : "1") : value;
+    };
+    for (let at = phase; at + samplesPerChip * 2 <= bits.length; at += samplesPerChip * 2) {
+        const a = chip(at), b = chip(at + samplesPerChip);
+        if (a === "0" && b === "1") decoded += "0";
+        else if (a === "1" && b === "0") decoded += "1";
+        else decoded += "?";
+    }
+    return decoded;
+}
+
+function bitsToCandidateBytes(bits, bitOffset = 0) {
+    const out = [];
+    for (let at = bitOffset; at + 8 <= bits.length; at += 8) {
+        const byteBits = bits.slice(at, at + 8);
+        if (byteBits.includes("?")) out.push(-1);
+        else out.push(parseInt(byteBits, 2));
+    }
+    return out;
+}
+
+export function decodeLrsPager(bytes, { sampleScale = 4 } = {}) {
     if (!(bytes instanceof Uint8Array)) throw new TypeError("LRS RX payload must be a Uint8Array");
-    const frameLength = 15;
-    for (let start = 0; start + frameLength <= bytes.length; start++) {
-        if (bytes[start] !== 0xaa || bytes[start + 1] !== 0xaa || bytes[start + 2] !== 0xaa ||
-            bytes[start + 3] !== 0xfc || bytes[start + 4] !== 0x2d) continue;
 
-        const frame = bytes.slice(start, start + frameLength);
-        let sum = 0;
-        for (let i = 0; i < frameLength - 1; i++) sum += frame[i];
-        if ((sum % 255) !== frame[frameLength - 1]) continue;
+    // Also accept already Manchester-decoded reference/capture bytes.
+    for (let start = 0; start + 15 <= bytes.length; start++) {
+        const parsed = parseLrsFrame(bytes.slice(start, start + 15));
+        if (parsed) return parsed;
+    }
 
-        const restaurantId = frame[5];
-        const stationId = frame[6] >>> 4;
-        const pagerId = ((frame[6] & 0x0f) << 8) | frame[7];
-        if (frame.slice(8, 13).some((value) => value !== 0)) continue;
-        const alertType = frame[13];
-
-        return {
-            fields: {
-                restaurantId,
-                stationId,
-                pagerId,
-                alertType,
-                checksum: frame[14],
-            },
-            summary:
-                `restaurant ${restaurantId} · station ${stationId} · pager ${pagerId} · alert ${alertType} · checksum ${frame[14].toString(16).padStart(2, "0").toUpperCase()}`,
-        };
+    // OTA RX is sampled as raw 2-FSK at 4x the 1250-chip/s Manchester stream.
+    const bits = rawBits(bytes);
+    for (const inverted of [false, true]) {
+        for (let phase = 0; phase < sampleScale * 2; phase++) {
+            const logical = decodeManchesterSamples(bits, phase, inverted, sampleScale);
+            for (let bitOffset = 0; bitOffset < 8; bitOffset++) {
+                const candidate = bitsToCandidateBytes(logical, bitOffset);
+                for (let at = 0; at + 15 <= candidate.length; at++) {
+                    if (candidate[at] < 0) continue;
+                    const frame = Uint8Array.from(candidate.slice(at, at + 15));
+                    const parsed = parseLrsFrame(frame);
+                    if (parsed) return parsed;
+                }
+            }
+        }
     }
     return null;
 }
@@ -144,13 +190,13 @@ const lrs = {
 
     rxPreset: {
         frequency: 467_750_000,
-        dataRate: 625,
+        dataRate: 5000,
         bandwidth: 93_750,
         modulation: 0x00,
         deviation: 15_000,
         syncWord: 0x0000,
         syncMode: 0,
-        manchester: true,
+        manchester: false,
         lengthMode: "fixed",
         packetLength: 255,
         crc: false,
@@ -159,6 +205,7 @@ const lrs = {
         addressCheck: 0,
         deviceAddress: 0,
         lowball: false,
+        sampleScale: 4,
     },
 
     description:
