@@ -804,6 +804,95 @@ function updateRxAnalyzerStats() {
     $("rx-duplicates").textContent = String(duplicateCount);
 }
 
+const comparedCaptureIndexes = new Set();
+
+function updateCompareButton() {
+    const count = comparedCaptureIndexes.size;
+    $("rx-compare").textContent = `Compare (${count})`;
+    $("rx-compare").disabled = count < 2;
+}
+
+function compareByteRows(captures) {
+    const maxLength = Math.max(...captures.map((capture) => capture.bytes.length));
+    const changed = new Set();
+    for (let i = 0; i < maxLength; i++) {
+        const values = captures.map((capture) => capture.bytes[i]);
+        if (values.some((value) => value !== values[0])) changed.add(i);
+    }
+    return { maxLength, changed };
+}
+
+function renderCaptureCompare() {
+    const captures = [...comparedCaptureIndexes]
+        .sort((a, b) => a - b)
+        .map((index) => ({ index, capture: rxCaptures[index] }))
+        .filter(({ capture }) => capture);
+    if (captures.length < 2) return;
+
+    const body = $("rx-compare-body");
+    body.innerHTML = "";
+    const { maxLength, changed } = compareByteRows(captures.map(({ capture }) => capture));
+
+    const summary = document.createElement("div");
+    summary.className = "rx-compare-summary";
+    summary.textContent = `${captures.length} captures · ${changed.size} changing byte position${changed.size === 1 ? "" : "s"} · max ${maxLength} bytes`;
+    body.append(summary);
+
+    const bytes = document.createElement("div");
+    bytes.className = "rx-compare-bytes";
+    for (const [rowIndex, { capture }] of captures.entries()) {
+        const row = document.createElement("div");
+        row.className = "rx-compare-row";
+        const label = document.createElement("span");
+        label.className = "rx-compare-label";
+        label.textContent = String.fromCharCode(65 + rowIndex);
+        row.append(label);
+        const hexRow = document.createElement("div");
+        hexRow.className = "rx-compare-hex";
+        for (let i = 0; i < maxLength; i++) {
+            const cell = document.createElement("span");
+            cell.className = "rx-compare-byte";
+            if (changed.has(i)) cell.classList.add("changed");
+            cell.title = `byte ${i}`;
+            cell.textContent = capture.bytes[i] == null ? "--" : capture.bytes[i].toString(16).padStart(2, "0").toUpperCase();
+            hexRow.append(cell);
+        }
+        row.append(hexRow);
+        bytes.append(row);
+    }
+    body.append(bytes);
+
+    const fieldNames = [...new Set(captures.flatMap(({ capture }) => Object.keys(capture.fields ?? {})))];
+    if (fieldNames.length) {
+        const table = document.createElement("table");
+        table.className = "rx-compare-fields";
+        const head = document.createElement("tr");
+        head.innerHTML = "<th>Field</th>" + captures.map((_, i) => `<th>${String.fromCharCode(65 + i)}</th>`).join("");
+        table.append(head);
+        for (const field of fieldNames) {
+            const values = captures.map(({ capture }) => capture.fields?.[field]);
+            const tr = document.createElement("tr");
+            const different = values.some((value) => String(value ?? "—") !== String(values[0] ?? "—"));
+            if (different) tr.className = "changed";
+            const name = document.createElement("th");
+            name.textContent = field;
+            tr.append(name);
+            for (const value of values) {
+                const td = document.createElement("td");
+                td.textContent = value ?? "—";
+                tr.append(td);
+            }
+            table.append(tr);
+        }
+        body.append(table);
+    }
+
+    $("rx-compare-panel").hidden = false;
+}
+
+$("rx-compare").onclick = renderCaptureCompare;
+$("rx-compare-close").onclick = () => { $("rx-compare-panel").hidden = true; };
+
 function renderRxCapture(capture) {
     const captureIndex = rxCaptures.push(capture) - 1;
     $("packetList").querySelector(".empty")?.remove();
@@ -811,6 +900,21 @@ function renderRxCapture(capture) {
     const el = document.createElement("div");
     el.className = "packet";
     el.dataset.captureIndex = String(captureIndex);
+
+    const selector = document.createElement("label");
+    selector.className = "rx-compare-select";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = comparedCaptureIndexes.has(captureIndex);
+    checkbox.setAttribute("aria-label", "Select capture for comparison");
+    checkbox.onchange = () => {
+        if (checkbox.checked) comparedCaptureIndexes.add(captureIndex);
+        else comparedCaptureIndexes.delete(captureIndex);
+        el.classList.toggle("compare-selected", checkbox.checked);
+        updateCompareButton();
+    };
+    selector.append(checkbox, document.createTextNode(" Compare"));
+    el.append(selector);
 
     const meta = document.createElement("div");
     meta.className = "meta";
@@ -948,6 +1052,9 @@ function redecodeOfflineCaptures() {
     }));
 
     rxCaptures.length = 0;
+    comparedCaptureIndexes.clear();
+    updateCompareButton();
+    $("rx-compare-panel").hidden = true;
     pc = bc = decodedCount = rejectedCount = duplicateCount = 0;
     $("packetList").innerHTML = '<div class="empty">No packets captured.</div>';
 
