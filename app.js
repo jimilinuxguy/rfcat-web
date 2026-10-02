@@ -982,6 +982,7 @@ function updateCompareButton() {
     $("rx-compare").textContent = `Compare (${count})`;
     $("rx-compare").disabled = count < 2;
     $("rx-infer").disabled = count < 2;
+    $("preset-build").disabled = count < 2;
 }
 
 function compareByteRows(captures) {
@@ -1175,6 +1176,168 @@ function renderFieldInference() {
     body.append(note);
     $("rx-infer-panel").hidden = false;
 }
+
+const PRESET_STORAGE_KEY = "rfcat-web.protocol-presets";
+
+function selectedInferenceCaptures() {
+    return [...comparedCaptureIndexes].sort((a, b) => a - b)
+        .map((index) => rxCaptures[index]).filter(Boolean);
+}
+
+function suggestedPresetFields(captures) {
+    const maxLength = Math.max(...captures.map((capture) => capture.bytes.length));
+    const fields = [];
+    for (let offset = 0; offset < maxLength; offset++) {
+        const values = captures.map((capture) => capture.bytes[offset]);
+        const constant = values.every((value) => value != null && value === values[0]);
+        const correlations = constant ? [] : exactFieldMatchesByte(captures, offset);
+        fields.push({
+            offset,
+            name: correlations[0] ?? `byte${offset}`,
+            type: constant ? "constant" : "uint8",
+            value: constant ? values[0] : null,
+            mask: 255,
+        });
+    }
+    return fields;
+}
+
+function presetRow(field) {
+    const row = document.createElement("div");
+    row.className = "preset-field-row";
+    row.dataset.offset = field.offset;
+    const offset = document.createElement("span");
+    offset.className = "preset-offset";
+    offset.textContent = String(field.offset);
+    const name = document.createElement("input");
+    name.className = "preset-field-name";
+    name.value = field.name;
+    name.setAttribute("aria-label", `Byte ${field.offset} field name`);
+    const type = document.createElement("select");
+    type.className = "preset-field-type";
+    for (const [value, label] of [["constant","Constant"],["uint8","uint8"],["uint16be","uint16 BE"],["uint16le","uint16 LE"],["bitfield","Bit field"],["ignore","Ignore"],["checksum-sum255","Checksum sum mod 255"]]) {
+        const option = document.createElement("option");
+        option.value = value; option.textContent = label; type.append(option);
+    }
+    type.value = field.type;
+    const value = document.createElement("input");
+    value.className = "preset-field-value";
+    value.placeholder = field.type === "constant" ? "hex" : "mask hex";
+    value.value = field.type === "constant" ? field.value.toString(16).padStart(2, "0").toUpperCase() : "FF";
+    row.append(offset, name, type, value);
+    return row;
+}
+
+function renderPresetBuilder() {
+    const captures = selectedInferenceCaptures();
+    if (captures.length < 2) return;
+    const host = $("preset-fields");
+    host.replaceChildren();
+    const head = document.createElement("div");
+    head.className = "preset-field-head";
+    for (const label of ["Offset", "Name", "Type", "Value / mask"]) {
+        const span = document.createElement("span"); span.textContent = label; head.append(span);
+    }
+    host.append(head);
+    for (const field of suggestedPresetFields(captures)) host.append(presetRow(field));
+    $("preset-result").replaceChildren();
+    $("preset-builder").hidden = false;
+}
+
+function readPresetDefinition() {
+    const fields = [...$("preset-fields").querySelectorAll(".preset-field-row")].map((row) => {
+        const type = row.querySelector(".preset-field-type").value;
+        const raw = row.querySelector(".preset-field-value").value.trim();
+        return {
+            offset: Number(row.dataset.offset),
+            name: row.querySelector(".preset-field-name").value.trim() || `byte${row.dataset.offset}`,
+            type,
+            ...(type === "constant" ? { value: parseInt(raw, 16) } : {}),
+            ...(type === "bitfield" ? { mask: parseInt(raw || "FF", 16) } : {}),
+        };
+    });
+    return {
+        version: 1,
+        id: $("preset-id").value.trim() || "draft-protocol",
+        name: $("preset-name").value.trim() || "Draft Protocol",
+        fields,
+    };
+}
+
+function decodeWithPreset(bytes, preset) {
+    const decoded = {};
+    for (const field of preset.fields) {
+        if (field.type === "ignore") continue;
+        if (field.offset >= bytes.length) return { matched: false, error: `missing byte ${field.offset}` };
+        const b = bytes[field.offset];
+        if (field.type === "constant") {
+            if (!Number.isFinite(field.value) || b !== field.value) return { matched: false, error: `byte ${field.offset} constant mismatch` };
+        } else if (field.type === "uint8") decoded[field.name] = b;
+        else if (field.type === "uint16be") {
+            if (field.offset + 1 >= bytes.length) return { matched: false, error: `missing uint16 at ${field.offset}` };
+            decoded[field.name] = (b << 8) | bytes[field.offset + 1];
+        } else if (field.type === "uint16le") {
+            if (field.offset + 1 >= bytes.length) return { matched: false, error: `missing uint16 at ${field.offset}` };
+            decoded[field.name] = b | (bytes[field.offset + 1] << 8);
+        } else if (field.type === "bitfield") decoded[field.name] = b & (Number.isFinite(field.mask) ? field.mask : 255);
+        else if (field.type === "checksum-sum255") {
+            let sum = 0;
+            for (let i = 0; i < field.offset; i++) sum = (sum + bytes[i]) % 255;
+            if (sum !== b) return { matched: false, error: `checksum mismatch at byte ${field.offset}` };
+            decoded[field.name] = b;
+        }
+    }
+    return { matched: true, fields: decoded };
+}
+
+function previewPreset() {
+    const preset = readPresetDefinition();
+    const captures = selectedInferenceCaptures();
+    const result = $("preset-result");
+    result.replaceChildren();
+    let matched = 0;
+    captures.forEach((capture, i) => {
+        const decoded = decodeWithPreset(capture.bytes, preset);
+        if (decoded.matched) matched++;
+        const row = document.createElement("div");
+        row.className = `preset-preview-row ${decoded.matched ? "matched" : "rejected"}`;
+        row.textContent = decoded.matched
+            ? `${inferenceLabel(i)} · matched · ${Object.entries(decoded.fields).map(([k,v]) => `${k}=${v}`).join(" · ")}`
+            : `${inferenceLabel(i)} · rejected · ${decoded.error}`;
+        result.append(row);
+    });
+    const summary = document.createElement("strong");
+    summary.className = "preset-preview-summary";
+    summary.textContent = `${matched}/${captures.length} selected captures matched`;
+    result.prepend(summary);
+}
+
+function savedPresets() {
+    try { return JSON.parse(localStorage.getItem(PRESET_STORAGE_KEY) || "[]"); }
+    catch { return []; }
+}
+
+$("preset-build").onclick = renderPresetBuilder;
+$("preset-close").onclick = () => { $("preset-builder").hidden = true; };
+$("preset-preview").onclick = previewPreset;
+$("preset-save").onclick = () => {
+    const preset = readPresetDefinition();
+    const presets = savedPresets().filter((item) => item.id !== preset.id);
+    presets.push({ ...preset, updatedAt: new Date().toISOString() });
+    localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(presets));
+    log(`Saved local protocol preset "${preset.name}"`);
+    previewPreset();
+};
+$("preset-export").onclick = () => {
+    const preset = readPresetDefinition();
+    const blob = new Blob([JSON.stringify(preset, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${preset.id || "protocol-preset"}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+};
 
 $("rx-infer").onclick = renderFieldInference;
 $("rx-infer-close").onclick = () => { $("rx-infer-panel").hidden = true; };
