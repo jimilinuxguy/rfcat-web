@@ -804,6 +804,175 @@ function updateRxAnalyzerStats() {
     $("rx-duplicates").textContent = String(duplicateCount);
 }
 
+const SESSION_DB = "rfcat-web";
+const SESSION_STORE = "capture-sessions";
+let activeSessionId = null;
+
+function openSessionDb() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(SESSION_DB, 1);
+        request.onupgradeneeded = () => {
+            const db = request.result;
+            if (!db.objectStoreNames.contains(SESSION_STORE)) {
+                const store = db.createObjectStore(SESSION_STORE, { keyPath: "id" });
+                store.createIndex("updatedAt", "updatedAt");
+            }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+async function sessionStore(mode, fn) {
+    const db = await openSessionDb();
+    try {
+        return await new Promise((resolve, reject) => {
+            const tx = db.transaction(SESSION_STORE, mode);
+            const store = tx.objectStore(SESSION_STORE);
+            let result;
+            try { result = fn(store); } catch (error) { reject(error); return; }
+            tx.oncomplete = () => resolve(result?.result);
+            tx.onerror = () => reject(tx.error);
+            tx.onabort = () => reject(tx.error);
+        });
+    } finally {
+        db.close();
+    }
+}
+
+async function listSessions() {
+    const sessions = await sessionStore("readonly", (store) => store.getAll()) ?? [];
+    return sessions.sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+}
+
+function sessionCaptureData() {
+    return rxCaptures.map(({ bytes, ...capture }) => ({ ...capture, hex: hex(bytes) }));
+}
+
+function currentSessionSnapshot(name, id = activeSessionId ?? crypto.randomUUID()) {
+    return {
+        id,
+        name,
+        notes: $("session-notes").value.trim(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        decoder: rxProtocolSelect.value,
+        model: rxProtocolModel.value || null,
+        filter: $("rx-filter").value,
+        frequencyMHz: $("freq").value,
+        dataRate: $("drate").value,
+        captures: sessionCaptureData(),
+    };
+}
+
+async function refreshSessionList(selectId = activeSessionId) {
+    const sessions = await listSessions();
+    const select = $("session-select");
+    select.replaceChildren();
+    if (!sessions.length) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "No saved sessions";
+        select.append(option);
+    } else {
+        for (const session of sessions) {
+            const option = document.createElement("option");
+            option.value = session.id;
+            option.textContent = `${session.name} · ${session.captures?.length ?? 0} captures`;
+            select.append(option);
+        }
+        if (selectId && sessions.some((session) => session.id === selectId)) select.value = selectId;
+    }
+    $("session-status").textContent = activeSessionId ? "Saved" : "Unsaved";
+}
+
+async function getSession(id) {
+    if (!id) return null;
+    return await sessionStore("readonly", (store) => store.get(id));
+}
+
+async function saveSession() {
+    const existing = activeSessionId ? await getSession(activeSessionId) : null;
+    const name = existing?.name ?? prompt("Session name", "Capture session");
+    if (!name?.trim()) return;
+    const snapshot = currentSessionSnapshot(name.trim(), existing?.id);
+    if (existing?.createdAt) snapshot.createdAt = existing.createdAt;
+    await sessionStore("readwrite", (store) => store.put(snapshot));
+    activeSessionId = snapshot.id;
+    await refreshSessionList(activeSessionId);
+    log(`Saved capture session "${snapshot.name}" with ${snapshot.captures.length} captures`);
+}
+
+async function openSavedSession(id) {
+    const session = await getSession(id);
+    if (!session) return;
+    activeSessionId = session.id;
+    $("session-notes").value = session.notes ?? "";
+    if (session.decoder && [...rxProtocolSelect.options].some((option) => option.value === session.decoder)) {
+        rxProtocolSelect.value = session.decoder;
+        renderRxProtocolModel();
+        if (session.model && [...rxProtocolModel.options].some((option) => option.value === session.model)) {
+            rxProtocolModel.value = session.model;
+        }
+    }
+    if (session.filter) $("rx-filter").value = session.filter;
+    if (session.frequencyMHz != null) $("freq").value = session.frequencyMHz;
+    if (session.dataRate != null) $("drate").value = session.dataRate;
+
+    rxCaptures.length = 0;
+    comparedCaptureIndexes.clear();
+    updateCompareButton();
+    $("rx-compare-panel").hidden = true;
+    pc = bc = decodedCount = rejectedCount = duplicateCount = 0;
+    $("packetList").innerHTML = '<div class="empty">No packets captured.</div>';
+
+    for (const item of session.captures ?? []) renderRxCapture(redecodeImportedCapture(item));
+    updateRxAnalyzerStats();
+    applyRxFilter();
+    await refreshSessionList(activeSessionId);
+    log(`Opened capture session "${session.name}" with ${session.captures?.length ?? 0} captures`);
+}
+
+$("session-new").onclick = () => {
+    activeSessionId = null;
+    $("session-notes").value = "";
+    rxCaptures.length = 0;
+    comparedCaptureIndexes.clear();
+    updateCompareButton();
+    $("rx-compare-panel").hidden = true;
+    pc = bc = decodedCount = rejectedCount = duplicateCount = 0;
+    $("packetList").innerHTML = '<div class="empty">No packets captured.</div>';
+    updateRxAnalyzerStats();
+    refreshSessionList();
+    log("Started a new capture session");
+};
+$("session-save").onclick = () => saveSession().catch((error) => log(`Session save error: ${error.message}`));
+$("session-open").onclick = () => openSavedSession($("session-select").value).catch((error) => log(`Session open error: ${error.message}`));
+$("session-rename").onclick = async () => {
+    const session = await getSession($("session-select").value);
+    if (!session) return;
+    const name = prompt("Rename session", session.name);
+    if (!name?.trim()) return;
+    session.name = name.trim();
+    session.updatedAt = new Date().toISOString();
+    await sessionStore("readwrite", (store) => store.put(session));
+    activeSessionId = session.id;
+    await refreshSessionList(activeSessionId);
+};
+$("session-delete").onclick = async () => {
+    const id = $("session-select").value;
+    const session = await getSession(id);
+    if (!session || !confirm(`Delete session "${session.name}"?`)) return;
+    await sessionStore("readwrite", (store) => store.delete(id));
+    if (activeSessionId === id) activeSessionId = null;
+    await refreshSessionList();
+    log(`Deleted capture session "${session.name}"`);
+};
+$("session-notes").addEventListener("input", () => {
+    if (activeSessionId) $("session-status").textContent = "Modified";
+});
+refreshSessionList().catch((error) => log(`Session database error: ${error.message}`));
+
 const comparedCaptureIndexes = new Set();
 
 function updateCompareButton() {
