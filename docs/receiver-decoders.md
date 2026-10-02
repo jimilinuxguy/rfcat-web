@@ -159,4 +159,6 @@ New exports include the capture frequency, data rate, and selected decode mode s
 
 The Receiver session statistics distinguish total RF/imported events from successfully decoded and rejected events. POCSAG duplicate suppression is counted separately. Strict protocol modes such as LRS can therefore count a false hardware-sync event as rejected without presenting it as a valid protocol capture.
 
+Decoded capture cards also provide **Copy hex** and **Use for TX** actions. **Use for TX** selects the matching transmitter protocol and copies fields with matching IDs into its form; it never starts transmission automatically.
+
 Offline re-decoding is intended for decoder development and regression work. It does not emulate the CC1111 packet engine, RF demodulation, hardware Manchester decoding, or hardware sync acquisition. Those stages still require OTA validation when their behavior matters.
