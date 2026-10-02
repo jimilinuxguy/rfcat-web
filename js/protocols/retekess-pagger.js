@@ -22,7 +22,7 @@ export function decodeRetekessPrinceton(bytes,{stationBits=13,pagerBits=10,actio
  // OTA raw OOK is asynchronously sampled. Build runs, suppress one-sample
  // glitches, then use the long LOW frame gap to anchor the preceding symbols.
  const runs=[];for(let i=0;i<bits.length;){const level=bits[i];let e=i+1;while(e<bits.length&&bits[e]===level)e++;runs.push({level,start:i,length:e-i});i=e;}
- for(let i=1;i+1<runs.length;){if(runs[i].length<=1&&runs[i-1].level===runs[i+1].level){runs[i-1].length+=runs[i].length+runs[i+1].length;runs.splice(i,2);continue;}i++;}
+ for(let i=1;i+1<runs.length;){const glitchMax=Math.max(1,Math.floor(sampleScale/2));if(runs[i].length<=glitchMax&&runs[i-1].level===runs[i+1].level){runs[i-1].length+=runs[i].length+runs[i+1].length;runs.splice(i,2);continue;}i++;}
  for(let gap=0;gap<runs.length;gap++){
   if(runs[gap].level!=="0"||runs[gap].length<14*sampleScale)continue;
   // Repeated OTA frames can leave a partial symbol or an extra slicer run
