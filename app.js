@@ -25,15 +25,56 @@ const waveformPreview = $("waveform-preview");
 renderProtocolSelector(protocolSelect, protocols);
 
 const rxProtocolSelect = $("rx-protocol");
-for (const protocol of decoderProtocols(protocols)) {
+const rxProtocolModel = $("rx-protocol-model");
+const rxProtocolModelLabel = $("rx-protocol-model-label");
+const rxDecoders = decoderProtocols(protocols);
+const rxDecoderGroups = new Map();
+
+for (const protocol of rxDecoders) {
+    if (protocol.decoderGroup) {
+        if (!rxDecoderGroups.has(protocol.decoderGroup)) rxDecoderGroups.set(protocol.decoderGroup, []);
+        rxDecoderGroups.get(protocol.decoderGroup).push(protocol);
+        continue;
+    }
     const option = document.createElement("option");
     option.value = protocol.id;
     option.textContent = protocol.name;
     rxProtocolSelect.append(option);
 }
+for (const group of rxDecoderGroups.keys()) {
+    const option = document.createElement("option");
+    option.value = `group:${group}`;
+    option.textContent = group;
+    rxProtocolSelect.append(option);
+}
+
+function selectedRxProtocolId() {
+    return rxProtocolSelect.value.startsWith("group:") ? rxProtocolModel.value : rxProtocolSelect.value;
+}
+
+function renderRxProtocolModel() {
+    const group = rxProtocolSelect.value.startsWith("group:") ? rxProtocolSelect.value.slice(6) : null;
+    const models = group ? rxDecoderGroups.get(group) ?? [] : [];
+    rxProtocolModel.replaceChildren();
+    for (const protocol of models) {
+        const option = document.createElement("option");
+        option.value = protocol.id;
+        option.textContent = protocol.name.startsWith(`${group} `) ? protocol.name.slice(group.length + 1) : protocol.name;
+        rxProtocolModel.append(option);
+    }
+    rxProtocolModelLabel.hidden = models.length === 0;
+}
+renderRxProtocolModel();
 const rxCaptures = [];
 let pulseRuns = [];
 let pocsagRolling = new Uint8Array();
+let t112Rolling = new Uint8Array();
+let t119Rolling = new Uint8Array();
+let td157Rolling = new Uint8Array();
+let td161Rolling = new Uint8Array();
+let td164Rolling = new Uint8Array();
+let td165Rolling = new Uint8Array();
+let td174Rolling = new Uint8Array();
 let lastPocsagFingerprint = null;
 const POCSAG_ROLLING_MAX = 1020;
 
@@ -46,6 +87,13 @@ function appendRollingBytes(existing, incoming, maxBytes = POCSAG_ROLLING_MAX) {
 
 function resetPocsagRolling() {
     pocsagRolling = new Uint8Array();
+    t112Rolling = new Uint8Array();
+    t119Rolling = new Uint8Array();
+    td157Rolling = new Uint8Array();
+    td161Rolling = new Uint8Array();
+    td164Rolling = new Uint8Array();
+    td165Rolling = new Uint8Array();
+    td174Rolling = new Uint8Array();
     lastPocsagFingerprint = null;
 }
 
@@ -474,6 +522,68 @@ $("apply").onclick = async () => {
     }
 };
 
+async function configureProtocolReceiver(protocol) {
+    const preset = protocol?.rxPreset;
+    if (!preset) return;
+
+    if (listening) {
+        await d.mode(C.RF_IDLE);
+        listening = false;
+    }
+    await d.mode(C.RF_IDLE);
+    await d.setFrequency(preset.frequency);
+    await d.setDataRate(preset.dataRate);
+    await d.setBandwidth(preset.bandwidth);
+    await d.setModulation(preset.modulation);
+    if (preset.deviation != null) await d.setDeviation(preset.deviation);
+    await d.setSync(preset.syncWord, preset.syncMode);
+    await d.setManchester(preset.manchester);
+    await d.setPacketConfig({
+        lengthMode: preset.lengthMode,
+        packetLength: preset.packetLength,
+        crc: preset.crc,
+        whitening: preset.whitening,
+        appendStatus: preset.appendStatus,
+        addressCheck: preset.addressCheck,
+        deviceAddress: preset.deviceAddress,
+    });
+    if (preset.lowball) await d.lowball();
+
+    $("freq").value = (preset.frequency / 1e6).toFixed(3);
+    $("drate").value = String(preset.dataRate);
+    $("bw").value = (preset.bandwidth / 1e3).toFixed(3);
+    $("mod").value = String(preset.modulation);
+    $("sync").value = preset.syncWord.toString(16).padStart(4, "0").toUpperCase();
+    $("syncmode").value = String(preset.syncMode);
+    $("lengthmode").value = preset.lengthMode;
+    $("pktlen").value = String(preset.packetLength);
+    $("crc").checked = preset.crc;
+    $("whitening").checked = preset.whitening;
+    $("appendstatus").checked = preset.appendStatus;
+    $("addrcheck").value = String(preset.addressCheck);
+    $("deviceaddr").value = preset.deviceAddress.toString(16).padStart(2, "0").toUpperCase();
+    $("lowball").checked = !!preset.lowball;
+    updatePacketControlState();
+    resetPocsagRolling();
+
+    await d.mode(C.RF_RX);
+    listening = true;
+    $("listen").textContent = "Stop listening";
+    $("rxstate").textContent = "RX";
+    log(`${protocol.name} RX started: ${(preset.frequency / 1e6).toFixed(3)} MHz · ${preset.dataRate} baud · ${(preset.bandwidth / 1e3).toFixed(3)} kHz BW · raw OOK`);
+}
+
+function applySelectedRxProtocol() {
+    const protocol = getProtocol(selectedRxProtocolId());
+    if (!protocol?.rxPreset || !d.device) return;
+    configureProtocolReceiver(protocol).catch((e) => log(`${protocol.name} RX error: ${e.message}`));
+}
+rxProtocolSelect.addEventListener("change", () => {
+    renderRxProtocolModel();
+    applySelectedRxProtocol();
+});
+rxProtocolModel.addEventListener("change", applySelectedRxProtocol);
+
 async function configurePocsagReceiver() {
     const frequencyMHz = Number($("pocsag-rx-frequency").value);
     const baud = Number($("pocsag-rx-baud").value);
@@ -517,6 +627,7 @@ async function configurePocsagReceiver() {
     $("addrcheck").value = "0";
     $("lowball").checked = false;
     rxProtocolSelect.value = "pocsag";
+    renderRxProtocolModel();
     updatePacketControlState();
     resetPocsagRolling();
 
@@ -695,10 +806,24 @@ d.addEventListener("packet", (e) => {
     const status = splitRxStatus(received, $("appendstatus").checked);
     const b = status.payload;
     appendPulseBytes(b);
-    const decodeMode = rxProtocolSelect.value;
+    const decodeMode = selectedRxProtocolId();
     const decodeBytes = decodeMode === "pocsag"
         ? (pocsagRolling = appendRollingBytes(pocsagRolling, b))
-        : b;
+        : decodeMode === "retekess-t112"
+            ? (t112Rolling = appendRollingBytes(t112Rolling, b))
+            : decodeMode === "retekess-t119"
+                ? (t119Rolling = appendRollingBytes(t119Rolling, b))
+                : decodeMode === "retekess-td157"
+                    ? (td157Rolling = appendRollingBytes(td157Rolling, b))
+                    : decodeMode === "retekess-td161"
+                        ? (td161Rolling = appendRollingBytes(td161Rolling, b))
+                        : decodeMode === "retekess-td164"
+                            ? (td164Rolling = appendRollingBytes(td164Rolling, b))
+                            : decodeMode === "retekess-td165"
+                                ? (td165Rolling = appendRollingBytes(td165Rolling, b))
+                                : decodeMode === "retekess-td174"
+                                    ? (td174Rolling = appendRollingBytes(td174Rolling, b))
+                                    : b;
     const decoded = decodeRxPacket(decodeBytes, decodeMode, {
         frequencyHz: Number($("freq").value) * 1e6,
         dataRate: Number($("drate").value),

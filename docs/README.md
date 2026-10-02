@@ -27,6 +27,7 @@ This document covers:
 - POCSAG RX and the dedicated receiver preset
 - Rolling receive-buffer decoding
 - Known-good OTA validation setups
+- Retekess raw OOK oversampling and rolling-buffer decoding
 - Decoder development
 
 ### RFCat USB
@@ -66,6 +67,7 @@ protocols/lrs.md
 protocols/oregon-thgr122nx.md
 protocols/pocsag.md
 protocols/pwm.md
+protocols/retekess.md
 protocols/schrader-eg53ma4.md
 protocols/schrader-mrxbc5a4.md
 protocols/schrader-mrxgg4.md
