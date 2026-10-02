@@ -33,6 +33,27 @@ for (const protocol of decoderProtocols(protocols)) {
 }
 const rxCaptures = [];
 let pulseRuns = [];
+let pocsagRolling = new Uint8Array();
+let lastPocsagFingerprint = null;
+const POCSAG_ROLLING_MAX = 1020;
+
+function appendRollingBytes(existing, incoming, maxBytes = POCSAG_ROLLING_MAX) {
+    const joined = new Uint8Array(existing.length + incoming.length);
+    joined.set(existing);
+    joined.set(incoming, existing.length);
+    return joined.length > maxBytes ? joined.slice(joined.length - maxBytes) : joined;
+}
+
+function resetPocsagRolling() {
+    pocsagRolling = new Uint8Array();
+    lastPocsagFingerprint = null;
+}
+
+function pocsagFingerprint(decoded) {
+    if (decoded?.protocol?.id !== "pocsag" || !decoded.fields) return null;
+    const f = decoded.fields;
+    return [f.capcode, f.function, f.message, f.polarity].join("|");
+}
 
 function selectProtocol() {
     const protocol = getProtocol(protocolSelect.value);
@@ -453,6 +474,63 @@ $("apply").onclick = async () => {
     }
 };
 
+async function configurePocsagReceiver() {
+    const frequencyMHz = Number($("pocsag-rx-frequency").value);
+    const baud = Number($("pocsag-rx-baud").value);
+    if (!Number.isFinite(frequencyMHz) || frequencyMHz <= 0) throw new Error("POCSAG RX frequency must be positive");
+    if (![512, 1200, 2400].includes(baud)) throw new Error("POCSAG RX baud must be 512, 1200, or 2400");
+
+    if (listening) {
+        await d.mode(C.RF_IDLE);
+        listening = false;
+    }
+
+    await d.mode(C.RF_IDLE);
+    await d.setFrequency(frequencyMHz * 1e6);
+    await d.setDataRate(baud);
+    await d.setBandwidth(93_750);
+    await d.setModulation(0x00);
+    await d.setDeviation(4_500);
+    await d.setSync(0x832d, 0);
+    await d.setManchester(false);
+    await d.setPacketConfig({
+        lengthMode: "fixed",
+        packetLength: 255,
+        crc: false,
+        whitening: false,
+        appendStatus: false,
+        addressCheck: 0,
+        deviceAddress: 0,
+    });
+
+    $("freq").value = frequencyMHz.toFixed(3);
+    $("drate").value = String(baud);
+    $("bw").value = "93.750";
+    $("mod").value = "0";
+    $("sync").value = "832D";
+    $("syncmode").value = "0";
+    $("lengthmode").value = "fixed";
+    $("pktlen").value = "255";
+    $("crc").checked = false;
+    $("whitening").checked = false;
+    $("appendstatus").checked = false;
+    $("addrcheck").value = "0";
+    $("lowball").checked = false;
+    rxProtocolSelect.value = "pocsag";
+    updatePacketControlState();
+    resetPocsagRolling();
+
+    await d.mode(C.RF_RX);
+    listening = true;
+    $("listen").textContent = "Stop listening";
+    $("pocsag-rx-start").textContent = "Restart POCSAG RX";
+    $("rxstate").textContent = "RX";
+    log(`POCSAG RX started: ${frequencyMHz.toFixed(3)} MHz · ${baud} baud · 93.750 kHz BW · 2-FSK · rolling decode enabled`);
+}
+
+$("pocsag-rx-start").onclick = () =>
+    configurePocsagReceiver().catch((e) => log(`POCSAG RX error: ${e.message}`));
+
 $("listen").onclick = async () => {
     try {
         listening = !listening;
@@ -462,6 +540,7 @@ $("listen").onclick = async () => {
             : "Start listening";
 
         if (listening) {
+            resetPocsagRolling();
             // Critical: enter RX and then leave the radio alone.
 
             await d.mode(C.RF_RX);
@@ -482,6 +561,9 @@ $("listen").onclick = async () => {
             $("rxstate").textContent = "RX";
         } else {
             await d.mode(C.RF_IDLE);
+
+            resetPocsagRolling();
+            $("pocsag-rx-start").textContent = "Start POCSAG RX";
 
             log("Listening stopped");
 
@@ -613,7 +695,11 @@ d.addEventListener("packet", (e) => {
     const status = splitRxStatus(received, $("appendstatus").checked);
     const b = status.payload;
     appendPulseBytes(b);
-    const decoded = decodeRxPacket(b, rxProtocolSelect.value, {
+    const decodeMode = rxProtocolSelect.value;
+    const decodeBytes = decodeMode === "pocsag"
+        ? (pocsagRolling = appendRollingBytes(pocsagRolling, b))
+        : b;
+    const decoded = decodeRxPacket(decodeBytes, decodeMode, {
         frequencyHz: Number($("freq").value) * 1e6,
         dataRate: Number($("drate").value),
         rssi: status.rssi,
@@ -621,12 +707,21 @@ d.addEventListener("packet", (e) => {
         crcOk: status.crcOk,
     }, protocols);
 
+    const fingerprint = pocsagFingerprint(decoded);
+    const duplicatePocsag = fingerprint != null && fingerprint === lastPocsagFingerprint;
+    if (fingerprint != null) lastPocsagFingerprint = fingerprint;
+
     pc++;
     bc += b.length;
     $("packets").textContent = pc;
     $("bytes").textContent = bc;
     if (status.rssi != null) $("rssi").textContent = `${status.rssi.toFixed(1)} dBm`;
     if (status.lqi != null) $("lqi").textContent = String(status.lqi);
+
+    if (duplicatePocsag) {
+        log(`POCSAG duplicate suppressed: ${decoded.summary}`);
+        return;
+    }
 
     const capture = {
         timestamp: new Date().toISOString(),
@@ -689,6 +784,7 @@ $("clear").onclick = () => {
 
     pc = bc = 0;
     rxCaptures.length = 0;
+    resetPocsagRolling();
 
     $("packets").textContent = $("bytes").textContent = "0";
 };

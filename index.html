@@ -297,6 +297,23 @@
                     </div>
                 </div>
 
+                <div class="pocsag-rx-preset">
+                    <span>POCSAG Receiver</span>
+                    <label>
+                        Frequency (MHz)
+                        <input id="pocsag-rx-frequency" type="number" step="0.001" value="467.750">
+                    </label>
+                    <label>
+                        Baud
+                        <select id="pocsag-rx-baud">
+                            <option value="512" selected>512</option>
+                            <option value="1200">1200</option>
+                            <option value="2400">2400</option>
+                        </select>
+                    </label>
+                    <button id="pocsag-rx-start">Start POCSAG RX</button>
+                </div>
+
                 <div class="receiver-controls">
                     <label>
                         Decode
