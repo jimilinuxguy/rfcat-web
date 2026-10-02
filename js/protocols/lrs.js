@@ -97,6 +97,38 @@ export function encodeLrsPager({
     };
 }
 
+export function decodeLrsPager(bytes) {
+    if (!(bytes instanceof Uint8Array) || bytes.length < 15) return null;
+
+    for (let start = bytes.length - 15; start >= 0; start--) {
+        if (bytes[start] !== 0xaa || bytes[start + 1] !== 0xaa || bytes[start + 2] !== 0xaa ||
+            bytes[start + 3] !== 0xfc || bytes[start + 4] !== 0x2d) continue;
+
+        const packet = bytes.slice(start, start + 15);
+        let sum = 0;
+        for (let i = 0; i < 14; i++) sum += packet[i];
+        if ((sum % 255) !== packet[14]) continue;
+
+        const stationId = packet[6] >> 4;
+        const pagerId = ((packet[6] & 0x0f) << 8) | packet[7];
+        if (packet.slice(8, 13).some((value) => value !== 0)) continue;
+
+        return {
+            fields: {
+                restaurantId: packet[5],
+                stationId,
+                pagerId,
+                alertType: packet[13],
+                checksum: packet[14],
+            },
+            summary:
+                `restaurant ${packet[5]} · station ${stationId} · pager ${pagerId} · alert ${packet[13]}`,
+        };
+    }
+
+    return null;
+}
+
 // ============================================================
 // Protocol definition
 // ============================================================
@@ -109,6 +141,27 @@ const lrs = {
 
     description:
         "LRS pager packet generator using 467.750 MHz 2-FSK with Manchester encoding.",
+
+    decode: decodeLrsPager,
+
+    rxPreset: {
+        frequency: 467_750_000,
+        dataRate: 625,
+        bandwidth: 93_750,
+        modulation: 0x00,
+        deviation: 15_000,
+        syncWord: 0x0000,
+        syncMode: 0,
+        manchester: true,
+        lengthMode: "fixed",
+        packetLength: 255,
+        crc: false,
+        whitening: false,
+        appendStatus: false,
+        addressCheck: 0,
+        deviceAddress: 0,
+        lowball: false,
+    },
 
     fields: [
         {

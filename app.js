@@ -68,6 +68,7 @@ renderRxProtocolModel();
 const rxCaptures = [];
 let pulseRuns = [];
 let pocsagRolling = new Uint8Array();
+let lrsRolling = new Uint8Array();
 let t112Rolling = new Uint8Array();
 let t119Rolling = new Uint8Array();
 let td157Rolling = new Uint8Array();
@@ -87,6 +88,7 @@ function appendRollingBytes(existing, incoming, maxBytes = POCSAG_ROLLING_MAX) {
 
 function resetPocsagRolling() {
     pocsagRolling = new Uint8Array();
+    lrsRolling = new Uint8Array();
     t112Rolling = new Uint8Array();
     t119Rolling = new Uint8Array();
     td157Rolling = new Uint8Array();
@@ -570,7 +572,7 @@ async function configureProtocolReceiver(protocol) {
     listening = true;
     $("listen").textContent = "Stop listening";
     $("rxstate").textContent = "RX";
-    log(`${protocol.name} RX started: ${(preset.frequency / 1e6).toFixed(3)} MHz · ${preset.dataRate} baud · ${(preset.bandwidth / 1e3).toFixed(3)} kHz BW · raw OOK`);
+    log(`${protocol.name} RX started: ${(preset.frequency / 1e6).toFixed(3)} MHz · ${preset.dataRate} baud · ${(preset.bandwidth / 1e3).toFixed(3)} kHz BW · modulation 0x${preset.modulation.toString(16).padStart(2, "0")} · Manchester ${preset.manchester ? "on" : "off"}`);
 }
 
 function applySelectedRxProtocol() {
@@ -644,6 +646,14 @@ $("pocsag-rx-start").onclick = () =>
 
 $("listen").onclick = async () => {
     try {
+        if (!listening) {
+            const protocol = getProtocol(selectedRxProtocolId());
+            if (protocol?.rxPreset) {
+                await configureProtocolReceiver(protocol);
+                return;
+            }
+        }
+
         listening = !listening;
 
         $("listen").textContent = listening
@@ -809,6 +819,8 @@ d.addEventListener("packet", (e) => {
     const decodeMode = selectedRxProtocolId();
     const decodeBytes = decodeMode === "pocsag"
         ? (pocsagRolling = appendRollingBytes(pocsagRolling, b))
+        : decodeMode === "lrs"
+            ? (lrsRolling = appendRollingBytes(lrsRolling, b))
         : decodeMode === "retekess-t112"
             ? (t112Rolling = appendRollingBytes(t112Rolling, b))
             : decodeMode === "retekess-t119"
