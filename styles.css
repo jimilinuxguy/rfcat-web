@@ -91,3 +91,10 @@
 .rx-file-actions button{width:100%;min-width:0;padding-left:10px;padding-right:10px}
 @media(max-width:900px){.receiver-controls{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.rx-file-actions{grid-column:1/-1;display:flex}.rx-file-actions button{width:auto;flex:1}}
 @media(max-width:520px){.receiver-controls{grid-template-columns:minmax(0,1fr)}.rx-file-actions{grid-column:1}}
+
+/* RX toolbar: compact actions with guaranteed containment */
+.receiver-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:10px;width:100%;box-sizing:border-box}
+.rx-file-actions{display:flex;gap:6px;min-width:0;align-items:end}
+.rx-file-actions button{width:auto;min-width:0;padding:0 10px;font-size:11px;white-space:nowrap}
+@media(max-width:700px){.receiver-controls{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.rx-file-actions{grid-column:1/-1}.rx-file-actions button{flex:1}}
+@media(max-width:520px){.receiver-controls{grid-template-columns:minmax(0,1fr)}.rx-file-actions{grid-column:1}}
