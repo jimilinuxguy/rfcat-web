@@ -115,3 +115,12 @@ This frequency is a documented test configuration, not a universal POCSAG freque
 7. Document what kind of RX input has actually been validated: synthetic bytes, RFCat-to-RFCat OTA, independent OTA capture, or a real physical transmitter.
 
 Do not put protocol-specific decoding logic in `app.js` or the RFCat device layer.
+
+
+## Retekess pager RX
+
+Retekess T112, T119, TD157, TD161, TD164, TD165 and TD174 are available as passive protocol-specific RX decoders and participate in Auto mode. The decoders recover the documented addressing/action fields from source-derived framing. TD164 additionally validates its checksum nibbles.
+
+The current Retekess RX implementations are synthetically validated against their corresponding TX encoders. OTA validation is still required. For hardware validation, capture a known base-station page, retain the raw bytes/pulse data, record the exact pager model/revision and configured identifiers, and compare the decoded fields and measured timing with the source-derived protocol documentation.
+
+Auto decoding is passive. A decoded capture does not cause retransmission.
