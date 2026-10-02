@@ -249,6 +249,10 @@ export class RFCatUSB extends EventTarget {
     }
 
     mode(m) {
+        if (m === C.RF_IDLE) {
+            console.trace("RF_IDLE requested");
+        }
+
         return this.send(C.APP_SYSTEM, C.SYS_RFMODE, new Uint8Array([m]));
     }
 
