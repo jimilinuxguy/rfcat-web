@@ -90,11 +90,10 @@ function lrsSignalCandidate(bytes) {
     if (!(bytes instanceof Uint8Array) || bytes.length < 32) return false;
     const bits = Array.from(bytes, (byte) => byte.toString(2).padStart(8, "0")).join("");
 
-    // The OTA captures show the LRS AA preamble as a long oversampled
-    // Manchester 1001... chip pattern. At 5 kbaud that becomes alternating
-    // runs of roughly four samples. Require a sustained sequence instead of
-    // merely counting plausible run lengths, since idle discriminator noise
-    // can also contain many 3-9 sample runs.
+    // Search locally rather than requiring the entire RFCat buffer to look
+    // like LRS. Real captures contain noise before/after the transmission and
+    // timing can slide by a sample. The AA preamble produces a sustained
+    // Manchester cadence with runs centered near four raw samples.
     const runs = [];
     for (let start = 0; start < bits.length;) {
         let end = start + 1;
@@ -103,14 +102,12 @@ function lrsSignalCandidate(bytes) {
         start = end;
     }
 
-    let streak = 0;
-    for (const n of runs) {
-        if (n >= 3 && n <= 5) {
-            streak++;
-            if (streak >= 20) return true;
-        } else {
-            streak = 0;
-        }
+    for (let at = 0; at + 24 <= runs.length; at++) {
+        const window = runs.slice(at, at + 24);
+        const nearChip = window.filter((n) => n >= 3 && n <= 6).length;
+        const glitches = window.filter((n) => n <= 2).length;
+        const longRuns = window.filter((n) => n > 9).length;
+        if (nearChip >= 18 && glitches <= 3 && longRuns === 0) return true;
     }
     return false;
 }
