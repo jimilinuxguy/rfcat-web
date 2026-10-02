@@ -337,6 +337,7 @@
                     <div class="rx-file-actions">
                         <button id="rx-compare" disabled>Compare (0)</button>
                         <button id="rx-infer" disabled>Infer Fields</button>
+                        <button id="preset-build" disabled>Build Protocol</button>
                         <button id="rx-import">Import JSON</button>
                         <input id="rx-import-file" type="file" accept="application/json,.json" hidden>
                         <button id="rx-export">Export JSON</button>
@@ -421,6 +422,24 @@
                         <button id="rx-infer-close" type="button">Close</button>
                     </div>
                     <div id="rx-infer-body"></div>
+                </div>
+
+                <div id="preset-builder" class="rx-compare-panel preset-builder" hidden>
+                    <div class="rx-compare-head">
+                        <strong>Protocol Preset Builder</strong>
+                        <button id="preset-close" type="button">Close</button>
+                    </div>
+                    <div class="preset-meta">
+                        <label>Name <input id="preset-name" value="Draft Protocol"></label>
+                        <label>ID <input id="preset-id" value="draft-protocol"></label>
+                    </div>
+                    <div id="preset-fields"></div>
+                    <div class="preset-actions">
+                        <button id="preset-preview" type="button">Preview Selected</button>
+                        <button id="preset-save" type="button">Save Local</button>
+                        <button id="preset-export" type="button">Export Protocol JSON</button>
+                    </div>
+                    <div id="preset-result"></div>
                 </div>
 
                 <div
