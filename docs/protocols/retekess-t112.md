@@ -44,6 +44,6 @@ Pagger documents TD174 at 433.889 MHz OOK using an SMC5326-style 25-bit represen
 
 ## Scope and validation
 
-These implementations are intended for explicit, known system/pager identifiers on equipment you own or are authorized to test. They intentionally omit station/pager enumeration, brute-force generation, all-pager helpers and desynchronization workflows.
+These implementations are intended for known systems on equipment you own or are authorized to test. Each supported model can page one explicit pager or page a user-selected sequential range within the configured station/system. Where the source documents a protocol-defined all-pagers command, RFCat Web exposes that command directly. It does not search or enumerate unknown station/system IDs.
 
 Run the automated regression tests first, then validate one known pager at a time over the air. Record the exact model/revision, configured frequency, observed action and any required CC1111 timing/deviation adjustment before marking a protocol OTA validated.
