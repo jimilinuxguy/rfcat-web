@@ -198,7 +198,7 @@ function findLrsFrame(logical) {
     return null;
 }
 
-export function decodeLrsPager(bytes, { sampleScale = 4 } = {}) {
+export function decodeLrsPager(bytes, { sampleScale = 8 } = {}) {
     if (!(bytes instanceof Uint8Array)) throw new TypeError("LRS RX payload must be a Uint8Array");
 
     // Normal OTA RX uses CC1111 Manchester + FC2D sync detection. The packet
@@ -214,7 +214,7 @@ export function decodeLrsPager(bytes, { sampleScale = 4 } = {}) {
         if (parsed) return parsed;
     }
 
-    // OTA RX is sampled as raw 2-FSK at 4x the 1250-chip/s Manchester stream.
+    // OTA RX at 5000 baud produces about 8 raw discriminator samples per\n    // 625-baud Manchester half-bit in the measured YS1 captures.
     // First try fixed sample phases. Then recover chip timing from transition run
     // lengths so normal CC1111 clock jitter cannot accumulate across the frame.
     const bits = rawBits(bytes);
@@ -266,7 +266,7 @@ const lrs = {
         addressCheck: 0,
         deviceAddress: 0,
         lowball: false,
-        sampleScale: 4,
+        sampleScale: 8,
     },
 
     description:
