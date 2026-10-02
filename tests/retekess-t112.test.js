@@ -20,3 +20,5 @@ test("TD164 RX validates checksums and decodes pager",()=>{const e=encodeRetekes
 
 test("TD161 RX recovers BCD system pager and function",()=>{const e=encodeRetekessTd161({systemId:321,pagerId:69,alertType:2,frames:1});const d=decodeRetekessTd161(e.bytes);assert.deepEqual(d.fields,{systemId:321,pagerId:69,alertType:2});});
 test("TD161 RX searches across an arbitrary byte offset",()=>{const e=encodeRetekessTd161({systemId:42,pagerId:7,alertType:1,frames:1});const b=new Uint8Array(e.bytes.length+1);b[0]=0xaa;b.set(e.bytes,1);const d=decodeRetekessTd161(b);assert.deepEqual(d.fields,{systemId:42,pagerId:7,alertType:1});});
+
+test("T112 default encoding stays within one RFCat packet",()=>{const e=encodeRetekessT112({systemId:1,pagerId:69,cancel:false});assert.equal(e.waveform.length,349);assert.equal(e.bytes.length,44);assert.equal(e.frames,12);});
