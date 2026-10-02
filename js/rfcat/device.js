@@ -44,7 +44,26 @@ export class RFCatUSB extends EventTarget {
 
         this.readLoop();
 
-        await this.ping();
+        // After a browser reload/reconnect the RFCat firmware can emit one
+        // stale NIC frame before it is ready to answer system commands. Give
+        // the IN loop a short window to drain it, then retry the handshake.
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        let lastError;
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                await this.ping();
+                return;
+            } catch (error) {
+                lastError = error;
+                if (attempt < 2) {
+                    await new Promise((resolve) => setTimeout(resolve, 150));
+                }
+            }
+        }
+
+        await this.disconnect();
+        throw lastError;
     }
 
     async disconnect() {
