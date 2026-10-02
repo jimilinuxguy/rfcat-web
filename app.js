@@ -90,26 +90,34 @@ function lrsSignalCandidate(bytes) {
     if (!(bytes instanceof Uint8Array) || bytes.length < 8) return false;
     const bits = Array.from(bytes, (byte) => byte.toString(2).padStart(8, "0")).join("");
 
-    // The LRS transmitter configures the CC1111 for 625 baud with hardware
-    // Manchester. Per the CC1111 modem behavior, logical data rate is half
-    // the baud rate, so raw RX at 625 baud sees the encoded chips directly.
-    // AA AA AA becomes the
-    // distinctive 1001... Manchester preamble (or its inverted polarity).
-    // Search at bit granularity so RFCat byte boundaries do not matter.
-    const preamble = "1001".repeat(12);
-    const inverted = "0110".repeat(12);
-    const maxErrors = 4;
-    for (let at = 0; at + preamble.length <= bits.length; at++) {
-        let normalErrors = 0;
-        let invertedErrors = 0;
-        for (let i = 0; i < preamble.length; i++) {
-            if (bits[at + i] !== preamble[i]) normalErrors++;
-            if (bits[at + i] !== inverted[i]) invertedErrors++;
-            if (normalErrors > maxErrors && invertedErrors > maxErrors) break;
-        }
-        if (normalErrors <= maxErrors || invertedErrors <= maxErrors) return true;
+    // Live LRS RX oversamples the 625-baud Manchester chip stream at 5000
+    // baud. A valid transmission therefore contains many sustained runs near
+    // 8 samples (one chip) and 16 samples (two equal adjacent chips). Do not
+    // require an exact AA preamble here: packet boundaries and discriminator
+    // polarity are arbitrary, and the decoder performs the strict frame and
+    // checksum validation after timing recovery.
+    const runs = [];
+    for (let at = 0; at < bits.length;) {
+        const level = bits[at];
+        let end = at + 1;
+        while (end < bits.length && bits[end] === level) end++;
+        runs.push(end - at);
+        at = end;
     }
-    return false;
+
+    let cadence = 0;
+    let bestCadence = 0;
+    for (const length of runs) {
+        const nearOneChip = length >= 6 && length <= 10;
+        const nearTwoChips = length >= 13 && length <= 19;
+        if (nearOneChip || nearTwoChips) {
+            cadence++;
+            bestCadence = Math.max(bestCadence, cadence);
+        } else {
+            cadence = 0;
+        }
+    }
+    return bestCadence >= 8;
 }
 
 function resetPocsagRolling() {
