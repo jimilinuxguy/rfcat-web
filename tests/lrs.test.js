@@ -109,6 +109,33 @@ for (const width of [3.55, 3.75, 3.95, 4.0, 4.15, 4.35, 4.45]) {
     }
 }
 
+
+test("LRS RX decodes nominal 5000-baud 8x Manchester capture", () => {
+    const raw = sampledLrsFrame({ width: 8, inverted: false, prefix: "1011010", suffix: "00101" });
+    const decoded = decodeLrsPager(raw, { sampleScale: 8 });
+    assert.ok(decoded);
+    assert.deepEqual(decoded.fields, {
+        restaurantId: 1,
+        stationId: 0,
+        pagerId: 1,
+        alertType: 1,
+        checksum: 0x2d,
+    });
+});
+
+test("LRS RX decodes inverted nominal 5000-baud 8x Manchester capture", () => {
+    const raw = sampledLrsFrame({ width: 8, inverted: true, prefix: "1011010", suffix: "00101" });
+    const decoded = decodeLrsPager(raw, { sampleScale: 8 });
+    assert.ok(decoded);
+    assert.deepEqual(decoded.fields, {
+        restaurantId: 1,
+        stationId: 0,
+        pagerId: 1,
+        alertType: 1,
+        checksum: 0x2d,
+    });
+});
+
 test("LRS adaptive RX rejects long structured idle pattern", () => {
     const idle = new Uint8Array(255);
     for (let i = 0; i < idle.length; i++) idle[i] = [0x00, 0xff, 0x7f, 0x80][i % 4];
@@ -130,7 +157,7 @@ function rawManchesterSymbols({ inverted = false, bitPrefix = "" } = {}) {
 
 for (let prefixBits = 0; prefixBits < 8; prefixBits++) {
     for (const inverted of [false, true]) {
-        test(`LRS RX decodes 1250-baud raw Manchester symbols offset=${prefixBits} inverted=${inverted}`, () => {
+        test(`LRS RX decodes raw Manchester symbols offset=${prefixBits} inverted=${inverted}`, () => {
             const raw = rawManchesterSymbols({ inverted, bitPrefix: "1".repeat(prefixBits) });
             const decoded = decodeLrsPager(raw, { sampleScale: 1 });
             assert.ok(decoded);
