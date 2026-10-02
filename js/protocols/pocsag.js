@@ -185,11 +185,142 @@ export function buildPocsagAlert({
     };
 }
 
+
+function bitsFromBytes(bytes) {
+    return Array.from(bytes, (byte) => byte.toString(2).padStart(8, "0")).join("");
+}
+
+function hammingDistance32(a, b) {
+    let x = (a ^ b) >>> 0;
+    let count = 0;
+    while (x) {
+        x &= x - 1;
+        count++;
+    }
+    return count;
+}
+
+function bitsToWord(bits) {
+    return Number.parseInt(bits, 2) >>> 0;
+}
+
+function decodePocsagCodeword(word) {
+    const received = word >>> 0;
+    let best = null;
+    const consider = (candidate, correctedBits) => {
+        const data = candidate >>> 11;
+        const expected = addEvenParity((((data * 0x400) | pocsagBch(data)) >>> 0));
+        if (expected !== candidate) return;
+        if (!best || correctedBits < best.correctedBits) best = { word: candidate, data, correctedBits };
+    };
+    consider(received, 0);
+    if (!best) {
+        for (let bit = 0; bit < 32; bit++) consider((received ^ (2 ** bit)) >>> 0, 1);
+    }
+    if (!best) return null;
+    return { ...best, message: !!(best.data & 0x100000) };
+}
+
+function decodeAlphaMessage(words) {
+    let bits = "";
+    for (const item of words) bits += (item.data & 0xfffff).toString(2).padStart(20, "0");
+    let text = "";
+    for (let i = 0; i + 7 <= bits.length; i += 7) {
+        const chunk = bits.slice(i, i + 7);
+        const value = Number.parseInt(chunk.split("").reverse().join(""), 2);
+        if (value === 0) break;
+        if (value === 3) break;
+        text += value >= 32 && value <= 126 ? String.fromCharCode(value) : "�";
+    }
+    return text.replace(/\u0000+$/g, "");
+}
+
+export function decodePocsag(bytes) {
+    if (!(bytes instanceof Uint8Array)) throw new TypeError("POCSAG RX payload must be a Uint8Array");
+    const bits = bitsFromBytes(bytes);
+    const syncBits = wordToBits(POCSAG_SYNC);
+    let syncAt = -1;
+    let inverted = false;
+
+    for (let i = 0; i + 32 <= bits.length; i++) {
+        const word = bitsToWord(bits.slice(i, i + 32));
+        if (hammingDistance32(word, POCSAG_SYNC) <= 2) {
+            syncAt = i;
+            break;
+        }
+        if (hammingDistance32((~word) >>> 0, POCSAG_SYNC) <= 2) {
+            syncAt = i;
+            inverted = true;
+            break;
+        }
+    }
+    if (syncAt < 0) return null;
+
+    let stream = bits.slice(syncAt);
+    if (inverted) stream = invertBits(stream);
+
+    const pages = [];
+    let offset = 0;
+    let batch = 0;
+    while (offset + 32 <= stream.length) {
+        const sync = bitsToWord(stream.slice(offset, offset + 32));
+        if (hammingDistance32(sync, POCSAG_SYNC) > 2) break;
+        offset += 32;
+
+        const decoded = [];
+        for (let slot = 0; slot < 16 && offset + 32 <= stream.length; slot++, offset += 32) {
+            decoded.push({ slot, decoded: decodePocsagCodeword(bitsToWord(stream.slice(offset, offset + 32))) });
+        }
+
+        for (let slot = 0; slot < decoded.length; slot++) {
+            const cw = decoded[slot].decoded;
+            if (!cw || cw.message || cw.word === POCSAG_IDLE) continue;
+            const frame = Math.floor(slot / 2);
+            const capcode = (((cw.data >>> 2) << 3) | frame) >>> 0;
+            const functionBits = cw.data & 3;
+            const messageWords = [];
+            for (let j = slot + 1; j < decoded.length; j++) {
+                const next = decoded[j].decoded;
+                if (!next || !next.message) break;
+                messageWords.push(next);
+            }
+            pages.push({
+                capcode,
+                functionBits,
+                frame,
+                batch,
+                message: decodeAlphaMessage(messageWords),
+                messageCodewords: messageWords.length,
+                correctedBits: cw.correctedBits + messageWords.reduce((n, item) => n + item.correctedBits, 0),
+            });
+        }
+        batch++;
+    }
+
+    if (!pages.length) return null;
+    const first = pages[0];
+    return {
+        fields: {
+            capcode: first.capcode,
+            function: first.functionBits,
+            message: first.message || "(alert only)",
+            polarity: inverted ? "inverted" : "normal",
+            correctedBits: first.correctedBits,
+        },
+        summary: `POCSAG capcode ${first.capcode} · function ${first.functionBits} · ${first.message || "alert"}`,
+        pages,
+    };
+}
+
 const pocsag = {
     id: "pocsag",
     name: "POCSAG Pager",
     description:
         "Explicit-capcode generic POCSAG alert and alphanumeric message generator.",
+
+    decode(bytes) {
+        return decodePocsag(bytes);
+    },
 
     fields: [
         { id: "frequency", label: "Frequency (Hz)", type: "number", min: 1, value: 457600000 },
