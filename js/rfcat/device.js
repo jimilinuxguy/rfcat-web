@@ -652,7 +652,7 @@ export class RFCatUSB extends EventTarget {
     async logTxDiagnostics(label = "TX") {
         const c = await this.config();
         const r = c.raw;
-        const deviatn = r[0x15];
+        const deviatn = r[0x11];
         const devE = (deviatn >> 4) & 0x07;
         const devM = deviatn & 0x07;
         const deviation =
@@ -677,7 +677,7 @@ export class RFCatUSB extends EventTarget {
             `${label} REGS: MDMCFG4=0x${r[0x0c].toString(16).padStart(2, "0")} ` +
             `MDMCFG3=0x${r[0x0d].toString(16).padStart(2, "0")} ` +
             `MDMCFG2=0x${r[0x0e].toString(16).padStart(2, "0")} ` +
-            `DEVIATN=0x${r[0x15].toString(16).padStart(2, "0")} ` +
+            `DEVIATN=0x${r[0x11].toString(16).padStart(2, "0")} ` +
             `FREND0=0x${r[0x1b].toString(16).padStart(2, "0")} ` +
             `PATABLE0=0x${r[0x2e].toString(16).padStart(2, "0")}`,
         );
