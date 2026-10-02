@@ -1,8 +1,9 @@
-const DB_NAME = "rfcat-web";
-const DB_VERSION = 1;
-const STORE_NAME = "workspace";
-const LAYOUT_KEY = "default-layout";
-const LAYOUT_VERSION = 1;
+import {
+    WORKSPACE_SCHEMA_VERSION,
+    loadWorkspaceLayout,
+    resetWorkspaceLayout,
+    saveWorkspaceLayout,
+} from "../storage/workspace-store.js";
 
 const PANEL_DEFINITIONS = [
     ["radio", ".radio"],
@@ -13,84 +14,13 @@ const PANEL_DEFINITIONS = [
     ["activity", ".console"],
 ];
 
-export function normalizeWorkspaceLayout(value) {
-    if (!value || value.version !== LAYOUT_VERSION || !Array.isArray(value.panels)) return null;
-    const known = new Set(PANEL_DEFINITIONS.map(([id]) => id));
-    const panels = value.panels
-        .filter((panel) => panel && known.has(panel.id))
-        .map((panel) => ({
-            id: panel.id,
-            order: Number.isFinite(panel.order) ? panel.order : 0,
-            width: Number.isFinite(panel.width) ? Math.max(280, Math.round(panel.width)) : null,
-            height: Number.isFinite(panel.height) ? Math.max(58, Math.round(panel.height)) : null,
-            open: typeof panel.open === "boolean" ? panel.open : null,
-        }));
-    return { version: LAYOUT_VERSION, panels };
-}
-
-function openDb() {
-    return new Promise((resolve, reject) => {
-        if (!globalThis.indexedDB) return reject(new Error("IndexedDB unavailable"));
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-        request.onupgradeneeded = () => {
-            const db = request.result;
-            if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
-        };
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-    });
-}
-
-async function readLayout() {
-    const db = await openDb();
-    try {
-        return await new Promise((resolve, reject) => {
-            const tx = db.transaction(STORE_NAME, "readonly");
-            const request = tx.objectStore(STORE_NAME).get(LAYOUT_KEY);
-            request.onsuccess = () => resolve(normalizeWorkspaceLayout(request.result));
-            request.onerror = () => reject(request.error);
-        });
-    } finally {
-        db.close();
-    }
-}
-
-async function writeLayout(layout) {
-    const db = await openDb();
-    try {
-        await new Promise((resolve, reject) => {
-            const tx = db.transaction(STORE_NAME, "readwrite");
-            tx.objectStore(STORE_NAME).put(layout, LAYOUT_KEY);
-            tx.oncomplete = resolve;
-            tx.onerror = () => reject(tx.error);
-            tx.onabort = () => reject(tx.error);
-        });
-    } finally {
-        db.close();
-    }
-}
-
-async function deleteLayout() {
-    const db = await openDb();
-    try {
-        await new Promise((resolve, reject) => {
-            const tx = db.transaction(STORE_NAME, "readwrite");
-            tx.objectStore(STORE_NAME).delete(LAYOUT_KEY);
-            tx.oncomplete = resolve;
-            tx.onerror = () => reject(tx.error);
-        });
-    } finally {
-        db.close();
-    }
-}
-
 function panelId(panel) {
     return panel.dataset.workspacePanel;
 }
 
 function captureLayout(workspace) {
     return {
-        version: LAYOUT_VERSION,
+        version: WORKSPACE_SCHEMA_VERSION,
         panels: [...workspace.children]
             .filter((panel) => panel.matches("[data-workspace-panel]"))
             .map((panel, order) => ({
@@ -171,12 +101,12 @@ export async function initWorkspace() {
         if (restoring) return;
         clearTimeout(saveTimer);
         saveTimer = setTimeout(() => {
-            writeLayout(captureLayout(workspace)).catch(() => {});
+            saveWorkspaceLayout(captureLayout(workspace)).catch(() => {});
         }, 200);
     };
 
     const toolbar = makeToolbar(async () => {
-        await deleteLayout().catch(() => {});
+        await resetWorkspaceLayout().catch(() => {});
         for (const panel of sourceOrder) {
             panel.style.width = "";
             panel.style.height = "";
@@ -224,7 +154,7 @@ export async function initWorkspace() {
         sourceOrder.forEach((panel) => observer.observe(panel));
     }
 
-    const layout = await readLayout().catch(() => null);
+    const layout = await loadWorkspaceLayout().catch(() => null);
     applyLayout(workspace, layout);
     restoring = false;
 }
