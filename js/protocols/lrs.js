@@ -148,6 +148,47 @@ function bitsToCandidateBytes(bits, bitOffset = 0) {
     return out;
 }
 
+function recoverChipsFromRuns(bits, samplesPerChip = 4, inverted = false) {
+    if (!bits.length) return "";
+    let chips = "";
+    let start = 0;
+    while (start < bits.length) {
+        const level = bits[start];
+        let end = start + 1;
+        while (end < bits.length && bits[end] === level) end++;
+        const runSamples = end - start;
+        const chipCount = Math.max(1, Math.round(runSamples / samplesPerChip));
+        const chip = inverted ? (level === "1" ? "0" : "1") : level;
+        chips += chip.repeat(chipCount);
+        start = end;
+    }
+    return chips;
+}
+
+function decodeManchesterChips(chips, phase = 0) {
+    let decoded = "";
+    for (let at = phase; at + 1 < chips.length; at += 2) {
+        const pair = chips.slice(at, at + 2);
+        if (pair === "01") decoded += "0";
+        else if (pair === "10") decoded += "1";
+        else decoded += "?";
+    }
+    return decoded;
+}
+
+function findLrsFrame(logical) {
+    for (let bitOffset = 0; bitOffset < 8; bitOffset++) {
+        const candidate = bitsToCandidateBytes(logical, bitOffset);
+        for (let at = 0; at + 15 <= candidate.length; at++) {
+            if (candidate[at] < 0) continue;
+            const frame = Uint8Array.from(candidate.slice(at, at + 15));
+            const parsed = parseLrsFrame(frame);
+            if (parsed) return parsed;
+        }
+    }
+    return null;
+}
+
 export function decodeLrsPager(bytes, { sampleScale = 4 } = {}) {
     if (!(bytes instanceof Uint8Array)) throw new TypeError("LRS RX payload must be a Uint8Array");
 
@@ -158,19 +199,19 @@ export function decodeLrsPager(bytes, { sampleScale = 4 } = {}) {
     }
 
     // OTA RX is sampled as raw 2-FSK at 4x the 1250-chip/s Manchester stream.
+    // First try fixed sample phases. Then recover chip timing from transition run
+    // lengths so normal CC1111 clock jitter cannot accumulate across the frame.
     const bits = rawBits(bytes);
     for (const inverted of [false, true]) {
         for (let phase = 0; phase < sampleScale * 2; phase++) {
-            const logical = decodeManchesterSamples(bits, phase, inverted, sampleScale);
-            for (let bitOffset = 0; bitOffset < 8; bitOffset++) {
-                const candidate = bitsToCandidateBytes(logical, bitOffset);
-                for (let at = 0; at + 15 <= candidate.length; at++) {
-                    if (candidate[at] < 0) continue;
-                    const frame = Uint8Array.from(candidate.slice(at, at + 15));
-                    const parsed = parseLrsFrame(frame);
-                    if (parsed) return parsed;
-                }
-            }
+            const parsed = findLrsFrame(decodeManchesterSamples(bits, phase, inverted, sampleScale));
+            if (parsed) return parsed;
+        }
+
+        const chips = recoverChipsFromRuns(bits, sampleScale, inverted);
+        for (let phase = 0; phase < 2; phase++) {
+            const parsed = findLrsFrame(decodeManchesterChips(chips, phase));
+            if (parsed) return parsed;
         }
     }
     return null;
