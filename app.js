@@ -1178,10 +1178,25 @@ function renderFieldInference() {
 }
 
 const PRESET_STORAGE_KEY = "rfcat-web.protocol-presets";
+const presetCaptureRoles = new Map();
 
 function selectedInferenceCaptures() {
     return [...comparedCaptureIndexes].sort((a, b) => a - b)
-        .map((index) => rxCaptures[index]).filter(Boolean);
+        .map((index) => ({ index, capture: rxCaptures[index] })).filter(({ capture }) => capture);
+}
+
+function sumMod255(bytes, start, end) {
+    let sum = 0;
+    for (let i = start; i <= end; i++) sum = (sum + bytes[i]) % 255;
+    return sum;
+}
+
+function inferChecksum(captures, offset) {
+    if (offset < 1 || captures.some((capture) => capture.bytes.length <= offset)) return null;
+    if (captures.every((capture) => sumMod255(capture.bytes, 0, offset - 1) === capture.bytes[offset])) {
+        return { algorithm: "sum-mod-255", start: 0, end: offset - 1 };
+    }
+    return null;
 }
 
 function suggestedPresetFields(captures) {
@@ -1191,12 +1206,14 @@ function suggestedPresetFields(captures) {
         const values = captures.map((capture) => capture.bytes[offset]);
         const constant = values.every((value) => value != null && value === values[0]);
         const correlations = constant ? [] : exactFieldMatchesByte(captures, offset);
+        const checksum = constant ? null : inferChecksum(captures, offset);
         fields.push({
-            offset,
-            name: correlations[0] ?? `byte${offset}`,
-            type: constant ? "constant" : "uint8",
+            offset, length: 1,
+            name: checksum ? "checksum" : (correlations[0] ?? `byte${offset}`),
+            type: constant ? "constant" : (checksum ? "checksum-sum255" : "uint8"),
             value: constant ? values[0] : null,
             mask: 255,
+            checksum,
         });
     }
     return fields;
@@ -1206,138 +1223,116 @@ function presetRow(field) {
     const row = document.createElement("div");
     row.className = "preset-field-row";
     row.dataset.offset = field.offset;
-    const offset = document.createElement("span");
-    offset.className = "preset-offset";
-    offset.textContent = String(field.offset);
+    const offset = document.createElement("input");
+    offset.className = "preset-field-offset"; offset.type = "number"; offset.min = "0"; offset.value = field.offset;
+    const length = document.createElement("input");
+    length.className = "preset-field-length"; length.type = "number"; length.min = "1"; length.value = field.length ?? 1;
     const name = document.createElement("input");
-    name.className = "preset-field-name";
-    name.value = field.name;
-    name.setAttribute("aria-label", `Byte ${field.offset} field name`);
+    name.className = "preset-field-name"; name.value = field.name;
     const type = document.createElement("select");
     type.className = "preset-field-type";
-    for (const [value, label] of [["constant","Constant"],["uint8","uint8"],["uint16be","uint16 BE"],["uint16le","uint16 LE"],["bitfield","Bit field"],["ignore","Ignore"],["checksum-sum255","Checksum sum mod 255"]]) {
-        const option = document.createElement("option");
-        option.value = value; option.textContent = label; type.append(option);
+    for (const [value, label] of [["constant","Constant"],["uint8","uint8"],["uint16be","uint16 BE"],["uint16le","uint16 LE"],["bytes","Byte range"],["bitfield","Bit field"],["ignore","Ignore"],["checksum-sum255","Checksum sum mod 255"]]) {
+        const option = document.createElement("option"); option.value=value; option.textContent=label; type.append(option);
     }
     type.value = field.type;
     const value = document.createElement("input");
     value.className = "preset-field-value";
-    value.placeholder = field.type === "constant" ? "hex" : "mask hex";
-    value.value = field.type === "constant" ? field.value.toString(16).padStart(2, "0").toUpperCase() : "FF";
-    row.append(offset, name, type, value);
+    value.placeholder = "hex / mask";
+    value.value = field.type === "constant" ? field.value.toString(16).padStart(2,"0").toUpperCase() : (field.type === "bitfield" ? (field.mask ?? 255).toString(16).padStart(2,"0").toUpperCase() : "");
+    row.append(offset,length,name,type,value);
     return row;
 }
 
+function renderPresetRoles(entries) {
+    const host=$("preset-capture-roles"); host.replaceChildren();
+    entries.forEach(({index},i)=>{
+        if(!presetCaptureRoles.has(index)) presetCaptureRoles.set(index,"positive");
+        const row=document.createElement("label"); row.className="preset-role";
+        const select=document.createElement("select");
+        [["positive","Should match"],["negative","Should reject"],["unknown","Unknown"]].forEach(([v,l])=>{const o=document.createElement("option");o.value=v;o.textContent=l;select.append(o);});
+        select.value=presetCaptureRoles.get(index);
+        select.onchange=()=>presetCaptureRoles.set(index,select.value);
+        row.append(document.createTextNode(`${inferenceLabel(i)} `),select); host.append(row);
+    });
+}
+
 function renderPresetBuilder() {
-    const captures = selectedInferenceCaptures();
-    if (captures.length < 2) return;
-    const host = $("preset-fields");
-    host.replaceChildren();
-    const head = document.createElement("div");
-    head.className = "preset-field-head";
-    for (const label of ["Offset", "Name", "Type", "Value / mask"]) {
-        const span = document.createElement("span"); span.textContent = label; head.append(span);
-    }
-    host.append(head);
-    for (const field of suggestedPresetFields(captures)) host.append(presetRow(field));
-    $("preset-result").replaceChildren();
-    $("preset-builder").hidden = false;
+    const entries=selectedInferenceCaptures(); if(entries.length<2)return;
+    const captures=entries.map(x=>x.capture);
+    $("preset-length").value=String(Math.max(...captures.map(x=>x.bytes.length)));
+    renderPresetRoles(entries);
+    const host=$("preset-fields"); host.replaceChildren();
+    const head=document.createElement("div"); head.className="preset-field-head";
+    ["Offset","Length","Name","Type","Value / mask"].forEach(label=>{const s=document.createElement("span");s.textContent=label;head.append(s);}); host.append(head);
+    suggestedPresetFields(captures).forEach(field=>host.append(presetRow(field)));
+    $("preset-result").replaceChildren(); $("preset-builder").hidden=false;
 }
 
 function readPresetDefinition() {
-    const fields = [...$("preset-fields").querySelectorAll(".preset-field-row")].map((row) => {
-        const type = row.querySelector(".preset-field-type").value;
-        const raw = row.querySelector(".preset-field-value").value.trim();
-        return {
-            offset: Number(row.dataset.offset),
-            name: row.querySelector(".preset-field-name").value.trim() || `byte${row.dataset.offset}`,
-            type,
-            ...(type === "constant" ? { value: parseInt(raw, 16) } : {}),
-            ...(type === "bitfield" ? { mask: parseInt(raw || "FF", 16) } : {}),
-        };
+    const fields=[...$("preset-fields").querySelectorAll(".preset-field-row")].map(row=>{
+        const type=row.querySelector(".preset-field-type").value, raw=row.querySelector(".preset-field-value").value.trim();
+        const offset=Number(row.querySelector(".preset-field-offset").value), length=Math.max(1,Number(row.querySelector(".preset-field-length").value)||1);
+        const field={offset,length,name:row.querySelector(".preset-field-name").value.trim()||`field${offset}`,type};
+        if(type==="constant") field.value=parseInt(raw,16);
+        if(type==="bitfield") field.mask=parseInt(raw||"FF",16);
+        if(type==="checksum-sum255"){field.algorithm="sum-mod-255";field.start=0;field.end=offset-1;}
+        return field;
     });
-    return {
-        version: 1,
-        id: $("preset-id").value.trim() || "draft-protocol",
-        name: $("preset-name").value.trim() || "Draft Protocol",
-        fields,
-    };
+    return {schema:"rfcat-web-protocol",version:1,id:$("preset-id").value.trim()||"draft-protocol",name:$("preset-name").value.trim()||"Draft Protocol",frame:{length:Number($("preset-length").value)||null},fields};
 }
 
-function decodeWithPreset(bytes, preset) {
-    const decoded = {};
-    for (const field of preset.fields) {
-        if (field.type === "ignore") continue;
-        if (field.offset >= bytes.length) return { matched: false, error: `missing byte ${field.offset}` };
-        const b = bytes[field.offset];
-        if (field.type === "constant") {
-            if (!Number.isFinite(field.value) || b !== field.value) return { matched: false, error: `byte ${field.offset} constant mismatch` };
-        } else if (field.type === "uint8") decoded[field.name] = b;
-        else if (field.type === "uint16be") {
-            if (field.offset + 1 >= bytes.length) return { matched: false, error: `missing uint16 at ${field.offset}` };
-            decoded[field.name] = (b << 8) | bytes[field.offset + 1];
-        } else if (field.type === "uint16le") {
-            if (field.offset + 1 >= bytes.length) return { matched: false, error: `missing uint16 at ${field.offset}` };
-            decoded[field.name] = b | (bytes[field.offset + 1] << 8);
-        } else if (field.type === "bitfield") decoded[field.name] = b & (Number.isFinite(field.mask) ? field.mask : 255);
-        else if (field.type === "checksum-sum255") {
-            let sum = 0;
-            for (let i = 0; i < field.offset; i++) sum = (sum + bytes[i]) % 255;
-            if (sum !== b) return { matched: false, error: `checksum mismatch at byte ${field.offset}` };
-            decoded[field.name] = b;
-        }
+function validatePreset(preset) {
+    if(preset?.schema!=="rfcat-web-protocol"||preset.version!==1||!Array.isArray(preset.fields)) throw new Error("Unsupported protocol preset schema");
+    for(const field of preset.fields) if(!Number.isInteger(field.offset)||field.offset<0||!Number.isInteger(field.length)||field.length<1) throw new Error("Invalid field range");
+    return preset;
+}
+
+function decodeWithPreset(bytes,preset) {
+    if(preset.frame?.length && bytes.length!==preset.frame.length) return {matched:false,error:`length ${bytes.length}, expected ${preset.frame.length}`};
+    const decoded={};
+    for(const field of preset.fields){
+        if(field.type==="ignore")continue;
+        if(field.offset+field.length>bytes.length)return{matched:false,error:`missing range ${field.offset}..${field.offset+field.length-1}`};
+        const b=bytes[field.offset];
+        if(field.type==="constant"){if(!Number.isFinite(field.value)||b!==field.value)return{matched:false,error:`byte ${field.offset} constant mismatch`};}
+        else if(field.type==="uint8")decoded[field.name]=b;
+        else if(field.type==="uint16be"){decoded[field.name]=(b<<8)|bytes[field.offset+1];}
+        else if(field.type==="uint16le"){decoded[field.name]=b|(bytes[field.offset+1]<<8);}
+        else if(field.type==="bytes")decoded[field.name]=hex(bytes.slice(field.offset,field.offset+field.length));
+        else if(field.type==="bitfield")decoded[field.name]=b&(Number.isFinite(field.mask)?field.mask:255);
+        else if(field.type==="checksum-sum255"){const actual=sumMod255(bytes,field.start??0,field.end??field.offset-1);if(actual!==b)return{matched:false,error:`checksum mismatch at byte ${field.offset}: expected ${actual.toString(16).padStart(2,"0").toUpperCase()}`};decoded[field.name]=b;}
     }
-    return { matched: true, fields: decoded };
+    return{matched:true,fields:decoded};
 }
 
 function previewPreset() {
-    const preset = readPresetDefinition();
-    const captures = selectedInferenceCaptures();
-    const result = $("preset-result");
-    result.replaceChildren();
-    let matched = 0;
-    captures.forEach((capture, i) => {
-        const decoded = decodeWithPreset(capture.bytes, preset);
-        if (decoded.matched) matched++;
-        const row = document.createElement("div");
-        row.className = `preset-preview-row ${decoded.matched ? "matched" : "rejected"}`;
-        row.textContent = decoded.matched
-            ? `${inferenceLabel(i)} · matched · ${Object.entries(decoded.fields).map(([k,v]) => `${k}=${v}`).join(" · ")}`
-            : `${inferenceLabel(i)} · rejected · ${decoded.error}`;
-        result.append(row);
+    const preset=validatePreset(readPresetDefinition()), entries=selectedInferenceCaptures(), result=$("preset-result"); result.replaceChildren();
+    let positive=0,positiveOk=0,negative=0,negativeOk=0,unknown=0,unknownMatch=0;
+    entries.forEach(({index,capture},i)=>{
+        const decoded=decodeWithPreset(capture.bytes,preset),role=presetCaptureRoles.get(index)||"positive";
+        if(role==="positive"){positive++;if(decoded.matched)positiveOk++;}else if(role==="negative"){negative++;if(!decoded.matched)negativeOk++;}else{unknown++;if(decoded.matched)unknownMatch++;}
+        const row=document.createElement("div");row.className=`preset-preview-row ${decoded.matched?"matched":"rejected"}`;
+        row.textContent=decoded.matched?`${inferenceLabel(i)} · ${role} · matched · ${Object.entries(decoded.fields).map(([k,v])=>`${k}=${v}`).join(" · ")}`:`${inferenceLabel(i)} · ${role} · rejected · ${decoded.error}`;result.append(row);
     });
-    const summary = document.createElement("strong");
-    summary.className = "preset-preview-summary";
-    summary.textContent = `${matched}/${captures.length} selected captures matched`;
-    result.prepend(summary);
+    const summary=document.createElement("strong");summary.className="preset-preview-summary";
+    summary.textContent=`Positive ${positiveOk}/${positive} matched · Negative ${negativeOk}/${negative} rejected · Unknown ${unknownMatch}/${unknown} matched`;result.prepend(summary);
 }
 
-function savedPresets() {
-    try { return JSON.parse(localStorage.getItem(PRESET_STORAGE_KEY) || "[]"); }
-    catch { return []; }
+function savedPresets(){try{return JSON.parse(localStorage.getItem(PRESET_STORAGE_KEY)||"[]");}catch{return[];}}
+function loadPresetIntoBuilder(preset){
+    validatePreset(preset);$("preset-name").value=preset.name||"Draft Protocol";$("preset-id").value=preset.id||"draft-protocol";$("preset-length").value=preset.frame?.length||"";
+    const host=$("preset-fields");host.replaceChildren();const head=document.createElement("div");head.className="preset-field-head";["Offset","Length","Name","Type","Value / mask"].forEach(x=>{const s=document.createElement("span");s.textContent=x;head.append(s);});host.append(head);
+    preset.fields.forEach(field=>host.append(presetRow(field)));$("preset-builder").hidden=false;
 }
-
-$("preset-build").onclick = renderPresetBuilder;
-$("preset-close").onclick = () => { $("preset-builder").hidden = true; };
-$("preset-preview").onclick = previewPreset;
-$("preset-save").onclick = () => {
-    const preset = readPresetDefinition();
-    const presets = savedPresets().filter((item) => item.id !== preset.id);
-    presets.push({ ...preset, updatedAt: new Date().toISOString() });
-    localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(presets));
-    log(`Saved local protocol preset "${preset.name}"`);
-    previewPreset();
-};
-$("preset-export").onclick = () => {
-    const preset = readPresetDefinition();
-    const blob = new Blob([JSON.stringify(preset, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${preset.id || "protocol-preset"}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-};
+$("preset-build").onclick=renderPresetBuilder;
+$("preset-close").onclick=()=>{$("preset-builder").hidden=true;};
+$("preset-preview").onclick=previewPreset;
+$("preset-all-positive").onclick=()=>{selectedInferenceCaptures().forEach(({index})=>presetCaptureRoles.set(index,"positive"));renderPresetRoles(selectedInferenceCaptures());};
+$("preset-last-negative").onclick=()=>{const e=selectedInferenceCaptures();e.forEach(({index})=>presetCaptureRoles.set(index,"positive"));if(e.length)presetCaptureRoles.set(e[e.length-1].index,"negative");renderPresetRoles(e);};
+$("preset-save").onclick=()=>{const preset=validatePreset(readPresetDefinition()),presets=savedPresets().filter(x=>x.id!==preset.id);presets.push({...preset,updatedAt:new Date().toISOString()});localStorage.setItem(PRESET_STORAGE_KEY,JSON.stringify(presets));log(`Saved local protocol preset "${preset.name}"`);previewPreset();};
+$("preset-export").onclick=()=>{const preset=validatePreset(readPresetDefinition()),blob=new Blob([JSON.stringify(preset,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=`${preset.id||"protocol-preset"}.json`;a.click();URL.revokeObjectURL(url);};
+$("preset-import").onclick=()=>$("preset-import-file").click();
+$("preset-import-file").addEventListener("change",async e=>{const file=e.target.files?.[0];e.target.value="";if(!file)return;try{loadPresetIntoBuilder(JSON.parse(await file.text()));log(`Imported protocol preset ${file.name}`);}catch(error){log(`Protocol preset import error: ${error.message}`);}});
 
 $("rx-infer").onclick = renderFieldInference;
 $("rx-infer-close").onclick = () => { $("rx-infer-panel").hidden = true; };
