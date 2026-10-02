@@ -45,6 +45,21 @@ export function decodeRetekessT112(bytes) {
             const high = runs[at], low = runs[at + 1];
             if (high.level !== "1" || low.level !== "0") break;
             const total = high.length + low.length;
+            // The last symbol's LOW tail can merge with radio idle time because
+            // T112 frames are transmitted as separate host-side packets.
+            if (n === 23 && low.length > 15) {
+                if (high.length >= 1 && high.length <= 6) {
+                    payload += "0";
+                    timingError += Math.abs(high.length - 3);
+                    continue;
+                }
+                if (high.length >= 7 && high.length <= 12) {
+                    payload += "1";
+                    timingError += Math.abs(high.length - 9);
+                    continue;
+                }
+                break;
+            }
             if (total < 8 || total > 16) break;
             const zeroError = Math.abs(high.length - 3) + Math.abs(low.length - 9);
             const oneError = Math.abs(high.length - 9) + Math.abs(low.length - 3);
