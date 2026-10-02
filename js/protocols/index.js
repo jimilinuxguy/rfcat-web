@@ -14,6 +14,9 @@ import touchtunes from "./touchtunes.js";
 import continuousCarrier from "./continuous-carrier.js";
 import pocsag from "./pocsag.js";
 import retekessT112 from "./retekess-t112.js";
+import retekessTd161 from "./retekess-td161.js";
+import retekessTd164 from "./retekess-td164.js";
+import { retekessT119, retekessTd157, retekessTd165, retekessTd174 } from "./retekess-pagger.js";
 
 // During the migration we'll add these one at a time:
 // import lrs from "./lrs.js";
@@ -36,6 +39,12 @@ export const protocols = Object.freeze([
     touchtunes,
     pocsag,
     retekessT112,
+    retekessT119,
+    retekessTd157,
+    retekessTd161,
+    retekessTd164,
+    retekessTd165,
+    retekessTd174,
     
 ].sort((a, b) =>
     a.name.localeCompare(
