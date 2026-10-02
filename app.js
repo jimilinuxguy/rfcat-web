@@ -90,8 +90,10 @@ function lrsSignalCandidate(bytes) {
     if (!(bytes instanceof Uint8Array) || bytes.length < 8) return false;
     const bits = Array.from(bytes, (byte) => byte.toString(2).padStart(8, "0")).join("");
 
-    // LRS TX is 625 logical bit/s with hardware Manchester, so raw RX at
-    // 1250 baud sees the encoded chips directly. AA AA AA becomes the
+    // The LRS transmitter configures the CC1111 for 625 baud with hardware
+    // Manchester. Per the CC1111 modem behavior, logical data rate is half
+    // the baud rate, so raw RX at 625 baud sees the encoded chips directly.
+    // AA AA AA becomes the
     // distinctive 1001... Manchester preamble (or its inverted polarity).
     // Search at bit granularity so RFCat byte boundaries do not matter.
     const preamble = "1001".repeat(12);
