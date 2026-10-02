@@ -1,87 +1,28 @@
-import { buildWaveformAnalysis, bytesToBits } from "../encoding/waveform.js";
+import { bitsOf, packWaveform, pulseEncode, makeOokAnalysis, configureOok, transmitOok, repeatFields } from "./retekess-common.js";
 
-export const RETEKESS_T112_PAGER_69 = new Uint8Array([
-    0x00, 0xaa, 0x88, 0x8e, 0x8e, 0x8e, 0xee, 0x8e,
-    0x8e, 0x88, 0x8e, 0x88, 0x88, 0x88, 0x88,
-]);
-
-export function encodeRetekessT112Pager69() {
-    const bytes = RETEKESS_T112_PAGER_69.slice();
-    return {
-        bytes,
-        hex: Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join(""),
-        pagerId: 69,
-    };
+export function encodeRetekessT112({ systemId, pagerId, cancel = false, frames = 12 }) {
+    systemId = Number(systemId); pagerId = Number(pagerId); frames = Number(frames);
+    if (!Number.isInteger(systemId) || systemId < 0 || systemId > 8191) throw new Error("System ID must be 0–8191");
+    if (!Number.isInteger(pagerId) || pagerId < 0 || pagerId > 1023) throw new Error("Pager ID must be 0–1023");
+    const payload = bitsOf(systemId, 13, { lsb: true }) + bitsOf(pagerId, 10, { lsb: true }) + (cancel ? "1" : "0");
+    const frame = pulseEncode(payload, { prefix: "11" + "0".repeat(59) });
+    const waveform = frame.repeat(frames);
+    const { bytes, padding } = packWaveform(waveform);
+    return { bytes, waveform, padding, payload, systemId, pagerId, cancel: !!cancel, frames };
 }
 
-const retekessT112 = {
-    id: "retekess-t112",
-    name: "Retekess T112 Pager 69",
-    menuGroup: "Restaurant Pagers",
-    description: "Fixed Pager 69 reference waveform from the published Retekess T112 RFCat script.",
-
-    fields: [
-        {
-            id: "repeat",
-            label: "Repeat count",
-            type: "number",
-            min: 0,
-            max: 100,
-            value: 0,
-        },
-        {
-            id: "offset",
-            label: "RFCat offset",
-            type: "number",
-            min: 0,
-            value: 0,
-        },
-    ],
-
-    encode() {
-        const encoded = encodeRetekessT112Pager69();
-        const waveform = bytesToBits(encoded.bytes);
-        return {
-            ...encoded,
-            bits: waveform,
-            waveform,
-            padding: 0,
-            modulation: "ASK/OOK",
-            analysis: buildWaveformAnalysis({
-                waveform,
-                symbolRate: 3060,
-                label: "Retekess T112 Pager 69 reference waveform",
-                requestedTimings: [
-                    { name: "Reference symbol", symbols: 1, requestedUs: 327 },
-                ],
-            }),
-            summary: `Retekess T112 TX: Pager 69 · fixed reference · ${encoded.bytes.length} bytes`,
-        };
-    },
-
-    async configure(device) {
-        await device.mode(0x04);
-        await device.setFrequency(433_920_000);
-        await device.setModulation(0x30);
-        await device.setDataRate(3060);
-        await device.setSync(0x0000, 0);
-        await device.setManchester(false);
-    },
-
-    async transmit(device, encoded, values) {
-        await device.configureAskOokPa?.();
-        await device.setAmpMode(true);
-        try {
-            const repeat = Math.max(0, Math.trunc(Number(values.repeat ?? 0)));
-            const offset = Number(values.offset ?? 0);
-            for (let i = 0; i <= repeat; i++) {
-                await device.transmit(encoded.bytes, 0, offset);
-            }
-        } finally {
-            await device.mode(0x04);
-            await device.setAmpMode(false);
-        }
-    },
+const protocol = {
+ id:"retekess-t112", name:"Retekess T112", menuGroup:"Restaurant Pagers",
+ description:"Retekess T112 24-bit OOK: 13-bit system ID, 10-bit pager ID, cancel flag.",
+ fields:[
+  {id:"systemId",label:"System ID",type:"number",min:0,max:8191,value:0},
+  {id:"pagerId",label:"Pager ID",type:"number",min:0,max:1023,value:69},
+  {id:"cancel",label:"Cancel alert",type:"checkbox",value:false},
+  {id:"frames",label:"Frames",type:"number",min:1,max:30,value:12},
+  ...repeatFields(0)
+ ],
+ encode(v){const e=encodeRetekessT112(v);return {...e,bits:e.payload,analysis:makeOokAnalysis(e.waveform,9090.909,"Retekess T112 OOK",[{name:"Base timing",symbols:1,requestedUs:110},{name:"Data bit",symbols:12,requestedUs:1320}]),modulation:"ASK/OOK",summary:`Retekess T112 TX: system ${e.systemId} · pager ${e.pagerId} · ${e.cancel?"cancel":"page"} · ${e.frames} frames`};},
+ async configure(d){await configureOok(d,433_920_000,9090.909);},
+ async transmit(d,e,v){await transmitOok(d,e.bytes,v);}
 };
-
-export default retekessT112;
+export default protocol;
