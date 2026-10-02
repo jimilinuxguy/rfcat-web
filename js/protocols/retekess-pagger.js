@@ -35,7 +35,16 @@ export function decodeRetekessPrinceton(bytes,{stationBits=13,pagerBits=10,actio
   for(let first=Math.max(0,ideal-boundarySlack);first<=Math.min(gap-2,ideal+4);first++){
    let logical="",error=0,ok=true,ri=first;
    for(let n=0;n<logicalLen;n++,ri+=2){
-    const hi=runs[ri],lo=runs[ri+1];if(!hi||!lo||ri+1>=gap||hi.level!=="1"||lo.level!=="0"){ok=false;break;}
+    const hi=runs[ri],lo=runs[ri+1];if(!hi||!lo||ri+1>gap||hi.level!=="1"||lo.level!=="0"){ok=false;break;}
+    const mergedGap=ri+1===gap;
+    if(mergedGap){
+     // The final symbol LOW can merge directly into the long frame trailer.
+     // In that case classify the symbol from its HIGH width and only require
+     // enough LOW duration for the corresponding data pulse.
+     const zeroError=Math.abs(hi.length-sampleScale),oneError=Math.abs(hi.length-3*sampleScale);
+     const isZero=zeroError<=oneError,requiredLow=(isZero?3:1)*sampleScale,best=Math.min(zeroError,oneError);
+     if(lo.length<requiredLow||best>2*sampleScale){ok=false;break;}logical+=isZero?"0":"1";error+=best;continue;
+    }
     const total=hi.length+lo.length;if(total<2*sampleScale||total>7*sampleScale){ok=false;break;}
     const zeroError=Math.abs(hi.length-sampleScale)+Math.abs(lo.length-3*sampleScale),oneError=Math.abs(hi.length-3*sampleScale)+Math.abs(lo.length-sampleScale),best=Math.min(zeroError,oneError);
     if(best>3*sampleScale){ok=false;break;}logical+=zeroError<=oneError?"0":"1";error+=best;
