@@ -97,14 +97,15 @@ data...
 The device abstraction validates that the transmitted data is a
 non-empty `Uint8Array` and fits within the supported RFCat payload size.
 
+The raw RFCat repeat field remains part of this transport framing, but pager protocols do not rely on firmware repeat behavior. POCSAG, JTECH, and LRS implement their UI repeat count host-side by issuing separate NIC_XMIT operations with the firmware repeat field set to zero.
+
 ## Command/Response Matching
 
 RFCat Web waits for the expected application and command response rather
 than treating arbitrary USB input as the response to the current
 request.
 
-Startup can occasionally produce a ping timeout or USB transfer error. A
-reconnect has been observed to recover normally.
+On connect, RFCat Web resets the WebUSB device, clears stale transport state, starts the receive loop, allows stale endpoint data to drain briefly, and retries the initial ping up to three times. This behavior was added to make disconnect/reload/reconnect reliable on the tested YARD Stick One.
 
 ## RX Consideration
 
