@@ -923,6 +923,7 @@ async function openSavedSession(id) {
     comparedCaptureIndexes.clear();
     updateCompareButton();
     $("rx-compare-panel").hidden = true;
+    $("rx-infer-panel").hidden = true;
     pc = bc = decodedCount = rejectedCount = duplicateCount = 0;
     $("packetList").innerHTML = '<div class="empty">No packets captured.</div>';
 
@@ -940,6 +941,7 @@ $("session-new").onclick = () => {
     comparedCaptureIndexes.clear();
     updateCompareButton();
     $("rx-compare-panel").hidden = true;
+    $("rx-infer-panel").hidden = true;
     pc = bc = decodedCount = rejectedCount = duplicateCount = 0;
     $("packetList").innerHTML = '<div class="empty">No packets captured.</div>';
     updateRxAnalyzerStats();
@@ -979,6 +981,7 @@ function updateCompareButton() {
     const count = comparedCaptureIndexes.size;
     $("rx-compare").textContent = `Compare (${count})`;
     $("rx-compare").disabled = count < 2;
+    $("rx-infer").disabled = count < 2;
 }
 
 function compareByteRows(captures) {
@@ -1066,8 +1069,119 @@ function renderCaptureCompare() {
     $("rx-compare-panel").hidden = false;
 }
 
+function inferenceLabel(index) {
+    return index < 26 ? String.fromCharCode(65 + index) : String(index + 1);
+}
+
+function exactFieldMatchesByte(captures, offset) {
+    const commonFields = [...new Set(captures.flatMap((capture) => Object.keys(capture.fields ?? {})))];
+    const matches = [];
+    for (const field of commonFields) {
+        const values = captures.map((capture) => capture.fields?.[field]);
+        if (values.some((value) => value == null)) continue;
+        const numeric = values.map(Number);
+        if (numeric.some((value) => !Number.isFinite(value))) continue;
+        if (numeric.every((value, i) => value === captures[i].bytes[offset])) matches.push(field);
+    }
+    return matches;
+}
+
+function renderFieldInference() {
+    const selected = [...comparedCaptureIndexes].sort((a, b) => a - b)
+        .map((index) => rxCaptures[index]).filter(Boolean);
+    if (selected.length < 2) return;
+
+    const body = $("rx-infer-body");
+    body.replaceChildren();
+    const maxLength = Math.max(...selected.map((capture) => capture.bytes.length));
+    const changing = [];
+
+    for (let offset = 0; offset < maxLength; offset++) {
+        const values = selected.map((capture) => capture.bytes[offset]);
+        if (values.some((value) => value !== values[0])) changing.push(offset);
+    }
+
+    const summary = document.createElement("div");
+    summary.className = "rx-compare-summary";
+    summary.textContent = `${selected.length} captures · ${changing.length} changing byte position${changing.length === 1 ? "" : "s"} · ${maxLength} byte maximum`;
+    body.append(summary);
+
+    const table = document.createElement("table");
+    table.className = "rx-compare-fields rx-infer-table";
+    const head = document.createElement("tr");
+    for (const title of ["Offset", "Values", "Bit changes", "Observation"]) {
+        const th = document.createElement("th");
+        th.textContent = title;
+        head.append(th);
+    }
+    table.append(head);
+
+    for (let offset = 0; offset < maxLength; offset++) {
+        const values = selected.map((capture) => capture.bytes[offset]);
+        const differs = values.some((value) => value !== values[0]);
+        const tr = document.createElement("tr");
+        if (differs) tr.className = "changed";
+
+        const offsetCell = document.createElement("td");
+        offsetCell.textContent = String(offset);
+        const valuesCell = document.createElement("td");
+        valuesCell.className = "rx-infer-values";
+        valuesCell.textContent = values.map((value) => value == null ? "—" : value.toString(16).padStart(2, "0").toUpperCase()).join(" ");
+
+        let changeMask = 0;
+        const present = values.filter((value) => value != null);
+        if (present.length) {
+            for (const value of present.slice(1)) changeMask |= present[0] ^ value;
+        }
+        const bitsCell = document.createElement("td");
+        bitsCell.className = "rx-infer-bits";
+        bitsCell.textContent = changeMask.toString(2).padStart(8, "0");
+
+        const observation = document.createElement("td");
+        if (!differs) {
+            observation.textContent = "Constant";
+        } else {
+            const matches = values.every((value) => value != null) ? exactFieldMatchesByte(selected, offset) : [];
+            observation.textContent = matches.length
+                ? `Correlated: exact value match with ${matches.join(", ")} across ${selected.length}/${selected.length} captures`
+                : "Changing";
+        }
+        tr.append(offsetCell, valuesCell, bitsCell, observation);
+        table.append(tr);
+    }
+    body.append(table);
+
+    const bitTitle = document.createElement("h4");
+    bitTitle.textContent = "Changing bytes";
+    body.append(bitTitle);
+    for (const offset of changing) {
+        const block = document.createElement("div");
+        block.className = "rx-infer-bit-block";
+        const title = document.createElement("strong");
+        title.textContent = `Byte ${offset}`;
+        block.append(title);
+        selected.forEach((capture, i) => {
+            const row = document.createElement("div");
+            const value = capture.bytes[offset];
+            row.textContent = `${inferenceLabel(i)}  ${value == null ? "—" : value.toString(16).padStart(2, "0").toUpperCase()}  ${value == null ? "--------" : value.toString(2).padStart(8, "0")}`;
+            block.append(row);
+        });
+        body.append(block);
+    }
+
+    const note = document.createElement("p");
+    note.className = "hint";
+    note.textContent = "Correlations are descriptive only. Matching changes do not prove a field's encoding or meaning.";
+    body.append(note);
+    $("rx-infer-panel").hidden = false;
+}
+
+$("rx-infer").onclick = renderFieldInference;
+$("rx-infer-close").onclick = () => { $("rx-infer-panel").hidden = true; };
+
 $("rx-compare").onclick = renderCaptureCompare;
-$("rx-compare-close").onclick = () => { $("rx-compare-panel").hidden = true; };
+$("rx-compare-close").onclick = () => { $("rx-compare-panel").hidden = true;
+    $("rx-infer-panel").hidden = true; };
 
 function renderRxCapture(capture) {
     const captureIndex = rxCaptures.push(capture) - 1;
@@ -1232,6 +1346,7 @@ function redecodeOfflineCaptures() {
     comparedCaptureIndexes.clear();
     updateCompareButton();
     $("rx-compare-panel").hidden = true;
+    $("rx-infer-panel").hidden = true;
     pc = bc = decodedCount = rejectedCount = duplicateCount = 0;
     $("packetList").innerHTML = '<div class="empty">No packets captured.</div>';
 
