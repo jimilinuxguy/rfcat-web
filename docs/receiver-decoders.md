@@ -162,3 +162,7 @@ The Receiver session statistics distinguish total RF/imported events from succes
 Decoded capture cards also provide **Copy hex** and **Use for TX** actions. **Use for TX** selects the matching transmitter protocol and copies fields with matching IDs into its form; it never starts transmission automatically.
 
 Offline re-decoding is intended for decoder development and regression work. It does not emulate the CC1111 packet engine, RF demodulation, hardware Manchester decoding, or hardware sync acquisition. Those stages still require OTA validation when their behavior matters.
+
+### Validated offline workflow
+
+The offline analyzer was validated with exported 13-byte LRS hardware-sync captures while no YARD Stick One was connected. Two imported frames (`AA FC 2D 01 00 01 00 00 00 00 00 01 2D`) were re-decoded as two valid LRS Pager events with zero rejected events, recovering restaurant 1, station 0, pager 1, alert 1, and checksum `2D`.
