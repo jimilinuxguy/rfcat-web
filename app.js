@@ -36,6 +36,7 @@ let pulseRuns = [];
 let pocsagRolling = new Uint8Array();
 let t112Rolling = new Uint8Array();
 let t119Rolling = new Uint8Array();
+let td157Rolling = new Uint8Array();
 let lastPocsagFingerprint = null;
 const POCSAG_ROLLING_MAX = 1020;
 
@@ -50,6 +51,7 @@ function resetPocsagRolling() {
     pocsagRolling = new Uint8Array();
     t112Rolling = new Uint8Array();
     t119Rolling = new Uint8Array();
+    td157Rolling = new Uint8Array();
     lastPocsagFingerprint = null;
 }
 
@@ -762,7 +764,9 @@ d.addEventListener("packet", (e) => {
             ? (t112Rolling = appendRollingBytes(t112Rolling, b))
             : decodeMode === "retekess-t119"
                 ? (t119Rolling = appendRollingBytes(t119Rolling, b))
-                : b;
+                : decodeMode === "retekess-td157"
+                    ? (td157Rolling = appendRollingBytes(td157Rolling, b))
+                    : b;
     const decoded = decodeRxPacket(decodeBytes, decodeMode, {
         frequencyHz: Number($("freq").value) * 1e6,
         dataRate: Number($("drate").value),
