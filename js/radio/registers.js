@@ -18,7 +18,7 @@ export const R = Object.freeze({
   PA_TABLE1: 0xdf2d,
   PA_TABLE0: 0xdf2e,
   PATABLE: 0xdf2d,
-  LQI: 0xdf33,
-  RSSI: 0xdf34,
+  LQI: 0xdf39,
+  RSSI: 0xdf3a,
   MARCSTATE: 0xdf3b,
 });
