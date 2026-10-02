@@ -136,6 +136,45 @@ test("LRS RX decodes inverted nominal 5000-baud 8x Manchester capture", () => {
     });
 });
 
+test("LRS RX tracks continuously drifting Manchester clock", () => {
+    const encoded = encodeLrsPager({ restaurantId: 1, pagerId: 1, alertType: 1 });
+    const logical = Array.from(encoded.bytes, (byte) => byte.toString(2).padStart(8, "0")).join("");
+    const chips = Array.from(logical, (bit) => bit === "0" ? "01" : "10").join("");
+
+    let sampled = "101101";
+    let runIndex = 0;
+    let chipAt = 0;
+    for (let at = 0; at < chips.length;) {
+        const level = chips[at];
+        let end = at + 1;
+        while (end < chips.length && chips[end] === level) end++;
+        const count = end - at;
+        const progress = chipAt / chips.length;
+        const width = 4.0 + 2.0 * progress;
+        const jitter = [-0.35, 0.2, 0.4, -0.15][runIndex % 4];
+        sampled += level.repeat(Math.max(1, Math.round(count * width + jitter)));
+        chipAt += count;
+        at = end;
+        runIndex++;
+    }
+    sampled += "00101";
+    sampled += "0".repeat((8 - sampled.length % 8) % 8);
+    const raw = new Uint8Array(sampled.length / 8);
+    for (let at = 0; at < sampled.length; at += 8) {
+        raw[at / 8] = parseInt(sampled.slice(at, at + 8), 2);
+    }
+
+    const decoded = decodeLrsPager(raw, { sampleScale: 8 });
+    assert.ok(decoded);
+    assert.deepEqual(decoded.fields, {
+        restaurantId: 1,
+        stationId: 0,
+        pagerId: 1,
+        alertType: 1,
+        checksum: 0x2d,
+    });
+});
+
 test("LRS adaptive RX rejects long structured idle pattern", () => {
     const idle = new Uint8Array(255);
     for (let i = 0; i < idle.length; i++) idle[i] = [0x00, 0xff, 0x7f, 0x80][i % 4];
