@@ -87,27 +87,25 @@ function appendRollingBytes(existing, incoming, maxBytes = POCSAG_ROLLING_MAX) {
 }
 
 function lrsSignalCandidate(bytes) {
-    if (!(bytes instanceof Uint8Array) || bytes.length < 32) return false;
+    if (!(bytes instanceof Uint8Array) || bytes.length < 8) return false;
     const bits = Array.from(bytes, (byte) => byte.toString(2).padStart(8, "0")).join("");
-    const runs = [];
-    for (let start = 0; start < bits.length;) {
-        let end = start + 1;
-        while (end < bits.length && bits[end] === bits[start]) end++;
-        runs.push(end - start);
-        start = end;
-    }
 
-    // Measured OTA LRS captures at the current 5 kbaud raw setting produce
-    // sustained discriminator runs of about 8 samples per chip, with adjacent
-    // equal Manchester chips merging into ~16-sample runs. Idle noise does not
-    // sustain this 8/16 cadence. Search locally so buffer boundaries do not
-    // matter.
-    for (let at = 0; at + 24 <= runs.length; at++) {
-        const window = runs.slice(at, at + 24);
-        const timed = window.filter((n) =>
-            (n >= 7 && n <= 9) || (n >= 15 && n <= 17)
-        ).length;
-        if (timed >= 20) return true;
+    // LRS TX is 625 logical bit/s with hardware Manchester, so raw RX at
+    // 1250 baud sees the encoded chips directly. AA AA AA becomes the
+    // distinctive 1001... Manchester preamble (or its inverted polarity).
+    // Search at bit granularity so RFCat byte boundaries do not matter.
+    const preamble = "1001".repeat(12);
+    const inverted = "0110".repeat(12);
+    const maxErrors = 4;
+    for (let at = 0; at + preamble.length <= bits.length; at++) {
+        let normalErrors = 0;
+        let invertedErrors = 0;
+        for (let i = 0; i < preamble.length; i++) {
+            if (bits[at + i] !== preamble[i]) normalErrors++;
+            if (bits[at + i] !== inverted[i]) invertedErrors++;
+            if (normalErrors > maxErrors && invertedErrors > maxErrors) break;
+        }
+        if (normalErrors <= maxErrors || invertedErrors <= maxErrors) return true;
     }
     return false;
 }
