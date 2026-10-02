@@ -474,6 +474,62 @@ $("apply").onclick = async () => {
     }
 };
 
+async function configureProtocolReceiver(protocol) {
+    const preset = protocol?.rxPreset;
+    if (!preset) return;
+
+    if (listening) {
+        await d.mode(C.RF_IDLE);
+        listening = false;
+    }
+    await d.mode(C.RF_IDLE);
+    await d.setFrequency(preset.frequency);
+    await d.setDataRate(preset.dataRate);
+    await d.setBandwidth(preset.bandwidth);
+    await d.setModulation(preset.modulation);
+    await d.setSync(preset.syncWord, preset.syncMode);
+    await d.setManchester(preset.manchester);
+    await d.setPacketConfig({
+        lengthMode: preset.lengthMode,
+        packetLength: preset.packetLength,
+        crc: preset.crc,
+        whitening: preset.whitening,
+        appendStatus: preset.appendStatus,
+        addressCheck: preset.addressCheck,
+        deviceAddress: preset.deviceAddress,
+    });
+    if (preset.lowball) await d.lowball();
+
+    $("freq").value = (preset.frequency / 1e6).toFixed(3);
+    $("drate").value = String(preset.dataRate);
+    $("bw").value = (preset.bandwidth / 1e3).toFixed(3);
+    $("mod").value = String(preset.modulation);
+    $("sync").value = preset.syncWord.toString(16).padStart(4, "0").toUpperCase();
+    $("syncmode").value = String(preset.syncMode);
+    $("lengthmode").value = preset.lengthMode;
+    $("pktlen").value = String(preset.packetLength);
+    $("crc").checked = preset.crc;
+    $("whitening").checked = preset.whitening;
+    $("appendstatus").checked = preset.appendStatus;
+    $("addrcheck").value = String(preset.addressCheck);
+    $("deviceaddr").value = preset.deviceAddress.toString(16).padStart(2, "0").toUpperCase();
+    $("lowball").checked = !!preset.lowball;
+    updatePacketControlState();
+    resetPocsagRolling();
+
+    await d.mode(C.RF_RX);
+    listening = true;
+    $("listen").textContent = "Stop listening";
+    $("rxstate").textContent = "RX";
+    log(`${protocol.name} RX started: ${(preset.frequency / 1e6).toFixed(3)} MHz · ${preset.dataRate} baud · ${(preset.bandwidth / 1e3).toFixed(3)} kHz BW · raw OOK`);
+}
+
+rxProtocolSelect.addEventListener("change", () => {
+    const protocol = getProtocol(rxProtocolSelect.value);
+    if (!protocol?.rxPreset || !d.device) return;
+    configureProtocolReceiver(protocol).catch((e) => log(`${protocol.name} RX error: ${e.message}`));
+});
+
 async function configurePocsagReceiver() {
     const frequencyMHz = Number($("pocsag-rx-frequency").value);
     const baud = Number($("pocsag-rx-baud").value);
