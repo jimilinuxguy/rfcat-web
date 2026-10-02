@@ -119,3 +119,29 @@ test("wait timeout removes stale waiter state", async () => {
     await assert.rejects(() => d.wait(0xff, 0x82, 5), /Timeout waiting for ff:82/);
     assert.equal(d.waiters.length, 0);
 });
+
+test("transmit rejects empty, oversized, and non-byte payloads before USB", () => {
+    const d = new RFCatUSB();
+    assert.throws(() => d.transmit([]), /Uint8Array/);
+    assert.throws(() => d.transmit(new Uint8Array()), /must not be empty/);
+    assert.throws(() => d.transmit(new Uint8Array(256)), /255 bytes/);
+});
+
+test("transmit encodes length repeat and offset as RFCat little-endian u16 fields", async () => {
+    const d = new RFCatUSB();
+    let captured;
+    d.send = async (app, cmd, payload, timeout) => {
+        captured = { app, cmd, payload: [...payload], timeout };
+        return new Uint8Array();
+    };
+    await d.transmit(new Uint8Array([0xaa, 0xbb]), 3, 4);
+    assert.equal(captured.app, 0x42);
+    assert.equal(captured.cmd, 0x02);
+    assert.deepEqual(captured.payload, [
+        0x02, 0x00,
+        0x03, 0x00,
+        0x04, 0x00,
+        0xaa, 0xbb,
+    ]);
+    assert.equal(captured.timeout, 10_000);
+});
