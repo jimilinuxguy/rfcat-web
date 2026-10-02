@@ -97,22 +97,31 @@ export function encodeLrsPager({
     };
 }
 
+function parseLrsPayload(payload) {
+    if (payload.length !== 10) return null;
+    if (payload.slice(3, 8).some((value) => value !== 0)) return null;
+
+    // The transmitted checksum covers the three AA preamble bytes, FC2D sync,
+    // and the ten-byte payload up to (but not including) the checksum byte.
+    let sum = 0xaa * 3 + 0xfc + 0x2d;
+    for (let i = 0; i < 9; i++) sum += payload[i];
+    if ((sum % 255) !== payload[9]) return null;
+
+    const restaurantId = payload[0];
+    const stationId = payload[1] >>> 4;
+    const pagerId = ((payload[1] & 0x0f) << 8) | payload[2];
+    const alertType = payload[8];
+    return {
+        fields: { restaurantId, stationId, pagerId, alertType, checksum: payload[9] },
+        summary: `restaurant ${restaurantId} · station ${stationId} · pager ${pagerId} · alert ${alertType} · checksum ${payload[9].toString(16).padStart(2, "0").toUpperCase()}`,
+    };
+}
+
 function parseLrsFrame(frame) {
     if (frame.length !== 15 ||
         frame[0] !== 0xaa || frame[1] !== 0xaa || frame[2] !== 0xaa ||
         frame[3] !== 0xfc || frame[4] !== 0x2d) return null;
-    let sum = 0;
-    for (let i = 0; i < 14; i++) sum += frame[i];
-    if ((sum % 255) !== frame[14]) return null;
-    if (frame.slice(8, 13).some((value) => value !== 0)) return null;
-    const restaurantId = frame[5];
-    const stationId = frame[6] >>> 4;
-    const pagerId = ((frame[6] & 0x0f) << 8) | frame[7];
-    const alertType = frame[13];
-    return {
-        fields: { restaurantId, stationId, pagerId, alertType, checksum: frame[14] },
-        summary: `restaurant ${restaurantId} · station ${stationId} · pager ${pagerId} · alert ${alertType} · checksum ${frame[14].toString(16).padStart(2, "0").toUpperCase()}`,
-    };
+    return parseLrsPayload(frame.slice(5));
 }
 
 function rawBits(bytes) {
@@ -192,7 +201,14 @@ function findLrsFrame(logical) {
 export function decodeLrsPager(bytes, { sampleScale = 4 } = {}) {
     if (!(bytes instanceof Uint8Array)) throw new TypeError("LRS RX payload must be a Uint8Array");
 
-    // Also accept already Manchester-decoded reference/capture bytes.
+    // Normal OTA RX uses CC1111 Manchester + FC2D sync detection. The packet
+    // engine strips preamble/sync and returns the ten bytes that follow FC2D.
+    if (bytes.length === 10) {
+        const parsed = parseLrsPayload(bytes);
+        if (parsed) return parsed;
+    }
+
+    // Keep support for complete reference frames and raw oversampled captures.
     for (let start = 0; start + 15 <= bytes.length; start++) {
         const parsed = parseLrsFrame(bytes.slice(start, start + 15));
         if (parsed) return parsed;
@@ -231,15 +247,15 @@ const lrs = {
 
     rxPreset: {
         frequency: 467_750_000,
-        dataRate: 5000,
+        dataRate: 625,
         bandwidth: 93_750,
         modulation: 0x00,
         deviation: 15_000,
-        syncWord: 0x0000,
-        syncMode: 0,
-        manchester: false,
+        syncWord: 0xfc2d,
+        syncMode: 2,
+        manchester: true,
         lengthMode: "fixed",
-        packetLength: 255,
+        packetLength: 10,
         crc: false,
         whitening: false,
         appendStatus: false,
