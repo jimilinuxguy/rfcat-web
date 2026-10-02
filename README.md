@@ -67,3 +67,8 @@ Transmit only on frequencies and equipment you are legally permitted to use. Pro
 The receiver includes an OOK Pulse Analyzer for inspecting HIGH/LOW timing runs from raw RFCat receive buffers. It uses the configured data rate as the sampling clock, draws a timing waveform, clusters similar pulse widths, estimates a base pulse, and can export the captured runs and timing distribution as JSON.
 
 For asynchronous OOK exploration, disable sync and enable **Lowball / raw OOK receive** before listening. The analyzer currently derives pulse timing from received CC1111 sample bytes; it is not a firmware-level edge timestamp capture, so timing resolution is limited by the configured data rate.
+
+
+## Configurable workspace
+
+The main RFCat Web panels can be dragged into a preferred order and resized from the lower-right corner on desktop-sized displays. Panel order, dimensions, and collapsed/open state are saved automatically in browser IndexedDB and restored on the next visit. **Reset layout** clears the saved workspace and restores the built-in arrangement. Mobile layouts intentionally use a single column and ignore saved desktop dimensions.

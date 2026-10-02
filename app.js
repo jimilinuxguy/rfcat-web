@@ -8,6 +8,7 @@ import { renderWaveformPreview, clearWaveformPreview } from "./js/ui/waveform.js
 import { exportProtocolToIPython } from "./js/export/ipython.js";
 import { decodeRxPacket, decoderProtocols, splitRxStatus } from "./js/rx/decode.js";
 import { bytesToPulseRuns, pulseDistribution, estimateBasePulse } from "./js/rx/pulses.js";
+import { initWorkspace } from "./js/ui/workspace.js";
 
 import { protocols, getProtocol } from "./js/protocols/index.js";
 
@@ -21,6 +22,8 @@ const d = new RFCatUSB();
 const protocolSelect = $("protocol");
 const protocolFields = $("protocol-fields");
 const waveformPreview = $("waveform-preview");
+
+initWorkspace();
 
 renderProtocolSelector(protocolSelect, protocols);
 

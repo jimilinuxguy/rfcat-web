@@ -161,3 +161,19 @@
 .preset-role select{margin-left:4px}
 .preset-field-head,.preset-field-row{grid-template-columns:58px 58px minmax(110px,1fr) minmax(110px,160px) minmax(90px,130px)}
 @media(max-width:650px){.preset-meta{grid-template-columns:1fr}.preset-field-head,.preset-field-row{grid-template-columns:48px 48px minmax(90px,1fr)}.preset-field-head span:nth-child(n+4){display:none}.preset-field-type,.preset-field-value{grid-column:2/-1}}
+
+
+/* Configurable workspace */
+main[data-workspace-ready="true"]{display:block;max-width:1440px}
+.workspace-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px;padding:10px 12px;border:1px solid #263244;border-radius:10px;background:#0c121bd9}
+.workspace-toolbar>div{display:flex;align-items:baseline;gap:10px;min-width:0}.workspace-toolbar strong{color:#c9d8ea;font-size:12px;text-transform:uppercase;letter-spacing:.08em}.workspace-toolbar span{color:#66758a;font-size:11px}.workspace-toolbar button{padding:6px 10px;font-size:11px}
+.workspace{display:flex;flex-wrap:wrap;align-items:flex-start;gap:18px;min-width:0}
+.workspace>.workspace-panel{position:relative;flex:1 1 520px;width:calc(50% - 9px);min-width:320px;max-width:100%;min-height:58px;resize:both;overflow:auto;margin:0;grid-column:auto}
+.workspace>.workspace-panel[data-workspace-panel="radio"],.workspace>.workspace-panel[data-workspace-panel="waveform"],.workspace>.workspace-panel[data-workspace-panel="activity"]{flex-basis:100%;width:100%}
+.workspace>.workspace-panel[open]{min-height:120px}
+.workspace>details.workspace-panel:not([open]){height:58px!important;min-height:58px;resize:horizontal;overflow:hidden}
+.workspace-grip{position:absolute;z-index:4;top:9px;right:10px;width:34px;height:34px;padding:0;display:grid;place-items:center;cursor:grab;color:#718198;background:#101925;border-color:#2b394c;font-size:18px;line-height:1;touch-action:none}
+.workspace-grip:active{cursor:grabbing}.workspace-dragging{opacity:.55;outline:1px dashed #4c78a8}
+.workspace>.receiver-card{grid-column:auto}.workspace+.rx-tx-tools{display:none}
+.workspace>.collapsible .section-summary{padding-right:56px}.workspace>.receiver-card>.title-row{padding-right:44px}
+@media(max-width:800px){.workspace-toolbar span{display:none}.workspace{display:block}.workspace>.workspace-panel{width:100%!important;height:auto!important;min-width:0;max-width:none;margin-bottom:12px;resize:none}.workspace>details.workspace-panel:not([open]){height:58px!important}}
