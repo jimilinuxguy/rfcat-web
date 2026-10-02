@@ -5,7 +5,7 @@ export function encodeRetekessT112({ systemId, pagerId, cancel = false, frames =
     if (!Number.isInteger(systemId) || systemId < 0 || systemId > 8191) throw new Error("System ID must be 0–8191");
     if (!Number.isInteger(pagerId) || pagerId < 0 || pagerId > 1023) throw new Error("Pager ID must be 0–1023");
     const payload = bitsOf(systemId, 13, { lsb: true }) + bitsOf(pagerId, 10, { lsb: true }) + (cancel ? "1" : "0");
-    const frame = pulseEncode(payload, { prefix: "11" + "0".repeat(59) });
+    const frame = pulseEncode(payload, { zero: [3, 9], one: [9, 3], prefix: "11" + "0".repeat(59) });
     const waveform = frame.repeat(frames);
     const { bytes, padding } = packWaveform(waveform);
     return { bytes, waveform, padding, payload, systemId, pagerId, cancel: !!cancel, frames };
