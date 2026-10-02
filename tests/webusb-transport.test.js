@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { RFCatUSB } from "../js/rfcat/device.js";
+globalThis.document = {\n    getElementById() { return null; },\n};\n\nconst { RFCatUSB } = await import("../js/rfcat/device.js");
 
 function responseFrame(app, cmd, payload = []) {
     return new Uint8Array([0x40, app, cmd, payload.length & 0xff, payload.length >> 8, ...payload]);
@@ -123,7 +123,7 @@ test("wait timeout removes stale waiter state", async () => {
 test("transmit rejects empty, oversized, and non-byte payloads before USB", () => {
     const d = new RFCatUSB();
     assert.throws(() => d.transmit([]), /Uint8Array/);
-    assert.throws(() => d.transmit(new Uint8Array()), /must not be empty/);
+    assert.throws(() => d.transmit(new Uint8Array()), /cannot be empty/);
     assert.throws(() => d.transmit(new Uint8Array(256)), /255 bytes/);
 });
 
