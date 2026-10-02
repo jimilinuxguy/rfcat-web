@@ -24,7 +24,7 @@ CAME-12 and POCSAG provide protocol-specific RX decoders. CAME-12 has been valid
 
 See [Receiver and Protocol Decoders](docs/receiver-decoders.md) for RX behavior, decoder development, framing notes, and the known-good CAME and POCSAG test setups.
 
-The Retekess modules support explicit single-pager operation and sequential paging within a configured system/station. Protocol-defined all-pager commands are exposed where documented by the source material. **Retekess T112, T119, TD157 and TD161 TX/RX are OTA validated with YARD Stick One hardware.** T112 was additionally checked against independent RTL-SDR/rtl_433 captures for system 0, pagers 69 and 70. TD164, TD165 and TD174 remain source-derived/synthetically tested pending OTA validation.
+The Retekess modules support explicit single-pager operation and sequential paging within a configured system/station. Protocol-defined all-pager commands are exposed where documented by the source material. **Retekess T112, T119, TD157, TD161, TD164, TD165 and TD174 TX/RX are OTA validated with YARD Stick One hardware.** T112 was additionally checked against independent RTL-SDR/rtl_433 captures for system 0, pagers 69 and 70. The asynchronous Princeton-style receivers use protocol-specific raw OOK sampling rates; T119, TD157, TD165 and TD174 use 4× sampling so the CC1111 preserves short 1-TE pulses reliably. TD174 uses the verified station → action → pager field order. TD164 uses 2-FSK and only reports frames that match its preamble and checksum rules.
 
 See [docs/README.md](docs/README.md) for protocol documentation.
 

@@ -27,6 +27,7 @@ This document covers:
 - POCSAG RX and the dedicated receiver preset
 - Rolling receive-buffer decoding
 - Known-good OTA validation setups
+- Retekess raw OOK oversampling and rolling-buffer decoding
 - Decoder development
 
 ### RFCat USB

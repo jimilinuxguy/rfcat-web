@@ -119,8 +119,33 @@ Do not put protocol-specific decoding logic in `app.js` or the RFCat device laye
 
 ## Retekess pager RX
 
-Retekess T112, T119, TD157, TD161, TD164, TD165 and TD174 are available as passive protocol-specific RX decoders and participate in Auto mode. The decoders recover the documented addressing/action fields from source-derived framing. TD164 additionally validates its checksum nibbles.
+Retekess T112, T119, TD157, TD161, TD164, TD165 and TD174 are available as protocol-specific RX decoders and participate in Auto mode. All seven implemented models have been validated over the air with YARD Stick One hardware for both TX and RX.
 
-The current Retekess RX implementations are synthetically validated against their corresponding TX encoders. OTA validation is still required. For hardware validation, capture a known base-station page, retain the raw bytes/pulse data, record the exact pager model/revision and configured identifiers, and compare the decoded fields and measured timing with the source-derived protocol documentation.
+T112 and TD161 use dedicated timing-tolerant decoders. The T119/TD157/TD165/TD174 family uses a shared Princeton-style pulse decoder that searches across arbitrary byte alignment and rolling RFCat receive-buffer boundaries. It builds HIGH/LOW runs, suppresses short slicer glitches, anchors frames on the long LOW trailer, tolerates partial runs at repeated-frame boundaries, and accepts a final symbol whose LOW portion merges into the frame trailer.
+
+### Raw OOK sampling
+
+A key OTA finding is that the CC1111 raw receive sampling rate should not be confused with the protocol's transmit symbol timing. Sampling the Princeton-style formats at approximately one sample per TE was marginal: real captures could contain recognizable repeated traffic but short 1-TE pulses collapsed into phase-shifted `AA`/`55` or `11`/`22`/`44`/`88` patterns and the logical frame would not decode reliably.
+
+The validated receiver therefore samples these protocols at four samples per TE:
+
+| Model | RF | TX TE | Raw RX sample rate | RX scale |
+| --- | --- | ---: | ---: | ---: |
+| T119 | 433.920 MHz OOK | 271 µs | 14760.1476 samples/s | 4× |
+| TD157 | 433.920 MHz OOK | 212 µs | 18867.9245 samples/s | 4× |
+| TD165 | 433.920 MHz OOK | 271 µs | 14760.1476 samples/s | 4× |
+| TD174 | 433.889 MHz OOK | 326 µs | 12269.9387 samples/s | 4× |
+
+These presets use 93.750 kHz bandwidth, hardware sync disabled, Manchester disabled, fixed raw packets, CRC/whitening/status disabled, no address check, and lowball/raw OOK receive. The decoder scales its expected 1:3 and 3:1 pulse widths by the protocol's RX sample scale.
+
+T112 remains validated with its dedicated 9090.909 samples/s raw preset, and TD161 remains validated at 5000 samples/s. TD164 is different from the OOK family: it uses 433.920 MHz 2-FSK at 10 kbit/s, 93.750 kHz bandwidth and a 15 kHz requested deviation in the current implementation.
+
+### Decoder validation rules
+
+TD174's OTA testing confirmed that its logical field order is **13-bit station, 2-bit action, 8-bit pager, trailing zero**. Treating it as the generic station/pager/action layout produced stable but incorrect pager values, so TD174 has an explicit action-before-pager mapping for both TX and RX.
+
+TD164 searches for its fixed preamble and validates its separator, BCD pager digits, and both checksum nibbles before reporting a decoded frame. Raw 2-FSK receive buffers can still contain unrelated RF activity; protocol decode output is intentionally stricter than the raw capture stream.
+
+All Retekess decoders have synthetic encode/decode regressions in addition to OTA validation. The four 4× OOK receivers also have oversampled waveform regressions so future shared-decoder changes do not silently return them to marginal one-sample-per-TE behavior.
 
 Auto decoding is passive. A decoded capture does not cause retransmission.
