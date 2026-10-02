@@ -29,7 +29,10 @@ export function decodeRetekessPrinceton(bytes,{stationBits=13,pagerBits=10,actio
   // immediately before the long gap. Search a small window around the ideal
   // frame start instead of requiring an exact run index.
   const ideal=gap-logicalLen*2;
-  for(let first=Math.max(0,ideal-4);first<=Math.min(gap-2,ideal+4);first++){
+  // At higher raw sample rates byte padding and host-idle LOW can merge into
+  // the trailer. Search farther back than the nominal run boundary.
+  const boundarySlack=Math.max(4,sampleScale*4);
+  for(let first=Math.max(0,ideal-boundarySlack);first<=Math.min(gap-2,ideal+4);first++){
    let logical="",error=0,ok=true,ri=first;
    for(let n=0;n<logicalLen;n++,ri+=2){
     const hi=runs[ri],lo=runs[ri+1];if(!hi||!lo||ri+1>=gap||hi.level!=="1"||lo.level!=="0"){ok=false;break;}
