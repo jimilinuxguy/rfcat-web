@@ -42,3 +42,23 @@ test("POCSAG RX tolerates one bad bit in an address codeword", () => {
 test("POCSAG RX rejects unrelated bytes", () => {
     assert.equal(decodePocsag(Uint8Array.of(1, 2, 3, 4, 5, 6, 7, 8)), null);
 });
+
+test("POCSAG RX can decode a page spanning two 255-byte receive chunks", () => {
+    const encoded = buildPocsagAlert({ capcode: 24680, functionBits: 2, message: "BOUNDARY" });
+    const prefix = new Uint8Array(250);
+    prefix.fill(0x55);
+    const stream = new Uint8Array(prefix.length + encoded.bytes.length);
+    stream.set(prefix);
+    stream.set(encoded.bytes, prefix.length);
+
+    const first = stream.slice(0, 255);
+    const second = stream.slice(255, 510);
+    assert.equal(decodePocsag(first), null);
+
+    const rolling = new Uint8Array(first.length + second.length);
+    rolling.set(first);
+    rolling.set(second, first.length);
+    const decoded = decodePocsag(rolling);
+    assert.equal(decoded.fields.capcode, 24680);
+    assert.equal(decoded.fields.message, "BOUNDARY");
+});
