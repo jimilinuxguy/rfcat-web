@@ -1,6 +1,7 @@
 import binary from "./binary.js";
 import came12 from "./came12.js";
 import lrs from "./lrs.js";
+import jtech from "./jtech.js";
 import tesla from "./tesla.js";
 import pwm from "./pwm.js";
 import oregonThgr122nx from "./oregon-thgr122nx.js";
@@ -21,6 +22,7 @@ export const protocols = Object.freeze([
     binary,
     came12,
     lrs,
+    jtech,
     tesla,
     pwm,
     oregonThgr122nx,

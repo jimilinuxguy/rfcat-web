@@ -189,49 +189,26 @@ const pocsag = {
     id: "pocsag",
     name: "POCSAG Pager",
     description:
-        "Explicit-capcode POCSAG alert generator with a JTECH reference RF preset.",
+        "Explicit-capcode generic POCSAG alert and alphanumeric message generator.",
 
     fields: [
-        {
-            id: "profile",
-            label: "Profile",
-            type: "select",
-            value: "generic",
-            options: [
-                { value: "generic", label: "Generic POCSAG" },
-                { value: "jtech-legacy", label: "JTECH Restaurant Pagers" },
-            ],
-        },
         { id: "frequency", label: "Frequency (Hz)", type: "number", min: 1, value: 457600000 },
-        {
-            id: "legacyReference",
-            label: "JTECH Restaurant Pager",
-            type: "select",
-            value: "79984",
-            options: [
-                { value: "79984", label: "79984 (Not Lost)" },
-                { value: "79992", label: "79992 (All)" },
-            ],
-            visibleWhen: { field: "profile", values: ["jtech-legacy"] },
-        },
         {
             id: "baud",
             label: "Baud",
             type: "select",
             value: "512",
-            visibleWhen: { field: "profile", values: ["generic"] },
             options: [
                 { value: "512", label: "512" },
                 { value: "1200", label: "1200" },
                 { value: "2400", label: "2400" },
             ],
         },
-        { id: "deviation", label: "Deviation (Hz)", type: "number", min: 1, value: 4500, visibleWhen: { field: "profile", values: ["generic"] } },
-        { id: "capcode", label: "Capcode", type: "number", min: 0, max: 2097151, value: 1, visibleWhen: { field: "profile", values: ["generic"] } },
+        { id: "deviation", label: "Deviation (Hz)", type: "number", min: 1, value: 4500 },
+        { id: "capcode", label: "Capcode", type: "number", min: 0, max: 2097151, value: 1 },
         {
             id: "functionBits",
             label: "Function",
-            visibleWhen: { field: "profile", values: ["generic"] },
             type: "select",
             value: "0",
             options: [
@@ -247,12 +224,10 @@ const pocsag = {
             type: "text",
             value: "",
             placeholder: "Optional 7-bit ASCII message",
-            visibleWhen: { field: "profile", values: ["generic"] },
         },
         {
             id: "inverted",
             label: "Invert transmitted polarity (CC1111)",
-            visibleWhen: { field: "profile", values: ["generic"] },
             type: "checkbox",
             value: false,
         },
@@ -261,17 +236,14 @@ const pocsag = {
     ],
 
     encode(values) {
-        const profile = String(values.profile ?? "generic");
-        const encoded = profile === "jtech-legacy"
-            ? buildJtechLegacyAlert(values.legacyReference)
-            : buildPocsagAlert({
-                capcode: values.capcode,
-                functionBits: values.functionBits,
-                message: values.message,
-                inverted: values.inverted,
-            });
+        const encoded = buildPocsagAlert({
+            capcode: values.capcode,
+            functionBits: values.functionBits,
+            message: values.message,
+            inverted: values.inverted,
+        });
 
-        const baud = profile === "jtech-legacy" ? 512 : Number(values.baud ?? 512);
+        const baud = Number(values.baud ?? 512);
         const analysis = buildWaveformAnalysis({
             waveform: encoded.bits,
             symbolRate: baud,
@@ -287,17 +259,14 @@ const pocsag = {
             waveform: encoded.bits,
             analysis,
             modulation: "2-FSK",
-            summary: encoded.legacyJtech
-                ? `JTECH legacy TX: reference capcode ${encoded.capcode} · 512 baud · ${encoded.bytes.length} bytes`
-                : `POCSAG TX: capcode ${encoded.capcode} · frame ${encoded.frame} · ` +
-                  `function ${encoded.functionBits} · ${encoded.message ? `${encoded.message.length} char message · ` : ""}${baud} baud · ` +
-                  `${encoded.inverted ? "inverted" : "normal"} polarity · ` +
-                  `${encoded.bytes.length} bytes`,
+            summary: `POCSAG TX: capcode ${encoded.capcode} · frame ${encoded.frame} · ` +
+                `function ${encoded.functionBits} · ${encoded.message ? `${encoded.message.length} char message · ` : ""}${baud} baud · ` +
+                `${encoded.inverted ? "inverted" : "normal"} polarity · ` +
+                `${encoded.bytes.length} bytes`,
         };
     },
 
     async configure(device, values) {
-        const profile = String(values.profile ?? "generic");
         const baud = Number(values.baud ?? 512);
         const deviation = Number(values.deviation ?? 4500);
 
@@ -308,11 +277,8 @@ const pocsag = {
             throw new Error("POCSAG deviation must be positive");
         }
 
-        // The public JTECH reference script uses 512 baud and 4.5 kHz deviation.
-        // Keep these as profile defaults, not claims about every JTECH installation.
-        const isJtech = profile === "jtech-legacy";
-        const configuredBaud = isJtech ? 512 : baud;
-        const configuredDeviation = isJtech ? 4500 : deviation;
+        const configuredBaud = baud;
+        const configuredDeviation = deviation;
 
         await device.mode(0x04);
         await device.setFrequency(Number(values.frequency));
@@ -343,7 +309,6 @@ const pocsag = {
                 Number(values.offset ?? 0),
             );
         } finally {
-            await device.mode(0x04);
             await device.setAmpMode(false);
         }
     },

@@ -43,15 +43,21 @@ export class RFCatUSB extends EventTarget {
     async disconnect() {
         this.running = false;
 
-        try {
-            await this.device?.releaseInterface(0);
-        } catch {}
-
-        try {
-            await this.device?.close();
-        } catch {}
-
+        const device = this.device;
         this.device = null;
+
+        for (const waiter of this.waiters.splice(0)) {
+            clearTimeout(waiter.timer);
+            waiter.reject(new Error("USB device disconnected"));
+        }
+
+        try {
+            await device?.releaseInterface(0);
+        } catch {}
+
+        try {
+            await device?.close();
+        } catch {}
     }
 
     async readLoop() {
@@ -144,7 +150,7 @@ export class RFCatUSB extends EventTarget {
 
     wait(app, cmd, ms = 3000) {
         return new Promise((resolve, reject) => {
-            const w = { app, cmd, resolve };
+            const w = { app, cmd, resolve, reject };
 
             w.timer = setTimeout(() => {
                 this.waiters = this.waiters.filter((x) => x !== w);
@@ -167,29 +173,55 @@ export class RFCatUSB extends EventTarget {
             payload,
         );
 
-        const pending = this.wait(app, cmd, timeout);
-
-        for (let p = 0; p < frame.length; p += 64) {
-            const chunk = frame.slice(p, p + 64);
-            const chunkNumber = Math.floor(p / 64) + 1;
-            const chunkCount = Math.ceil(frame.length / 64);
-
-            log(
-                `USB OUT app=0x${app.toString(16).padStart(2, "0")} ` +
-                    `cmd=0x${cmd.toString(16).padStart(2, "0")} ` +
-                    `payload=${payload.length} · ` +
-                    `chunk ${chunkNumber}/${chunkCount} · ` +
-                    `${chunk.length} bytes: ${hex(chunk)}`,
-            );
-
-            const r = await this.device.transferOut(5, chunk);
-
-            if (r.status !== "ok") {
-                throw new Error(`USB write ${r.status}`);
-            }
+        const device = this.device;
+        if (!device?.opened) {
+            throw new Error("USB device is not connected");
         }
 
-        return pending;
+        const pending = this.wait(app, cmd, timeout);
+        const cancelPending = (error) => {
+            const waiter = this.waiters.find(
+                (w) => w.app === app && w.cmd === cmd,
+            );
+            if (!waiter) return;
+            this.waiters = this.waiters.filter((w) => w !== waiter);
+            clearTimeout(waiter.timer);
+            waiter.reject(error);
+        };
+
+        try {
+            for (let p = 0; p < frame.length; p += 64) {
+                const chunk = frame.slice(p, p + 64);
+                const chunkNumber = Math.floor(p / 64) + 1;
+                const chunkCount = Math.ceil(frame.length / 64);
+
+                log(
+                    `USB OUT app=0x${app.toString(16).padStart(2, "0")} ` +
+                        `cmd=0x${cmd.toString(16).padStart(2, "0")} ` +
+                        `payload=${payload.length} · ` +
+                        `chunk ${chunkNumber}/${chunkCount} · ` +
+                        `${chunk.length} bytes: ${hex(chunk)}`,
+                );
+
+                if (this.device !== device || !device.opened) {
+                    throw new Error("USB device disconnected during write");
+                }
+
+                const r = await device.transferOut(5, chunk);
+
+                if (r.status !== "ok") {
+                    throw new Error(`USB write ${r.status}`);
+                }
+            }
+
+            return await pending;
+        } catch (error) {
+            cancelPending(error);
+            // Observe the rejected waiter even when transferOut failed before
+            // the command response could arrive.
+            pending.catch(() => {});
+            throw error;
+        }
     }
 
     ping() {
