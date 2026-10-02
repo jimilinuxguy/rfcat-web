@@ -202,3 +202,12 @@ Select two or more captures, then choose **Build Protocol**. RFCat Web creates a
 Each row can be changed to Constant, uint8, uint16 big-endian, uint16 little-endian, Bit field, Ignore, or Checksum sum mod 255. **Preview Selected** applies the draft declaratively to every selected capture and reports matched or rejected frames plus decoded field values. Presets do not execute JavaScript.
 
 **Save Local** stores the JSON definition in browser local storage. **Export Protocol JSON** downloads the definition for review, sharing, or later conversion into a permanent decoder under `js/protocols/`. Local presets are draft analysis artifacts and are not automatically added to the live RX decoder list or transmitter.
+
+
+### Expanded preset validation
+
+The builder can infer a `sum-mod-255` checksum candidate when a changing byte exactly equals the sum of every preceding byte modulo 255 across all selected captures. Inferred checksums are candidates supported by the selected sample set, not proof of an undocumented protocol rule.
+
+Draft fields now carry explicit offset and length values and support arbitrary byte ranges in addition to integer and bit-field types. Presets include a required `rfcat-web-protocol` schema identifier, version 1, and frame-length validation. Exported preset JSON can be imported back into the builder; imports are schema-checked and remain declarative.
+
+Selected captures can be classified as **Should match**, **Should reject**, or **Unknown**. Preview reports positive matches, correct negative rejections, and unknown matches separately, and gives the reason for each rejected frame. This makes it possible to test a draft against both examples of the protocol and deliberately invalid or unrelated frames.
