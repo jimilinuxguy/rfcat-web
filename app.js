@@ -1071,6 +1071,7 @@ $("rx-compare-close").onclick = () => { $("rx-compare-panel").hidden = true; };
 
 function renderRxCapture(capture) {
     const captureIndex = rxCaptures.push(capture) - 1;
+    if (activeSessionId) $("session-status").textContent = "Modified";
     $("packetList").querySelector(".empty")?.remove();
 
     const el = document.createElement("div");
