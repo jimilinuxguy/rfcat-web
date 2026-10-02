@@ -334,7 +334,11 @@
                             <option value="unknown">Unknown only</option>
                         </select>
                     </label>
-                    <button id="rx-export">Export JSON</button>
+                    <div class="rx-file-actions">
+                        <button id="rx-import">Import JSON</button>
+                        <input id="rx-import-file" type="file" accept="application/json,.json" hidden>
+                        <button id="rx-export">Export JSON</button>
+                    </div>
                 </div>
 
                 <div class="stats">
@@ -346,6 +350,21 @@
                     <span>
                         Bytes
                         <b id="bytes">0</b>
+                    </span>
+
+                    <span>
+                        Decoded
+                        <b id="rx-decoded">0</b>
+                    </span>
+
+                    <span>
+                        Rejected
+                        <b id="rx-rejected">0</b>
+                    </span>
+
+                    <span>
+                        Duplicates
+                        <b id="rx-duplicates">0</b>
                     </span>
 
                     <span>
@@ -365,8 +384,7 @@
                 </div>
 
                 <p class="hint receiver-hint">
-                    Entries are validated protocol packets when a decoder is selected;
-                    raw mode may show RFCat receive buffers.
+                    Imported captures re-decode automatically when you change the decoder. No radio required.
                 </p>
 
                 <div

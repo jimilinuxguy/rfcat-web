@@ -149,3 +149,20 @@ TD164 searches for its fixed preamble and validates its separator, BCD pager dig
 All Retekess decoders have synthetic encode/decode regressions in addition to OTA validation. The four 4× OOK receivers also have oversampled waveform regressions so future shared-decoder changes do not silently return them to marginal one-sample-per-TE behavior.
 
 Auto decoding is passive. A decoded capture does not cause retransmission.
+
+
+## Offline capture import and RX analyzer
+
+Receiver exports can be imported back into RFCat Web without a connected YARD Stick One. Use **Import JSON** in the Receiver and choose a previously exported RX JSON file. Each capture is reconstructed from its hex payload and passed through the same protocol decoder entry point used by live RX. Changing **Decode** or a grouped decoder's **Model** automatically re-runs all imported captures, so one capture set can be compared across decoders without re-importing it.
+
+New exports include the capture frequency, data rate, and selected decode mode so offline analysis retains useful acquisition context. Older exports remain importable; when those fields are absent, the current radio-form values are used as decoder context.
+
+The Receiver session statistics distinguish total RF/imported events from successfully decoded and rejected events. POCSAG duplicate suppression is counted separately. Strict protocol modes such as LRS can therefore count a false hardware-sync event as rejected without presenting it as a valid protocol capture.
+
+Decoded capture cards also provide **Copy hex** and **Use for TX** actions. **Use for TX** selects the matching transmitter protocol and copies fields with matching IDs into its form; it never starts transmission automatically.
+
+Offline re-decoding is intended for decoder development and regression work. It does not emulate the CC1111 packet engine, RF demodulation, hardware Manchester decoding, or hardware sync acquisition. Those stages still require OTA validation when their behavior matters.
+
+### Validated offline workflow
+
+The offline analyzer was validated with exported 13-byte LRS hardware-sync captures while no YARD Stick One was connected. Two imported frames (`AA FC 2D 01 00 01 00 00 00 00 00 01 2D`) were re-decoded as two valid LRS Pager events with zero rejected events, recovering restaurant 1, station 0, pager 1, alert 1, and checksum `2D`.
