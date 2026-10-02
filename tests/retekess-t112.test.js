@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { packWaveform } from "../js/protocols/retekess-common.js";
 import { encodeRetekessT112, decodeRetekessT112 } from "../js/protocols/retekess-t112.js";
 import { encodeRetekessTd161, decodeRetekessTd161 } from "../js/protocols/retekess-td161.js";
 import { encodeRetekessTd164, decodeRetekessTd164 } from "../js/protocols/retekess-td164.js";
