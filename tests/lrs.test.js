@@ -114,3 +114,33 @@ test("LRS adaptive RX rejects long structured idle pattern", () => {
     for (let i = 0; i < idle.length; i++) idle[i] = [0x00, 0xff, 0x7f, 0x80][i % 4];
     assert.equal(decodeLrsPager(idle), null);
 });
+
+
+function rawManchesterSymbols({ inverted = false, bitPrefix = "" } = {}) {
+    const encoded = encodeLrsPager({ restaurantId: 1, pagerId: 1, alertType: 1 });
+    const logical = Array.from(encoded.bytes, (byte) => byte.toString(2).padStart(8, "0")).join("");
+    let chips = Array.from(logical, (bit) => bit === "0" ? "01" : "10").join("");
+    if (inverted) chips = Array.from(chips, (bit) => bit === "0" ? "1" : "0").join("");
+    let sampled = bitPrefix + chips;
+    sampled += "0".repeat((8 - sampled.length % 8) % 8);
+    const raw = new Uint8Array(sampled.length / 8);
+    for (let at = 0; at < sampled.length; at += 8) raw[at / 8] = parseInt(sampled.slice(at, at + 8), 2);
+    return raw;
+}
+
+for (let prefixBits = 0; prefixBits < 8; prefixBits++) {
+    for (const inverted of [false, true]) {
+        test(`LRS RX decodes 1250-baud raw Manchester symbols offset=${prefixBits} inverted=${inverted}`, () => {
+            const raw = rawManchesterSymbols({ inverted, bitPrefix: "1".repeat(prefixBits) });
+            const decoded = decodeLrsPager(raw, { sampleScale: 1 });
+            assert.ok(decoded);
+            assert.deepEqual(decoded.fields, {
+                restaurantId: 1,
+                stationId: 0,
+                pagerId: 1,
+                alertType: 1,
+                checksum: 0x2d,
+            });
+        });
+    }
+}
