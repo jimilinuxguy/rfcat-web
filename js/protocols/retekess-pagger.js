@@ -7,7 +7,7 @@ function encodePrinceton({station,pager,action=0,stationBits=13,pagerBits=10,act
  const waveform=frame.repeat(Number(frames)); const {bytes,padding}=packWaveform(waveform);
  return {bytes,waveform,padding,logical,station,pager,action,te,frames:Number(frames)};
 }
-export function decodeRetekessPrinceton(bytes,{stationBits=13,pagerBits=10,actionBits=1,reverseFields=true,trailingBit=""}={}){
+export function decodeRetekessPrinceton(bytes,{stationBits=13,pagerBits=10,actionBits=1,reverseFields=true,trailingBit="",sampleScale=1}={}){
  const bits=bitsFromBytes(bytes), logicalLen=stationBits+pagerBits+actionBits+trailingBit.length, encodedLen=logicalLen*4;
 
  // Keep exact decoding for generated/reference frames.
@@ -24,14 +24,14 @@ export function decodeRetekessPrinceton(bytes,{stationBits=13,pagerBits=10,actio
  const runs=[];for(let i=0;i<bits.length;){const level=bits[i];let e=i+1;while(e<bits.length&&bits[e]===level)e++;runs.push({level,start:i,length:e-i});i=e;}
  for(let i=1;i+1<runs.length;){if(runs[i].length<=1&&runs[i-1].level===runs[i+1].level){runs[i-1].length+=runs[i].length+runs[i+1].length;runs.splice(i,2);continue;}i++;}
  for(let gap=0;gap<runs.length;gap++){
-  if(runs[gap].level!=="0"||runs[gap].length<14)continue;
+  if(runs[gap].level!=="0"||runs[gap].length<14*sampleScale)continue;
   const first=gap-logicalLen*2;if(first<0)continue;
   let logical="",error=0,ok=true;
   for(let i=first;i<gap;i+=2){
    const hi=runs[i],lo=runs[i+1];if(!hi||!lo||hi.level!=="1"||lo.level!=="0"){ok=false;break;}
-   const total=hi.length+lo.length;if(total<2||total>7){ok=false;break;}
-   const zeroError=Math.abs(hi.length-1)+Math.abs(lo.length-3),oneError=Math.abs(hi.length-3)+Math.abs(lo.length-1),best=Math.min(zeroError,oneError);
-   if(best>3){ok=false;break;}logical+=zeroError<=oneError?"0":"1";error+=best;
+   const total=hi.length+lo.length;if(total<2*sampleScale||total>7*sampleScale){ok=false;break;}
+   const zeroError=Math.abs(hi.length-sampleScale)+Math.abs(lo.length-3*sampleScale),oneError=Math.abs(hi.length-3*sampleScale)+Math.abs(lo.length-sampleScale),best=Math.min(zeroError,oneError);
+   if(best>3*sampleScale){ok=false;break;}logical+=zeroError<=oneError?"0":"1";error+=best;
   }
   if(!ok||logical.length!==logicalLen)continue;
   if(trailingBit&&logical.slice(-trailingBit.length)!==trailingBit)continue;
@@ -41,13 +41,13 @@ export function decodeRetekessPrinceton(bytes,{stationBits=13,pagerBits=10,actio
  return null;
 }
 function makeProtocol({id,name,frequency=433920000,stationBits=13,pagerBits=10,actionBits=1,reverseFields=true,te=271,trailingBit="",pagerMax=999,fixedAction=null,broadcastPager=null,broadcastAction=null,rxPreset=null}){
- return {id,name,menuGroup:"Restaurant Pagers",description:`${name} documented OOK single-pager framing.`,rxPreset,decode(bytes){return decodeRetekessPrinceton(bytes,{stationBits,pagerBits,actionBits,reverseFields,trailingBit});},
+ return {id,name,menuGroup:"Restaurant Pagers",description:`${name} documented OOK single-pager framing.`,rxPreset,decode(bytes){return decodeRetekessPrinceton(bytes,{stationBits,pagerBits,actionBits,reverseFields,trailingBit,sampleScale:rxPreset?.sampleScale??1});},
  fields:[{id:"station",label:"Station",type:"number",min:0,max:2**stationBits-1,value:0},{id:"pager",label:"Pager",type:"number",min:0,max:pagerMax,value:1},...(fixedAction===null?[{id:"action",label:"Action",type:"number",min:0,max:2**actionBits-1,value:0}]:[]),{id:"sequenceEnd",label:"Sequence through pager",type:"number",min:0,max:pagerMax,value:1},...(broadcastPager===null?[]:[{id:"broadcast",label:"All pagers",type:"checkbox",value:false}]),{id:"frames",label:"Frames",type:"number",min:1,max:20,value:10},...repeatFields(0)],
  encode(v){const e=encodePrinceton({...v,action:fixedAction??v.action,stationBits,pagerBits,actionBits,reverseFields,te,trailingBit});return {...e,bits:e.logical,analysis:makeOokAnalysis(e.waveform,1e6/te,`${name} OOK`,[{name:"TE",symbols:1,requestedUs:te}]),modulation:"ASK/OOK",summary:`${name} TX: station ${e.station} · pager ${e.pager} · action ${e.action}`};},
  async configure(d){await configureOok(d,frequency,1e6/te);},async transmit(d,e,v){const start=Number(v.pager),end=Math.max(start,Number(v.sequenceEnd??start));const targets=v.broadcast&&broadcastPager!==null?[broadcastPager]:Array.from({length:end-start+1},(_,i)=>start+i);for(const pager of targets){const next=encodePrinceton({...v,pager,action:v.broadcast&&broadcastAction!==null?broadcastAction:(fixedAction??v.action),stationBits,pagerBits,actionBits,reverseFields,te,trailingBit});await transmitOok(d,next.bytes,v);}}};
 }
 export const retekessT119=makeProtocol({id:"retekess-t119",name:"Retekess T119",broadcastPager:1005,broadcastAction:0,rxPreset:{frequency:433_920_000,dataRate:3690.036900369004,bandwidth:93_750,modulation:0x30,syncWord:0x0000,syncMode:0,manchester:false,lengthMode:"fixed",packetLength:255,crc:false,whitening:false,appendStatus:false,addressCheck:0,deviceAddress:0,lowball:true}});
 export const retekessTd165=makeProtocol({id:"retekess-td165",name:"Retekess TD165",broadcastPager:1005,broadcastAction:0});
-export const retekessTd157=makeProtocol({id:"retekess-td157",name:"Retekess TD157",stationBits:10,pagerBits:10,actionBits:4,reverseFields:false,te:212,fixedAction:2,broadcastPager:999,broadcastAction:15});
+export const retekessTd157=makeProtocol({id:"retekess-td157",name:"Retekess TD157",stationBits:10,pagerBits:10,actionBits:4,reverseFields:false,te:212,fixedAction:2,broadcastPager:999,broadcastAction:15,rxPreset:{frequency:433_920_000,dataRate:4716.981132075472,bandwidth:93_750,modulation:0x30,syncWord:0x0000,syncMode:0,manchester:false,lengthMode:"fixed",packetLength:255,crc:false,whitening:false,appendStatus:false,addressCheck:0,deviceAddress:0,lowball:true,sampleScale:1}});
 export const retekessTd174=makeProtocol({id:"retekess-td174",name:"Retekess TD174",frequency:433889000,stationBits:13,pagerBits:8,actionBits:2,reverseFields:true,te:326,trailingBit:"0",pagerMax:255,fixedAction:0});
 export { encodePrinceton as encodeRetekessPrinceton };
