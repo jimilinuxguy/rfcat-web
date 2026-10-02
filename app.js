@@ -38,6 +38,9 @@ let t112Rolling = new Uint8Array();
 let t119Rolling = new Uint8Array();
 let td157Rolling = new Uint8Array();
 let td161Rolling = new Uint8Array();
+let td164Rolling = new Uint8Array();
+let td165Rolling = new Uint8Array();
+let td174Rolling = new Uint8Array();
 let lastPocsagFingerprint = null;
 const POCSAG_ROLLING_MAX = 1020;
 
@@ -54,6 +57,9 @@ function resetPocsagRolling() {
     t119Rolling = new Uint8Array();
     td157Rolling = new Uint8Array();
     td161Rolling = new Uint8Array();
+    td164Rolling = new Uint8Array();
+    td165Rolling = new Uint8Array();
+    td174Rolling = new Uint8Array();
     lastPocsagFingerprint = null;
 }
 
@@ -495,6 +501,7 @@ async function configureProtocolReceiver(protocol) {
     await d.setDataRate(preset.dataRate);
     await d.setBandwidth(preset.bandwidth);
     await d.setModulation(preset.modulation);
+    if (preset.deviation != null) await d.setDeviation(preset.deviation);
     await d.setSync(preset.syncWord, preset.syncMode);
     await d.setManchester(preset.manchester);
     await d.setPacketConfig({
@@ -770,7 +777,13 @@ d.addEventListener("packet", (e) => {
                     ? (td157Rolling = appendRollingBytes(td157Rolling, b))
                     : decodeMode === "retekess-td161"
                         ? (td161Rolling = appendRollingBytes(td161Rolling, b))
-                        : b;
+                        : decodeMode === "retekess-td164"
+                            ? (td164Rolling = appendRollingBytes(td164Rolling, b))
+                            : decodeMode === "retekess-td165"
+                                ? (td165Rolling = appendRollingBytes(td165Rolling, b))
+                                : decodeMode === "retekess-td174"
+                                    ? (td174Rolling = appendRollingBytes(td174Rolling, b))
+                                    : b;
     const decoded = decodeRxPacket(decodeBytes, decodeMode, {
         frequencyHz: Number($("freq").value) * 1e6,
         dataRate: Number($("drate").value),
