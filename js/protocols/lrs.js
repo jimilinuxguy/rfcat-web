@@ -268,7 +268,7 @@ function findLrsFrame(logical) {
     return null;
 }
 
-export function decodeLrsPager(bytes, { sampleScale = 4 } = {}) {
+export function decodeLrsPager(bytes, { sampleScale = 1 } = {}) {
     if (!(bytes instanceof Uint8Array)) throw new TypeError("LRS RX payload must be a Uint8Array");
 
     // Normal OTA RX uses CC1111 Manchester + FC2D sync detection. The packet
@@ -323,26 +323,30 @@ const lrs = {
 
     rxPreset: {
         frequency: 467_750_000,
-        dataRate: 5000,
+        // TX is 625 logical bit/s with hardware Manchester. Manchester doubles
+        // the on-air symbol rate, so raw RX must clock the encoded symbols at
+        // 1250 baud when Manchester decoding is disabled.
+        dataRate: 1250,
         bandwidth: 93_750,
         modulation: 0x00,
         deviation: 15_000,
         syncWord: 0x0000,
         // Keep Manchester in software. The CC1111 hardware Manchester/sync
         // path did not lock onto the OTA LRS waveform even though raw RX sees
-        // it clearly. Keep the longer raw buffer for decoder context; app.js
-        // gates noise before these buffers are surfaced as user RX events.
+        // it clearly. Receive the Manchester symbols raw at their actual
+        // 1250-symbol/s OTA rate and decode them in software. app.js gates
+        // noise before buffers are surfaced as user RX events.
         syncMode: 0,
         manchester: false,
         lengthMode: "fixed",
-        packetLength: 255,
+        packetLength: 64,
         crc: false,
         whitening: false,
         appendStatus: false,
         addressCheck: 0,
         deviceAddress: 0,
         lowball: false,
-        sampleScale: 4,
+        sampleScale: 1,
     },
 
     description:
