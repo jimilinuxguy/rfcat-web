@@ -254,12 +254,12 @@ const lrs = {
         syncWord: 0x0000,
         // Keep Manchester in software. The CC1111 hardware Manchester/sync
         // path did not lock onto the OTA LRS waveform even though raw RX sees
-        // it clearly. A short raw packet keeps RX usable without 255-byte
-        // noise floods while the decoder validates the full LRS frame.
+        // it clearly. Keep the longer raw buffer for decoder context; app.js
+        // gates noise before these buffers are surfaced as user RX events.
         syncMode: 0,
         manchester: false,
         lengthMode: "fixed",
-        packetLength: 64,
+        packetLength: 255,
         crc: false,
         whitening: false,
         appendStatus: false,
