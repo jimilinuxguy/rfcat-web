@@ -9,6 +9,7 @@ export const R = Object.freeze({
   MDMCFG4: 0xdf0c,
   MDMCFG3: 0xdf0d,
   MDMCFG2: 0xdf0e,
+  MDMCFG1: 0xdf0f,
   DEVIATN: 0xdf11,
   FREND1: 0xdf1a,
   FREND0: 0xdf1b,
