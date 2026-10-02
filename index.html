@@ -432,11 +432,16 @@
                     <div class="preset-meta">
                         <label>Name <input id="preset-name" value="Draft Protocol"></label>
                         <label>ID <input id="preset-id" value="draft-protocol"></label>
+                        <label>Frame length <input id="preset-length" type="number" min="1"></label>
                     </div>
+                    <div class="preset-test-labels"><span>Selected capture roles:</span><button id="preset-all-positive" type="button">All should match</button><button id="preset-last-negative" type="button">Last should reject</button></div>
+                    <div id="preset-capture-roles"></div>
                     <div id="preset-fields"></div>
                     <div class="preset-actions">
                         <button id="preset-preview" type="button">Preview Selected</button>
                         <button id="preset-save" type="button">Save Local</button>
+                        <button id="preset-import" type="button">Import Protocol JSON</button>
+                        <input id="preset-import-file" type="file" accept="application/json,.json" hidden>
                         <button id="preset-export" type="button">Export Protocol JSON</button>
                     </div>
                     <div id="preset-result"></div>
