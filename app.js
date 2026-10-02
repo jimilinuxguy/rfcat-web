@@ -839,6 +839,45 @@ function renderRxCapture(capture) {
     raw.className = "hex";
     raw.textContent = hex(capture.bytes);
     el.append(raw);
+
+    const actions = document.createElement("div");
+    actions.className = "rx-capture-actions";
+    const copy = document.createElement("button");
+    copy.type = "button";
+    copy.textContent = "Copy hex";
+    copy.onclick = async () => {
+        try {
+            await navigator.clipboard.writeText(hex(capture.bytes));
+            copy.textContent = "Copied";
+            setTimeout(() => { copy.textContent = "Copy hex"; }, 1200);
+        } catch (error) {
+            log(`Clipboard unavailable: ${error.message}`);
+        }
+    };
+    actions.append(copy);
+
+    if (capture.decoder && capture.fields && getProtocol(capture.decoder)) {
+        const useTx = document.createElement("button");
+        useTx.type = "button";
+        useTx.textContent = "Use for TX";
+        useTx.onclick = () => {
+            const protocol = getProtocol(capture.decoder);
+            protocolSelect.value = protocol.id;
+            renderProtocolFields(protocolFields, protocol);
+            for (const [field, value] of Object.entries(capture.fields)) {
+                const input = protocolFields.querySelector(`[data-protocol-field="${field}"]`);
+                if (!input) continue;
+                if (input.type === "checkbox") input.checked = Boolean(value);
+                else input.value = String(value);
+                input.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+            document.querySelector(".transmitter-card")?.setAttribute("open", "");
+            updateProtocolPreview();
+            log(`Loaded ${protocol.name} capture into transmitter fields; transmission was not started`);
+        };
+        actions.append(useTx);
+    }
+    el.append(actions);
     el.classList.toggle("filtered", !rxCaptureVisible(capture));
     $("packetList").prepend(el);
 }
