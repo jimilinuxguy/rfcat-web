@@ -149,7 +149,7 @@ const lrs = {
         },
         {
             id: "repeat",
-            label: "RFCat repeat",
+            label: "Repeat count",
             type: "number",
             min: 0,
             max: 100,
@@ -260,11 +260,11 @@ const lrs = {
         await device.setAmpMode(true);
 
         try {
-            await device.transmit(
-                encoded.bytes,
-                Number(values.repeat ?? 0),
-                Number(values.offset ?? 0),
-            );
+            const repeat = Math.max(0, Math.trunc(Number(values.repeat ?? 0)));
+            const offset = Number(values.offset ?? 0);
+            for (let i = 0; i <= repeat; i++) {
+                await device.transmit(encoded.bytes, 0, offset);
+            }
         } finally {
             await device.setAmpMode(false);
         }

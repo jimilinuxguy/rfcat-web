@@ -50,11 +50,15 @@ test("POCSAG TX refreshes PA immediately before diagnostics and amplifier enable
 
     assert.deepEqual(names(d), [
         "setPacketConfig", "setMaxPower", "logTxDiagnostics",
-        "setAmpMode", "transmit", "setAmpMode",
+        "setAmpMode", "transmit", "transmit", "transmit", "setAmpMode",
     ]);
     assert.deepEqual(d.calls[3], ["setAmpMode", true]);
-    assert.deepEqual(d.calls[4], ["transmit", encoded.bytes, 2, 1]);
-    assert.deepEqual(d.calls[5], ["setAmpMode", false]);
+    assert.deepEqual(d.calls.slice(4, 7), [
+        ["transmit", encoded.bytes, 0, 1],
+        ["transmit", encoded.bytes, 0, 1],
+        ["transmit", encoded.bytes, 0, 1],
+    ]);
+    assert.deepEqual(d.calls[7], ["setAmpMode", false]);
 });
 
 test("POCSAG TX always disables amplifier when NIC_XMIT fails", async () => {
@@ -144,4 +148,16 @@ test("Tesla TX cleanup runs after transmit failure", async () => {
         ["mode", 0x04],
         ["setAmpMode", false],
     ]);
+});
+
+test("pager repeat count is implemented host-side for every FSK pager protocol", async () => {
+    for (const protocol of [pocsag, jtech, lrs]) {
+        const d = recorder();
+        const encoded = { bytes: new Uint8Array([0xaa]) };
+        await protocol.transmit(d, encoded, { repeat: 4, offset: 7 });
+        const tx = d.calls.filter(([name]) => name === "transmit");
+        assert.equal(tx.length, 5);
+        assert.deepEqual(tx, Array.from({ length: 5 }, () =>
+            ["transmit", encoded.bytes, 0, 7]));
+    }
 });
