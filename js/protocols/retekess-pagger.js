@@ -25,18 +25,23 @@ export function decodeRetekessPrinceton(bytes,{stationBits=13,pagerBits=10,actio
  for(let i=1;i+1<runs.length;){if(runs[i].length<=1&&runs[i-1].level===runs[i+1].level){runs[i-1].length+=runs[i].length+runs[i+1].length;runs.splice(i,2);continue;}i++;}
  for(let gap=0;gap<runs.length;gap++){
   if(runs[gap].level!=="0"||runs[gap].length<14*sampleScale)continue;
-  const first=gap-logicalLen*2;if(first<0)continue;
-  let logical="",error=0,ok=true;
-  for(let i=first;i<gap;i+=2){
-   const hi=runs[i],lo=runs[i+1];if(!hi||!lo||hi.level!=="1"||lo.level!=="0"){ok=false;break;}
-   const total=hi.length+lo.length;if(total<2*sampleScale||total>7*sampleScale){ok=false;break;}
-   const zeroError=Math.abs(hi.length-sampleScale)+Math.abs(lo.length-3*sampleScale),oneError=Math.abs(hi.length-3*sampleScale)+Math.abs(lo.length-sampleScale),best=Math.min(zeroError,oneError);
-   if(best>3*sampleScale){ok=false;break;}logical+=zeroError<=oneError?"0":"1";error+=best;
+  // Repeated OTA frames can leave a partial symbol or an extra slicer run
+  // immediately before the long gap. Search a small window around the ideal
+  // frame start instead of requiring an exact run index.
+  const ideal=gap-logicalLen*2;
+  for(let first=Math.max(0,ideal-4);first<=Math.min(gap-2,ideal+4);first++){
+   let logical="",error=0,ok=true,ri=first;
+   for(let n=0;n<logicalLen;n++,ri+=2){
+    const hi=runs[ri],lo=runs[ri+1];if(!hi||!lo||ri+1>=gap||hi.level!=="1"||lo.level!=="0"){ok=false;break;}
+    const total=hi.length+lo.length;if(total<2*sampleScale||total>7*sampleScale){ok=false;break;}
+    const zeroError=Math.abs(hi.length-sampleScale)+Math.abs(lo.length-3*sampleScale),oneError=Math.abs(hi.length-3*sampleScale)+Math.abs(lo.length-sampleScale),best=Math.min(zeroError,oneError);
+    if(best>3*sampleScale){ok=false;break;}logical+=zeroError<=oneError?"0":"1";error+=best;
+   }
+   if(!ok||logical.length!==logicalLen)continue;
+   if(trailingBit&&logical.slice(-trailingBit.length)!==trailingBit)continue;
+   let at=0;const station=valueFromBits(logical.slice(at,at+=stationBits),{lsb:reverseFields});const pager=valueFromBits(logical.slice(at,at+=pagerBits),{lsb:reverseFields});const action=valueFromBits(logical.slice(at,at+actionBits),{lsb:reverseFields});
+   return {fields:{station,pager,action,payloadBits:logical},summary:`station ${station} · pager ${pager} · action ${action} · bits ${logical}`,bitOffset:runs[first].start,timingError:error};
   }
-  if(!ok||logical.length!==logicalLen)continue;
-  if(trailingBit&&logical.slice(-trailingBit.length)!==trailingBit)continue;
-  let at=0;const station=valueFromBits(logical.slice(at,at+=stationBits),{lsb:reverseFields});const pager=valueFromBits(logical.slice(at,at+=pagerBits),{lsb:reverseFields});const action=valueFromBits(logical.slice(at,at+actionBits),{lsb:reverseFields});
-  return {fields:{station,pager,action,payloadBits:logical},summary:`station ${station} · pager ${pager} · action ${action} · bits ${logical}`,bitOffset:runs[first].start,timingError:error};
  }
  return null;
 }
