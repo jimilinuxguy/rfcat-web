@@ -13,15 +13,47 @@ export function encodeRetekessT112({ systemId, pagerId, cancel = false, frames =
 
 export function decodeRetekessT112(bytes) {
     const bits = bitsFromBytes(bytes);
-    for (let start = 0; start + 349 <= bits.length; start++) {
-        const sync = bits.slice(start, start + 61);
-        if (sync !== "11" + "0".repeat(59)) continue;
-        const payload = decodePulseBits(bits.slice(start + 61, start + 349), { zero: "111000000000", one: "111111111000" });
-        if (!payload || payload.length !== 24) continue;
+    const runs = [];
+    for (let i = 0; i < bits.length;) {
+        const level = bits[i];
+        let end = i + 1;
+        while (end < bits.length && bits[end] === level) end++;
+        runs.push({ level, start: i, length: end - i });
+        i = end;
+    }
+
+    // OTA captures are asynchronously sampled. Accept timing around the
+    // nominal 2/59 sync and 3/9 or 9/3 data runs rather than exact bit strings.
+    for (let r = 0; r + 49 < runs.length; r++) {
+        const syncHigh = runs[r], syncLow = runs[r + 1];
+        if (syncHigh.level !== "1" || syncLow.level !== "0") continue;
+        if (syncHigh.length < 1 || syncHigh.length > 4 || syncLow.length < 52) continue;
+
+        let at = r + 2, payload = "", timingError = 0;
+        for (let n = 0; n < 24 && at + 1 < runs.length; n++, at += 2) {
+            const high = runs[at], low = runs[at + 1];
+            if (high.level !== "1" || low.level !== "0") break;
+            const total = high.length + low.length;
+            if (total < 9 || total > 15) break;
+            const zeroError = Math.abs(high.length - 3) + Math.abs(low.length - 9);
+            const oneError = Math.abs(high.length - 9) + Math.abs(low.length - 3);
+            const best = Math.min(zeroError, oneError);
+            if (best > 4) break;
+            payload += zeroError <= oneError ? "0" : "1";
+            timingError += best;
+        }
+        if (payload.length !== 24) continue;
+
         const systemId = valueFromBits(payload.slice(0, 13), { lsb: true });
         const pagerId = valueFromBits(payload.slice(13, 23), { lsb: true });
         const cancel = payload[23] === "1";
-        return { fields: { systemId, pagerId, cancel }, summary: `T112 system ${systemId} · pager ${pagerId} · ${cancel ? "cancel" : "page"}`, bitOffset: start };
+        const payloadHex = parseInt(payload, 2).toString(16).padStart(6, "0").toUpperCase();
+        return {
+            fields: { systemId, pagerId, cancel, payloadBits: payload, payloadHex },
+            summary: `T112 system ${systemId} · pager ${pagerId} · ${cancel ? "cancel" : "page"} · bits ${payload} · hex ${payloadHex}`,
+            bitOffset: syncHigh.start,
+            timingError,
+        };
     }
     return null;
 }
