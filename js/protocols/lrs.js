@@ -327,8 +327,17 @@ function findLrsFrame(logical) {
 export function decodeLrsPager(bytes, { sampleScale = 1 } = {}) {
     if (!(bytes instanceof Uint8Array)) throw new TypeError("LRS RX payload must be a Uint8Array");
 
-    // Normal OTA RX uses CC1111 Manchester + FC2D sync detection. The packet
-    // engine strips preamble/sync and returns the ten bytes that follow FC2D.
+    // Live RX uses AA AA as the CC1111 sync word. Sync detection is required
+    // for byte alignment; with sync disabled the packet engine starts fixed
+    // packets at arbitrary bit boundaries. The first two AA bytes are stripped,
+    // leaving AA FC 2D plus the ten-byte LRS payload.
+    if (bytes.length === 13 &&
+        bytes[0] === 0xaa && bytes[1] === 0xfc && bytes[2] === 0x2d) {
+        const parsed = parseLrsPayload(bytes.slice(3));
+        if (parsed) return parsed;
+    }
+
+    // Retain compatibility with the earlier FC2D hardware-sync experiment.
     if (bytes.length === 10) {
         const parsed = parseLrsPayload(bytes);
         if (parsed) return parsed;
@@ -390,16 +399,15 @@ const lrs = {
         bandwidth: 93_750,
         modulation: 0x00,
         deviation: 15_000,
-        // The transmitter sends AA AA AA FC 2D as packet data with hardware
-        // Manchester enabled and CC1111 sync disabled. Receive the same way:
-        // let hardware recover/decode Manchester, but do not require a hardware
-        // sync word. The software decoder searches the returned byte stream for
-        // the complete 15-byte frame and validates its checksum.
-        syncWord: 0x0000,
-        syncMode: 0,
+        // RX needs a sync word to establish byte boundaries. The transmitter
+        // carries AA AA AA FC 2D inside its data, so lock on the first AA AA.
+        // CC1111 strips those two sync bytes and returns the remaining 13 bytes:
+        // AA FC 2D + the ten-byte LRS payload.
+        syncWord: 0xaaaa,
+        syncMode: 2,
         manchester: true,
         lengthMode: "fixed",
-        packetLength: 64,
+        packetLength: 13,
         crc: false,
         whitening: false,
         appendStatus: false,
