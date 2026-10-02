@@ -88,36 +88,12 @@ function appendRollingBytes(existing, incoming, maxBytes = POCSAG_ROLLING_MAX) {
 
 function lrsSignalCandidate(bytes) {
     if (!(bytes instanceof Uint8Array) || bytes.length < 8) return false;
-    const bits = Array.from(bytes, (byte) => byte.toString(2).padStart(8, "0")).join("");
 
-    // Live LRS RX oversamples the 625-baud Manchester chip stream at 5000
-    // baud. A valid transmission therefore contains many sustained runs near
-    // 8 samples (one chip) and 16 samples (two equal adjacent chips). Do not
-    // require an exact AA preamble here: packet boundaries and discriminator
-    // polarity are arbitrary, and the decoder performs the strict frame and
-    // checksum validation after timing recovery.
-    const runs = [];
-    for (let at = 0; at < bits.length;) {
-        const level = bits[at];
-        let end = at + 1;
-        while (end < bits.length && bits[end] === level) end++;
-        runs.push(end - at);
-        at = end;
-    }
-
-    let cadence = 0;
-    let bestCadence = 0;
-    for (const length of runs) {
-        const nearOneChip = length >= 6 && length <= 10;
-        const nearTwoChips = length >= 13 && length <= 19;
-        if (nearOneChip || nearTwoChips) {
-            cadence++;
-            bestCadence = Math.max(bestCadence, cadence);
-        } else {
-            cadence = 0;
-        }
-    }
-    return bestCadence >= 8;
+    // LRS now uses the CC1111's hardware Manchester decoder at the same
+    // 625-baud modem rate as TX. Do not apply the old 5000-baud run-length
+    // cadence gate: those bytes were packet-engine output, not 8x RF samples.
+    // The LRS decoder itself performs the strict full-frame/checksum test.
+    return true;
 }
 
 function resetPocsagRolling() {
