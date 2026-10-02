@@ -84,3 +84,10 @@
 .packet .rx-rejected{margin:6px 0;color:#d6a875;font-size:11px}.packet .rx-rejected:before{content:"× ";font-weight:700}
 @media(max-width:900px){.receiver-controls{grid-template-columns:1fr 1fr}.rx-file-actions{align-self:end}.receiver-card .stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:520px){.receiver-controls{grid-template-columns:1fr}.rx-file-actions{width:100%}.rx-file-actions button{flex:1}.receiver-card .stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Keep RX file actions inside the receiver card */
+.receiver-controls{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,.9fr);align-items:end}
+.rx-file-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;min-width:0}
+.rx-file-actions button{width:100%;min-width:0;padding-left:10px;padding-right:10px}
+@media(max-width:900px){.receiver-controls{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.rx-file-actions{grid-column:1/-1;display:flex}.rx-file-actions button{width:auto;flex:1}}
+@media(max-width:520px){.receiver-controls{grid-template-columns:minmax(0,1fr)}.rx-file-actions{grid-column:1}}
