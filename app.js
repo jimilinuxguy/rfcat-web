@@ -34,6 +34,7 @@ for (const protocol of decoderProtocols(protocols)) {
 const rxCaptures = [];
 let pulseRuns = [];
 let pocsagRolling = new Uint8Array();
+let lastPocsagFingerprint = null;
 const POCSAG_ROLLING_MAX = 1020;
 
 function appendRollingBytes(existing, incoming, maxBytes = POCSAG_ROLLING_MAX) {
@@ -45,6 +46,13 @@ function appendRollingBytes(existing, incoming, maxBytes = POCSAG_ROLLING_MAX) {
 
 function resetPocsagRolling() {
     pocsagRolling = new Uint8Array();
+    lastPocsagFingerprint = null;
+}
+
+function pocsagFingerprint(decoded) {
+    if (decoded?.protocol?.id !== "pocsag" || !decoded.fields) return null;
+    const f = decoded.fields;
+    return [f.capcode, f.function, f.message, f.polarity].join("|");
 }
 
 function selectProtocol() {
@@ -555,6 +563,7 @@ $("listen").onclick = async () => {
             await d.mode(C.RF_IDLE);
 
             resetPocsagRolling();
+            $("pocsag-rx-start").textContent = "Start POCSAG RX";
 
             log("Listening stopped");
 
@@ -698,12 +707,21 @@ d.addEventListener("packet", (e) => {
         crcOk: status.crcOk,
     }, protocols);
 
+    const fingerprint = pocsagFingerprint(decoded);
+    const duplicatePocsag = fingerprint != null && fingerprint === lastPocsagFingerprint;
+    if (fingerprint != null) lastPocsagFingerprint = fingerprint;
+
     pc++;
     bc += b.length;
     $("packets").textContent = pc;
     $("bytes").textContent = bc;
     if (status.rssi != null) $("rssi").textContent = `${status.rssi.toFixed(1)} dBm`;
     if (status.lqi != null) $("lqi").textContent = String(status.lqi);
+
+    if (duplicatePocsag) {
+        log(`POCSAG duplicate suppressed: ${decoded.summary}`);
+        return;
+    }
 
     const capture = {
         timestamp: new Date().toISOString(),
