@@ -129,3 +129,12 @@
 .session-notes-label textarea{display:block;width:100%;box-sizing:border-box;margin-top:5px;resize:vertical;min-height:48px}
 @media(max-width:760px){.rx-session-toolbar{grid-template-columns:1fr 1fr 1fr}.rx-session-toolbar select{grid-column:1/-1}}
 @media(max-width:520px){.rx-session-toolbar{grid-template-columns:1fr 1fr}}
+
+/* Multi-capture field inference */
+.rx-infer-panel{margin-top:8px}
+.rx-infer-table{margin-top:8px}
+.rx-infer-values,.rx-infer-bits{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:nowrap}
+.rx-infer-bits{letter-spacing:.08em}
+.rx-infer-panel h4{margin:14px 0 7px;color:#aebed1;font-size:12px}
+.rx-infer-bit-block{display:inline-block;vertical-align:top;min-width:150px;margin:0 7px 7px 0;padding:8px 10px;border:1px solid #2b3c50;border-radius:6px;background:#091019;font:11px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.rx-infer-bit-block strong{display:block;margin-bottom:3px;color:#c9d8ea}
