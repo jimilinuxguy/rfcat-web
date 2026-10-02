@@ -247,15 +247,19 @@ const lrs = {
 
     rxPreset: {
         frequency: 467_750_000,
-        dataRate: 625,
+        dataRate: 5000,
         bandwidth: 93_750,
         modulation: 0x00,
         deviation: 15_000,
-        syncWord: 0xfc2d,
-        syncMode: 2,
-        manchester: true,
+        syncWord: 0x0000,
+        // Keep Manchester in software. The CC1111 hardware Manchester/sync
+        // path did not lock onto the OTA LRS waveform even though raw RX sees
+        // it clearly. A short raw packet keeps RX usable without 255-byte
+        // noise floods while the decoder validates the full LRS frame.
+        syncMode: 0,
+        manchester: false,
         lengthMode: "fixed",
-        packetLength: 10,
+        packetLength: 64,
         crc: false,
         whitening: false,
         appendStatus: false,
