@@ -1,6 +1,6 @@
 # Retekess restaurant pagers
 
-**Status: T112 and T119 TX/RX OTA validated; remaining models source-derived/synthetically tested pending OTA validation**
+**Status: T112, T119 and TD157 TX/RX OTA validated; remaining models source-derived/synthetically tested pending OTA validation**
 
 RFCat Web keeps the documented Retekess families separate because model numbers use different RF modulation, timing and frame layouts. Retekess hardware can also exist in different protocol revisions under the same model name.
 
@@ -44,6 +44,8 @@ T119 TX and RX are OTA validated with YARD Stick One hardware. Known-good raw RX
 
 Pagger documents TD157 at 433.920 MHz OOK with 10 station bits, 10 pager bits and a four-bit action field. Its normal single-pager call uses action 0010 and Princeton TE 212 µs. RFCat Web exposes explicit station and pager values, supports a user-selected sequential range, fixes normal single/sequential paging to action 0010, and exposes the documented all-pagers command using pager 999 with action 1111.
 
+TD157 TX and RX are OTA validated with YARD Stick One hardware. Known-good raw RX settings are 433.920 MHz, ASK/OOK, 4716.981 requested samples/s, 93.750 kHz bandwidth, sync disabled, Manchester disabled, fixed 255-byte packets, CRC/whitening/status disabled, and lowball enabled. RX uses the rolling raw capture path and timing-tolerant Princeton-family decoder.
+
 ## TD174
 
 Pagger documents TD174 at 433.889 MHz OOK using an SMC5326-style 25-bit representation with TE 326 µs. The decoded fields are a 13-bit station, two action bits and eight pager bits. RFCat Web implements the normal page action and supports a user-selected sequential pager range. No separate TD174 all-pagers command is asserted by the sources used here.
@@ -54,7 +56,7 @@ The Retekess protocol modules also provide passive RX decoders for T112, T119, T
 
 OOK decoders search across bit alignment rather than requiring the frame to begin at byte offset zero. T112 validates its sync and 24 data symbols. TD161 validates the BCD fields, documented function range and trailing low symbols. The T119/TD157/TD165/TD174 family decoders recover their documented station, pager and action fields. TD164 detects its preamble and validates both checksum nibbles before reporting a frame.
 
-All Retekess decoders are covered by synthetic encode/decode regression tests. T112 and T119 have additionally been validated over the air with YARD Stick One hardware. TD157, TD161, TD164, TD165 and TD174 remain pending OTA validation.
+All Retekess decoders are covered by synthetic encode/decode regression tests. T112, T119 and TD157 have additionally been validated over the air with YARD Stick One hardware. TD161, TD164, TD165 and TD174 remain pending OTA validation.
 
 ## OTA validation matrix
 
@@ -62,7 +64,7 @@ All Retekess decoders are covered by synthetic encode/decode regression tests. T
 | --- | --- | --- | --- |
 | T112 | OTA validated | OTA validated | 433.920 MHz OOK; pager 69 and 70 TX vectors independently captured; timing-tolerant rolling RX |
 | T119 | OTA validated | OTA validated | 433.920 MHz OOK; protocol-specific raw RX preset and timing-tolerant rolling RX |
-| TD157 | Pending | Pending | Source-derived and synthetically tested |
+| TD157 | OTA validated | OTA validated | 433.920 MHz OOK; protocol-specific raw RX preset and timing-tolerant rolling RX |
 | TD161 | Pending | Pending | Source-derived and synthetically tested |
 | TD164 | Pending | Pending | Source-derived and synthetically tested |
 | TD165 | Pending | Pending | Source-derived and synthetically tested |
