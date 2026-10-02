@@ -212,8 +212,11 @@ function recoverAdaptiveLrs(bits) {
             while (from < chips.length) {
                 const at = chips.indexOf(prefix, from);
                 if (at < 0) break;
-                const frameChips = chips.slice(at, at + 15 * 8 * 2);
+                let frameChips = chips.slice(at, at + 15 * 8 * 2);
                 if (frameChips.length === 15 * 8 * 2 && !frameChips.includes("?")) {
+                    if (inverted) {
+                        frameChips = Array.from(frameChips, (bit) => bit === "0" ? "1" : "0").join("");
+                    }
                     const logical = decodeManchesterChips(frameChips, 0);
                     if (!logical.includes("?")) {
                         const candidate = bitsToCandidateBytes(logical, 0);
