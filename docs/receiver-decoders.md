@@ -67,7 +67,7 @@ Prefer validating framing, fixed markers, checksums, symbol patterns, or other p
 
 ## CAME-12 decoder
 
-CAME-12 is the first protocol decoder implemented in RFCat Web. Its waveform maps each logical bit to three OOK symbols:
+CAME-12 was the first protocol decoder implemented in RFCat Web. Its waveform maps each logical bit to three OOK symbols:
 
 ```text
 0 -> 100
@@ -89,6 +89,20 @@ Hex:      0xA5A
 For a controlled RFCat Web TX-to-RX test, configure the receiving radio to match the transmitter and set the fixed packet length to the number of bytes produced by the TX configuration. With the default CAME-12 settings used during validation (three bursts), this is 22 bytes.
 
 Start with **Raw / All** to verify reception, then select **CAME 12-bit** or **Auto** to verify decoding.
+
+## POCSAG decoder
+
+POCSAG RX is decoded from a rolling byte window rather than treating every RFCat receive event as an independent page. This is necessary because the validated configuration returns fixed 255-byte buffers while a POCSAG page may cross that boundary.
+
+The dedicated **POCSAG Receiver** preset accepts frequency and 512/1200/2400 baud and configures the known-good receive parameters automatically. The validated 512-baud setup uses 2-FSK, 4.5 kHz requested deviation, 93.75 kHz channel bandwidth, hardware sync disabled, fixed 255-byte packets, CRC/whitening/status disabled, and no address check.
+
+The decoder searches for the standard POCSAG sync word, detects normal or inverted polarity, validates BCH/parity, attempts single-bit codeword correction, extracts capcode/function, and decodes 7-bit alphanumeric messages. The rolling window is limited to 1020 bytes, and consecutive duplicate pages rediscovered from the window are suppressed.
+
+### Known-good POCSAG OTA test
+
+A live YARD Stick One receive test at **467.750 MHz / 512 baud** decoded capcode 1, function 3, message `hello`, inverted polarity, with zero corrected bits.
+
+This frequency is a documented test configuration, not a universal POCSAG frequency.
 
 ## Adding another decoder
 
