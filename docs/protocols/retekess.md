@@ -1,6 +1,6 @@
 # Retekess restaurant pagers
 
-**Status: source-derived implementations; OTA validation pending**
+**Status: source-derived TX/RX implementations; OTA validation pending**
 
 RFCat Web keeps the documented Retekess families separate because model numbers use different RF modulation, timing and frame layouts. Retekess hardware can also exist in different protocol revisions under the same model name.
 
@@ -41,6 +41,14 @@ Pagger documents TD157 at 433.920 MHz OOK with 10 station bits, 10 pager bits an
 ## TD174
 
 Pagger documents TD174 at 433.889 MHz OOK using an SMC5326-style 25-bit representation with TE 326 µs. The decoded fields are a 13-bit station, two action bits and eight pager bits. RFCat Web implements the normal page action and supports a user-selected sequential pager range. No separate TD174 all-pagers command is asserted by the sources used here.
+
+## Receive / sniffing support
+
+The Retekess protocol modules also provide passive RX decoders for T112, T119, TD157, TD161, TD164, TD165 and TD174. They participate in RFCat Web's protocol-specific and Auto decode modes.
+
+OOK decoders search across bit alignment rather than requiring the frame to begin at byte offset zero. T112 validates its sync and 24 data symbols. TD161 validates the BCD fields, documented function range and trailing low symbols. The T119/TD157/TD165/TD174 family decoders recover their documented station, pager and action fields. TD164 detects its preamble and validates both checksum nibbles before reporting a frame.
+
+These decoders are synthetically tested by encoding known frames and decoding the resulting byte stream. They are not yet OTA validated against captures from physical Retekess transmitters.
 
 ## Scope and validation
 
