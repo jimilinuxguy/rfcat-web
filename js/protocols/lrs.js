@@ -157,19 +157,86 @@ function bitsToCandidateBytes(bits, bitOffset = 0) {
     return out;
 }
 
-function recoverChipsFromRuns(bits, samplesPerChip = 4, inverted = false) {
-    if (!bits.length) return "";
-    let chips = "";
-    let start = 0;
-    while (start < bits.length) {
+function runLengths(bits) {
+    const runs = [];
+    for (let start = 0; start < bits.length;) {
         const level = bits[start];
         let end = start + 1;
         while (end < bits.length && bits[end] === level) end++;
-        const runSamples = end - start;
-        const chipCount = Math.max(1, Math.round(runSamples / samplesPerChip));
-        const chip = inverted ? (level === "1" ? "0" : "1") : level;
-        chips += chip.repeat(chipCount);
+        runs.push({ level, samples: end - start });
         start = end;
+    }
+    return runs;
+}
+
+function manchesterChipsForBytes(bytes, inverted = false) {
+    let chips = "";
+    for (const byte of bytes) {
+        for (let bit = 7; bit >= 0; bit--) {
+            const one = (byte >>> bit) & 1;
+            let pair = one ? "10" : "01";
+            if (inverted) pair = pair === "10" ? "01" : "10";
+            chips += pair;
+        }
+    }
+    return chips;
+}
+
+const LRS_PREFIX = new Uint8Array([0xaa, 0xaa, 0xaa, 0xfc, 0x2d]);
+
+function recoverAdaptiveLrs(bits) {
+    const runs = runLengths(bits);
+    if (runs.length < 20) return null;
+
+    // The TX is 625 baud with hardware Manchester, so the on-air chip rate is
+    // 1250 chips/s. Raw RX is 5000 samples/s: nominally four samples/chip.
+    // Do not assume the clocks are exact. Search a bounded clock range and
+    // quantize each transition-to-transition run independently. This prevents
+    // sample-clock error from accumulating across the 15-byte frame.
+    for (let width = 3.50; width <= 4.50 + 1e-9; width += 0.05) {
+        let chips = "";
+        for (const run of runs) {
+            const count = Math.max(1, Math.round(run.samples / width));
+            // Huge idle/noise runs cannot belong to one LRS frame. Preserve a
+            // separator so prefix matching cannot bridge across them.
+            if (count > 12) {
+                chips += "?";
+                continue;
+            }
+            chips += run.level.repeat(count);
+        }
+
+        for (const inverted of [false, true]) {
+            const prefix = manchesterChipsForBytes(LRS_PREFIX, inverted);
+            let from = 0;
+            while (from < chips.length) {
+                const at = chips.indexOf(prefix, from);
+                if (at < 0) break;
+                const frameChips = chips.slice(at, at + 15 * 8 * 2);
+                if (frameChips.length === 15 * 8 * 2 && !frameChips.includes("?")) {
+                    const logical = decodeManchesterChips(frameChips, 0);
+                    if (!logical.includes("?")) {
+                        const candidate = bitsToCandidateBytes(logical, 0);
+                        if (candidate.length === 15) {
+                            const parsed = parseLrsFrame(Uint8Array.from(candidate));
+                            if (parsed) return parsed;
+                        }
+                    }
+                }
+                from = at + 1;
+            }
+        }
+    }
+    return null;
+}
+
+function recoverChipsFromRuns(bits, samplesPerChip = 4, inverted = false) {
+    if (!bits.length) return "";
+    let chips = "";
+    for (const run of runLengths(bits)) {
+        const chipCount = Math.max(1, Math.round(run.samples / samplesPerChip));
+        const chip = inverted ? (run.level === "1" ? "0" : "1") : run.level;
+        chips += chip.repeat(chipCount);
     }
     return chips;
 }
@@ -198,7 +265,7 @@ function findLrsFrame(logical) {
     return null;
 }
 
-export function decodeLrsPager(bytes, { sampleScale = 8 } = {}) {
+export function decodeLrsPager(bytes, { sampleScale = 4 } = {}) {
     if (!(bytes instanceof Uint8Array)) throw new TypeError("LRS RX payload must be a Uint8Array");
 
     // Normal OTA RX uses CC1111 Manchester + FC2D sync detection. The packet
@@ -214,10 +281,16 @@ export function decodeLrsPager(bytes, { sampleScale = 8 } = {}) {
         if (parsed) return parsed;
     }
 
-    // OTA RX at 5000 baud produces about 8 raw discriminator samples per\n    // 625-baud Manchester half-bit in the measured YS1 captures.
+    // Prefer adaptive transition-clock recovery. The known TX is 625 baud
+    // with hardware Manchester, while raw RX samples at 5000 baud.
+    const bits = rawBits(bytes);
+    const adaptive = recoverAdaptiveLrs(bits);
+    if (adaptive) return adaptive;
+
+    // Retain the fixed-phase and fixed-width fallbacks for clean/synthetic
+    // captures and backwards compatibility.
     // First try fixed sample phases. Then recover chip timing from transition run
     // lengths so normal CC1111 clock jitter cannot accumulate across the frame.
-    const bits = rawBits(bytes);
     for (const inverted of [false, true]) {
         for (let phase = 0; phase < sampleScale * 2; phase++) {
             const parsed = findLrsFrame(decodeManchesterSamples(bits, phase, inverted, sampleScale));
@@ -266,7 +339,7 @@ const lrs = {
         addressCheck: 0,
         deviceAddress: 0,
         lowball: false,
-        sampleScale: 8,
+        sampleScale: 4,
     },
 
     description:
