@@ -47,6 +47,10 @@ const jtech = {
     },
     async transmit(device, encoded, values) {
         await device.setPacketConfig({ lengthMode: "fixed", packetLength: encoded.bytes.length, crc: false, whitening: false, appendStatus: false, addressCheck: 0, deviceAddress: 0 });
+        // Refresh FSK PA state immediately before TX. This mirrors the
+        // known-good ASK/OOK path and prevents stale PA state from a prior
+        // modulation/configuration from carrying into packet transmission.
+        await device.setMaxPower();
         await device.logTxDiagnostics?.("JTECH PRE-TX");
         await device.setAmpMode(true);
         try { await device.transmit(encoded.bytes, Number(values.repeat ?? 0), Number(values.offset ?? 0)); }
