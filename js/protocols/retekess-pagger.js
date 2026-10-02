@@ -9,12 +9,36 @@ function encodePrinceton({station,pager,action=0,stationBits=13,pagerBits=10,act
 }
 export function decodeRetekessPrinceton(bytes,{stationBits=13,pagerBits=10,actionBits=1,reverseFields=true,trailingBit=""}={}){
  const bits=bitsFromBytes(bytes), logicalLen=stationBits+pagerBits+actionBits+trailingBit.length, encodedLen=logicalLen*4;
+
+ // Keep exact decoding for generated/reference frames.
  for(let start=0;start+encodedLen<=bits.length;start++){
-  const logical=decodePulseBits(bits.slice(start,start+encodedLen)); if(!logical||logical.length!==logicalLen)continue;
+  const logical=decodePulseBits(bits.slice(start,start+encodedLen));
+  if(!logical||logical.length!==logicalLen)continue;
   if(trailingBit&&logical.slice(-trailingBit.length)!==trailingBit)continue;
   let at=0;const station=valueFromBits(logical.slice(at,at+=stationBits),{lsb:reverseFields});const pager=valueFromBits(logical.slice(at,at+=pagerBits),{lsb:reverseFields});const action=valueFromBits(logical.slice(at,at+actionBits),{lsb:reverseFields});
-  return {fields:{station,pager,action},summary:`station ${station} · pager ${pager} · action ${action}`,bitOffset:start};
- } return null;
+  return {fields:{station,pager,action,payloadBits:logical},summary:`station ${station} · pager ${pager} · action ${action} · bits ${logical}`,bitOffset:start};
+ }
+
+ // OTA raw OOK is asynchronously sampled. Build runs, suppress one-sample
+ // glitches, then use the long LOW frame gap to anchor the preceding symbols.
+ const runs=[];for(let i=0;i<bits.length;){const level=bits[i];let e=i+1;while(e<bits.length&&bits[e]===level)e++;runs.push({level,start:i,length:e-i});i=e;}
+ for(let i=1;i+1<runs.length;){if(runs[i].length<=1&&runs[i-1].level===runs[i+1].level){runs[i-1].length+=runs[i].length+runs[i+1].length;runs.splice(i,2);continue;}i++;}
+ for(let gap=0;gap<runs.length;gap++){
+  if(runs[gap].level!=="0"||runs[gap].length<14)continue;
+  const first=gap-logicalLen*2;if(first<0)continue;
+  let logical="",error=0,ok=true;
+  for(let i=first;i<gap;i+=2){
+   const hi=runs[i],lo=runs[i+1];if(!hi||!lo||hi.level!=="1"||lo.level!=="0"){ok=false;break;}
+   const total=hi.length+lo.length;if(total<2||total>7){ok=false;break;}
+   const zeroError=Math.abs(hi.length-1)+Math.abs(lo.length-3),oneError=Math.abs(hi.length-3)+Math.abs(lo.length-1),best=Math.min(zeroError,oneError);
+   if(best>3){ok=false;break;}logical+=zeroError<=oneError?"0":"1";error+=best;
+  }
+  if(!ok||logical.length!==logicalLen)continue;
+  if(trailingBit&&logical.slice(-trailingBit.length)!==trailingBit)continue;
+  let at=0;const station=valueFromBits(logical.slice(at,at+=stationBits),{lsb:reverseFields});const pager=valueFromBits(logical.slice(at,at+=pagerBits),{lsb:reverseFields});const action=valueFromBits(logical.slice(at,at+actionBits),{lsb:reverseFields});
+  return {fields:{station,pager,action,payloadBits:logical},summary:`station ${station} · pager ${pager} · action ${action} · bits ${logical}`,bitOffset:runs[first].start,timingError:error};
+ }
+ return null;
 }
 function makeProtocol({id,name,frequency=433920000,stationBits=13,pagerBits=10,actionBits=1,reverseFields=true,te=271,trailingBit="",pagerMax=999,fixedAction=null,broadcastPager=null,broadcastAction=null,rxPreset=null}){
  return {id,name,menuGroup:"Restaurant Pagers",description:`${name} documented OOK single-pager framing.`,rxPreset,decode(bytes){return decodeRetekessPrinceton(bytes,{stationBits,pagerBits,actionBits,reverseFields,trailingBit});},
