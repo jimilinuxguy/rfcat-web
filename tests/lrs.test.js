@@ -41,3 +41,25 @@ test("LRS RX decodes oversampled Manchester with clock jitter", () => {
     assert.equal(decoded.fields.pagerId, 1);
     assert.equal(decoded.fields.alertType, 1);
 });
+
+
+test("LRS RX decodes hardware-sync payload without preamble or sync bytes", () => {
+    const encoded = encodeLrsPager({ restaurantId: 42, pagerId: 0xabc, alertType: 3 });
+    const payload = encoded.bytes.slice(5);
+    assert.equal(payload.length, 10);
+
+    const decoded = decodeLrsPager(payload);
+    assert.ok(decoded);
+    assert.deepEqual(decoded.fields, {
+        restaurantId: 42,
+        stationId: 0,
+        pagerId: 0xabc,
+        alertType: 3,
+        checksum: encoded.bytes[14],
+    });
+});
+
+test("LRS RX rejects noise in hardware-sync payload", () => {
+    const noise = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    assert.equal(decodeLrsPager(noise), null);
+});
