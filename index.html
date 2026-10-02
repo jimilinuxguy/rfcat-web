@@ -334,9 +334,11 @@
                             <option value="unknown">Unknown only</option>
                         </select>
                     </label>
-                    <button id="rx-import">Import JSON</button>
-                    <input id="rx-import-file" type="file" accept="application/json,.json" hidden>
-                    <button id="rx-export">Export JSON</button>
+                    <div class="rx-file-actions">
+                        <button id="rx-import">Import JSON</button>
+                        <input id="rx-import-file" type="file" accept="application/json,.json" hidden>
+                        <button id="rx-export">Export JSON</button>
+                    </div>
                 </div>
 
                 <div class="stats">
@@ -382,8 +384,7 @@
                 </div>
 
                 <p class="hint receiver-hint">
-                    Import an exported RX JSON file to re-run captures through the currently selected decoder without hardware.
-                    Live protocol modes only surface validated packets when the protocol requires strict framing.
+                    Imported captures re-decode automatically when you change the decoder. No radio required.
                 </p>
 
                 <div
