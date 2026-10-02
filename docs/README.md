@@ -66,6 +66,7 @@ protocols/lrs.md
 protocols/oregon-thgr122nx.md
 protocols/pocsag.md
 protocols/pwm.md
+protocols/retekess-t112.md
 protocols/schrader-eg53ma4.md
 protocols/schrader-mrxbc5a4.md
 protocols/schrader-mrxgg4.md
