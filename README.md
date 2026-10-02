@@ -6,7 +6,7 @@ RFCat Web provides direct radio configuration, receive/transmit controls, wavefo
 
 ## Protocols
 
-Implemented protocol modules include CAME-12, Binary, LRS, JTECH, Retekess T112 Pager 69, Tesla charge-port test signaling, generic OOK/PWM, Oregon THGR122NX, Acurite 5n1, several Schrader TPMS formats, TouchTunes / The Fonz, Continuous Carrier, and generic POCSAG. POCSAG supports explicit-capcode alerts and 7-bit alphanumeric messages, 512/1200/2400 baud, configurable TX polarity, and receive decoding.
+Implemented protocol modules include CAME-12, Binary, LRS, JTECH, Retekess T112/T119/TD157/TD161/TD164/TD165/TD174 restaurant pagers, Tesla charge-port test signaling, generic OOK/PWM, Oregon THGR122NX, Acurite 5n1, several Schrader TPMS formats, TouchTunes / The Fonz, Continuous Carrier, and generic POCSAG. POCSAG supports explicit-capcode alerts and 7-bit alphanumeric messages, 512/1200/2400 baud, configurable TX polarity, and receive decoding.
 
 ### Validation status
 
@@ -20,9 +20,11 @@ TouchTunes / The Fonz is **OTA waveform validated**. A YARD Stick One transmissi
 
 The receiver supports **Raw**, **Auto**, and protocol-specific decode modes. Protocol modules can opt into RX by implementing a `decode(bytes, context)` hook. Unknown traffic remains available as raw captures, and CC1111 appended RSSI/LQI status bytes are separated from the protocol payload before decoding.
 
-CAME-12 is the first protocol with an RX decoder. It has been validated over the air between two YARD Stick One devices using compatible CC1111 packet framing. The current receiver is packet-engine based, so physical asynchronous OOK remotes may require a future pulse-oriented receive path rather than the same packet boundaries used by RFCat-generated transmissions.
+CAME-12 and POCSAG provide protocol-specific RX decoders. CAME-12 has been validated over the air between two YARD Stick One devices using compatible CC1111 packet framing. POCSAG512 RX is OTA validated at 467.750 MHz / 512 baud with automatic normal/inverted polarity detection, BCH/parity validation, single-bit correction, alphanumeric decoding, and a rolling receive buffer that spans 255-byte RFCat receive boundaries. The current generic receiver remains packet-engine based, so physical asynchronous OOK remotes may require pulse-oriented capture rather than the same packet boundaries used by RFCat-generated transmissions.
 
-See [Receiver and Protocol Decoders](docs/receiver-decoders.md) for RX behavior, decoder development, framing notes, and the known-good CAME test setup.
+See [Receiver and Protocol Decoders](docs/receiver-decoders.md) for RX behavior, decoder development, framing notes, and the known-good CAME and POCSAG test setups.
+
+The Retekess modules support explicit single-pager operation and sequential paging within a configured system/station. Protocol-defined all-pager commands are exposed where documented by the source material. Retekess support is source-derived and remains pending OTA validation.
 
 See [docs/README.md](docs/README.md) for protocol documentation.
 
