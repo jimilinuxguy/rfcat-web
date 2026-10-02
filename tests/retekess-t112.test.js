@@ -19,8 +19,8 @@ test("T119-style RX recovers station pager and action",()=>{const e=encodeReteke
 test("TD157-style RX recovers MSB-first fields",()=>{const e=encodeRetekessPrinceton({station:12,pager:34,action:2,stationBits:10,pagerBits:10,actionBits:4,reverseFields:false,te:212,frames:1});const d=decodeRetekessPrinceton(e.bytes,{stationBits:10,pagerBits:10,actionBits:4,reverseFields:false});assert.equal(d.fields.station,12);assert.equal(d.fields.pager,34);assert.equal(d.fields.action,2);});
 test("TD164 RX validates checksums and decodes pager",()=>{const e=encodeRetekessTd164({pagerId:321,sequenceNumber:4,functionCode:1,frames:1});const d=decodeRetekessTd164(e.bytes);assert.equal(d.fields.pagerId,321);assert.equal(d.fields.sequence,4);assert.equal(d.fields.function,1);});
 
-test("TD161 RX recovers BCD system pager and function",()=>{const e=encodeRetekessTd161({systemId:321,pagerId:69,alertType:2,frames:1});const d=decodeRetekessTd161(e.bytes);assert.deepEqual(d.fields,{systemId:321,pagerId:69,alertType:2});});
-test("TD161 RX searches across an arbitrary byte offset",()=>{const e=encodeRetekessTd161({systemId:42,pagerId:7,alertType:1,frames:1});const b=new Uint8Array(e.bytes.length+1);b[0]=0xaa;b.set(e.bytes,1);const d=decodeRetekessTd161(b);assert.deepEqual(d.fields,{systemId:42,pagerId:7,alertType:1});});
+test("TD161 RX recovers BCD system pager and function",()=>{const e=encodeRetekessTd161({systemId:321,pagerId:69,alertType:2,frames:1});const d=decodeRetekessTd161(e.bytes);assert.equal(d.fields.systemId,321);assert.equal(d.fields.pagerId,69);assert.equal(d.fields.alertType,2);assert.equal(d.fields.payloadBits,e.logical);});
+test("TD161 RX searches across an arbitrary byte offset",()=>{const e=encodeRetekessTd161({systemId:42,pagerId:7,alertType:1,frames:1});const b=new Uint8Array(e.bytes.length+1);b[0]=0xaa;b.set(e.bytes,1);const d=decodeRetekessTd161(b);assert.equal(d.fields.systemId,42);assert.equal(d.fields.pagerId,7);assert.equal(d.fields.alertType,1);});
 
 test("T112 default encoding stays within one RFCat packet",()=>{const e=encodeRetekessT112({systemId:1,pagerId:69,cancel:false});assert.equal(e.waveform.length,349);assert.equal(e.bytes.length,44);assert.equal(e.frames,12);});
 
@@ -31,3 +31,5 @@ test("T112 RX accepts final zero whose LOW tail merges with host TX idle",()=>{c
 
 test("T119 RX exposes logical payload bits",()=>{const e=encodeRetekessPrinceton({station:123,pager:45,action:1,frames:1});const d=decodeRetekessPrinceton(e.bytes);assert.equal(d.fields.station,123);assert.equal(d.fields.pager,45);assert.equal(d.fields.action,1);assert.equal(d.fields.payloadBits,e.logical);});
 test("T119 RX tolerates OTA-style byte offset before frame gap",()=>{const e=encodeRetekessPrinceton({station:1,pager:69,action:0,frames:1});const prefixed=new Uint8Array(e.bytes.length+2);prefixed[0]=0x00;prefixed[1]=0x00;prefixed.set(e.bytes,2);const d=decodeRetekessPrinceton(prefixed);assert.ok(d);assert.equal(d.fields.station,1);assert.equal(d.fields.pager,69);assert.equal(d.fields.action,0);});
+
+test("TD161 RX tolerates OTA-style buffer offset",()=>{const e=encodeRetekessTd161({systemId:30,pagerId:1,alertType:0,frames:1});const b=new Uint8Array(e.bytes.length+2);b.set(e.bytes,2);const d=decodeRetekessTd161(b);assert.ok(d);assert.equal(d.fields.systemId,30);assert.equal(d.fields.pagerId,1);assert.equal(d.fields.alertType,0);});
