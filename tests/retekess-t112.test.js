@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { encodeRetekessT112, decodeRetekessT112 } from "../js/protocols/retekess-t112.js";
-import { encodeRetekessTd161 } from "../js/protocols/retekess-td161.js";
+import { encodeRetekessTd161, decodeRetekessTd161 } from "../js/protocols/retekess-td161.js";
 import { encodeRetekessTd164, decodeRetekessTd164 } from "../js/protocols/retekess-td164.js";
 import { encodeRetekessPrinceton, decodeRetekessPrinceton } from "../js/protocols/retekess-pagger.js";
 
@@ -17,3 +17,6 @@ test("T112 RX decodes generated frame at arbitrary bit offset",()=>{const e=enco
 test("T119-style RX recovers station pager and action",()=>{const e=encodeRetekessPrinceton({station:123,pager:45,action:1,frames:1});const d=decodeRetekessPrinceton(e.bytes);assert.deepEqual(d.fields,{station:123,pager:45,action:1});});
 test("TD157-style RX recovers MSB-first fields",()=>{const e=encodeRetekessPrinceton({station:12,pager:34,action:2,stationBits:10,pagerBits:10,actionBits:4,reverseFields:false,te:212,frames:1});const d=decodeRetekessPrinceton(e.bytes,{stationBits:10,pagerBits:10,actionBits:4,reverseFields:false});assert.deepEqual(d.fields,{station:12,pager:34,action:2});});
 test("TD164 RX validates checksums and decodes pager",()=>{const e=encodeRetekessTd164({pagerId:321,sequenceNumber:4,functionCode:1,frames:1});const d=decodeRetekessTd164(e.bytes);assert.equal(d.fields.pagerId,321);assert.equal(d.fields.sequence,4);assert.equal(d.fields.function,1);});
+
+test("TD161 RX recovers BCD system pager and function",()=>{const e=encodeRetekessTd161({systemId:321,pagerId:69,alertType:2,frames:1});const d=decodeRetekessTd161(e.bytes);assert.deepEqual(d.fields,{systemId:321,pagerId:69,alertType:2});});
+test("TD161 RX searches across an arbitrary byte offset",()=>{const e=encodeRetekessTd161({systemId:42,pagerId:7,alertType:1,frames:1});const b=new Uint8Array(e.bytes.length+1);b[0]=0xaa;b.set(e.bytes,1);const d=decodeRetekessTd161(b);assert.deepEqual(d.fields,{systemId:42,pagerId:7,alertType:1});});
