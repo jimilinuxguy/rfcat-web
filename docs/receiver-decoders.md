@@ -184,3 +184,12 @@ Capture Sessions provide a persistent browser-local workspace for receiver resea
 Use **New** to start an empty workspace, **Save** to create or update the active session, **Open** to restore the selected saved session, **Rename** to change its name, and **Delete** to remove it from browser storage. The session status changes to **Modified** when captures or notes change after saving.
 
 Opening a session reconstructs its stored capture bytes and runs them through the current decoder pipeline, so saved captures benefit from decoder improvements. Capture Compare, Copy hex, and Use for TX continue to work on restored sessions. Session data remains in the browser profile's IndexedDB until the user deletes the session or clears the site's browser storage. JSON export remains the portable backup/interchange format.
+
+
+## Multi-Capture Field Inference
+
+Select two or more captures with the existing **Compare** checkboxes, then choose **Infer Fields**. The analyzer examines every byte offset across the selected capture set and labels offsets as constant or changing. For changing bytes it displays observed hexadecimal values and a bit-change mask, followed by per-capture binary values for closer inspection.
+
+When decoded numeric fields are available, the analyzer checks for exact value correlations between a changing byte and decoded field values across the entire selected set. For example, if a byte contains `01 02 03 04` while decoded `pagerId` values are `1 2 3 4`, it reports an exact correlation across all four captures.
+
+Field inference is intentionally descriptive. A correlation does not establish that a byte is the field, prove its encoding, or establish causality. Use controlled captures and protocol documentation or additional experiments before assigning meaning to an unknown byte or bit range. The feature works with live captures, imported JSON, and restored Capture Sessions and does not require connected hardware for offline analysis.
