@@ -22,3 +22,6 @@ test("TD161 RX recovers BCD system pager and function",()=>{const e=encodeReteke
 test("TD161 RX searches across an arbitrary byte offset",()=>{const e=encodeRetekessTd161({systemId:42,pagerId:7,alertType:1,frames:1});const b=new Uint8Array(e.bytes.length+1);b[0]=0xaa;b.set(e.bytes,1);const d=decodeRetekessTd161(b);assert.deepEqual(d.fields,{systemId:42,pagerId:7,alertType:1});});
 
 test("T112 default encoding stays within one RFCat packet",()=>{const e=encodeRetekessT112({systemId:1,pagerId:69,cancel:false});assert.equal(e.waveform.length,349);assert.equal(e.bytes.length,44);assert.equal(e.frames,12);});
+
+test("T112 RX exposes payload bits and hex",()=>{const e=encodeRetekessT112({systemId:0,pagerId:70,cancel:false,frames:1});const d=decodeRetekessT112(e.bytes);assert.equal(d.fields.systemId,0);assert.equal(d.fields.pagerId,70);assert.equal(d.fields.cancel,false);assert.equal(d.fields.payloadBits,"000000000000001100010000");assert.equal(d.fields.payloadHex,"000310");});
+test("T112 RX tolerates sampled pulse jitter",()=>{const e=encodeRetekessT112({systemId:0,pagerId:70,cancel:false,frames:1});let w=e.waveform;w=w.slice(0,61)+"1111"+"0".repeat(8)+w.slice(73);const {bytes}=packWaveform(w);const d=decodeRetekessT112(bytes);assert.equal(d.fields.pagerId,70);});
