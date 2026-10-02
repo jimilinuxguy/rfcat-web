@@ -68,7 +68,6 @@ renderRxProtocolModel();
 const rxCaptures = [];
 let pulseRuns = [];
 let pocsagRolling = new Uint8Array();
-let lrsRolling = new Uint8Array();
 let t112Rolling = new Uint8Array();
 let t119Rolling = new Uint8Array();
 let td157Rolling = new Uint8Array();
@@ -86,19 +85,9 @@ function appendRollingBytes(existing, incoming, maxBytes = POCSAG_ROLLING_MAX) {
     return joined.length > maxBytes ? joined.slice(joined.length - maxBytes) : joined;
 }
 
-function lrsSignalCandidate(bytes) {
-    if (!(bytes instanceof Uint8Array) || bytes.length < 8) return false;
-
-    // LRS now uses the CC1111's hardware Manchester decoder at the same
-    // 625-baud modem rate as TX. Do not apply the old 5000-baud run-length
-    // cadence gate: those bytes were packet-engine output, not 8x RF samples.
-    // The LRS decoder itself performs the strict full-frame/checksum test.
-    return true;
-}
 
 function resetPocsagRolling() {
     pocsagRolling = new Uint8Array();
-    lrsRolling = new Uint8Array();
     t112Rolling = new Uint8Array();
     t119Rolling = new Uint8Array();
     td157Rolling = new Uint8Array();
@@ -819,18 +808,9 @@ d.addEventListener("packet", (e) => {
     const b = status.payload;
     const decodeMode = selectedRxProtocolId();
 
-    if (decodeMode === "lrs") {
-        lrsRolling = appendRollingBytes(lrsRolling, b);
-        if (!lrsSignalCandidate(lrsRolling.slice(-Math.min(lrsRolling.length, 255)))) {
-            return;
-        }
-    }
-
     appendPulseBytes(b);
     const decodeBytes = decodeMode === "pocsag"
         ? (pocsagRolling = appendRollingBytes(pocsagRolling, b))
-        : decodeMode === "lrs"
-            ? lrsRolling
         : decodeMode === "retekess-t112"
             ? (t112Rolling = appendRollingBytes(t112Rolling, b))
             : decodeMode === "retekess-t119"
@@ -854,14 +834,9 @@ d.addEventListener("packet", (e) => {
         crcOk: status.crcOk,
     }, protocols);
 
-    // Raw LRS acquisition can span several 64-byte RFCat buffers. Once the
-    // cadence gate sees a real OTA burst, surface the transport chunk even if
-    // timing recovery has not yet produced a checksum-valid LRS frame. This
-    // keeps RF noise suppressed without hiding genuine LRS transmissions from
-    // Captured, and gives us the exact bytes needed to improve the decoder.
-    if (decodeMode === "lrs" && decoded?.protocol?.id === "lrs") {
-        lrsRolling = new Uint8Array();
-    }
+    // LRS hardware sync can occasionally false-lock. Only surface frames that
+    // pass the protocol header, structure, and checksum validation.
+    if (decodeMode === "lrs" && decoded?.protocol?.id !== "lrs") return;
 
     const fingerprint = pocsagFingerprint(decoded);
     const duplicatePocsag = fingerprint != null && fingerprint === lastPocsagFingerprint;
