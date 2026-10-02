@@ -24,9 +24,17 @@ CAME-12, POCSAG, and LRS Pager provide protocol-specific RX decoders. CAME-12 ha
 
 See [Receiver and Protocol Decoders](docs/receiver-decoders.md) for RX behavior, decoder development, framing notes, and known-good OTA setups. The receiver also supports offline JSON import/re-decoding: exported captures can be loaded without a connected radio and run through the currently selected decoder. Session statistics track RF events, bytes, decoded packets, rejected packets, and suppressed POCSAG duplicates. Imported captures automatically re-decode when the selected decoder or model changes. Decoded capture cards provide **Copy hex** and **Use for TX** actions; TX handoff populates the transmitter form but never transmits automatically.
 
+Receiver analysis also includes persistent **Capture Sessions**, side-by-side **Capture Compare**, **Multi-Capture Field Inference**, and a declarative **Protocol Preset Builder**. Selected captures can be analyzed for constant/changing bytes and exact decoded-field correlations, then converted into a draft protocol definition with field ranges, constants, integer/bit fields, byte ranges, and `sum-mod-255` checksum candidates. Drafts can be validated against captures marked **Should match**, **Should reject**, or **Unknown**, saved locally, and imported/exported as versioned protocol JSON. Presets remain analysis artifacts and do not automatically transmit or become live protocol modules.
+
 The Retekess modules support explicit single-pager operation and sequential paging within a configured system/station. Protocol-defined all-pager commands are exposed where documented by the source material. **Retekess T112, T119, TD157, TD161, TD164, TD165 and TD174 TX/RX are OTA validated with YARD Stick One hardware.** T112 was additionally checked against independent RTL-SDR/rtl_433 captures for system 0, pagers 69 and 70. The asynchronous Princeton-style receivers use protocol-specific raw OOK sampling rates; T119, TD157, TD165 and TD174 use 4× sampling so the CC1111 preserves short 1-TE pulses reliably. TD174 uses the verified station → action → pager field order. TD164 uses 2-FSK and only reports frames that match its preamble and checksum rules.
 
-See [docs/README.md](docs/README.md) for protocol documentation.
+A typical reverse-engineering workflow is:
+
+```text
+Capture → Offline Analysis / Sessions → Compare → Infer Fields → Build Protocol → Validate → Save / Export Protocol JSON
+```
+
+See [docs/README.md](docs/README.md) for the documentation index and [Receiver and Protocol Decoders](docs/receiver-decoders.md) for the complete analysis workflow.
 
 ## Architecture
 
