@@ -335,6 +335,7 @@
                         </select>
                     </label>
                     <div class="rx-file-actions">
+                        <button id="rx-compare" disabled>Compare (0)</button>
                         <button id="rx-import">Import JSON</button>
                         <input id="rx-import-file" type="file" accept="application/json,.json" hidden>
                         <button id="rx-export">Export JSON</button>
@@ -384,8 +385,16 @@
                 </div>
 
                 <p class="hint receiver-hint">
-                    Imported captures re-decode automatically when you change the decoder. No radio required.
+                    Select 2 or more captures to compare changing bytes and decoded fields. Imported captures re-decode automatically.
                 </p>
+
+                <div id="rx-compare-panel" class="rx-compare-panel" hidden>
+                    <div class="rx-compare-head">
+                        <strong>Capture Compare</strong>
+                        <button id="rx-compare-close" type="button">Close</button>
+                    </div>
+                    <div id="rx-compare-body"></div>
+                </div>
 
                 <div
                     id="packetList"
