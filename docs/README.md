@@ -25,6 +25,7 @@ This document covers:
 - Packet framing
 - CAME-12 RX
 - POCSAG RX and the dedicated receiver preset
+- LRS Pager hardware-Manchester RX with `AA AA` sync, 13-byte framing, and checksum validation
 - Rolling receive-buffer decoding
 - Known-good OTA validation setups
 - Retekess raw OOK oversampling and rolling-buffer decoding

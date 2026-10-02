@@ -85,6 +85,7 @@ function appendRollingBytes(existing, incoming, maxBytes = POCSAG_ROLLING_MAX) {
     return joined.length > maxBytes ? joined.slice(joined.length - maxBytes) : joined;
 }
 
+
 function resetPocsagRolling() {
     pocsagRolling = new Uint8Array();
     t112Rolling = new Uint8Array();
@@ -570,7 +571,7 @@ async function configureProtocolReceiver(protocol) {
     listening = true;
     $("listen").textContent = "Stop listening";
     $("rxstate").textContent = "RX";
-    log(`${protocol.name} RX started: ${(preset.frequency / 1e6).toFixed(3)} MHz · ${preset.dataRate} baud · ${(preset.bandwidth / 1e3).toFixed(3)} kHz BW · raw OOK`);
+    log(`${protocol.name} RX started: ${(preset.frequency / 1e6).toFixed(3)} MHz · ${preset.dataRate} baud · ${(preset.bandwidth / 1e3).toFixed(3)} kHz BW · ${preset.modulation === 0x00 ? "2-FSK" : "raw OOK"}`);
 }
 
 function applySelectedRxProtocol() {
@@ -805,8 +806,9 @@ d.addEventListener("packet", (e) => {
     const received = e.detail;
     const status = splitRxStatus(received, $("appendstatus").checked);
     const b = status.payload;
-    appendPulseBytes(b);
     const decodeMode = selectedRxProtocolId();
+
+    appendPulseBytes(b);
     const decodeBytes = decodeMode === "pocsag"
         ? (pocsagRolling = appendRollingBytes(pocsagRolling, b))
         : decodeMode === "retekess-t112"
@@ -831,6 +833,10 @@ d.addEventListener("packet", (e) => {
         lqi: status.lqi,
         crcOk: status.crcOk,
     }, protocols);
+
+    // LRS hardware sync can occasionally false-lock. Only surface frames that
+    // pass the protocol header, structure, and checksum validation.
+    if (decodeMode === "lrs" && decoded?.protocol?.id !== "lrs") return;
 
     const fingerprint = pocsagFingerprint(decoded);
     const duplicatePocsag = fingerprint != null && fingerprint === lastPocsagFingerprint;

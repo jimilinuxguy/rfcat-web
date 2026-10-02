@@ -97,6 +97,50 @@ export function encodeLrsPager({
     };
 }
 
+function parseLrsPayload(payload) {
+    if (payload.length !== 10) return null;
+    if (payload.slice(3, 8).some((value) => value !== 0)) return null;
+
+    // The transmitted checksum covers the three AA preamble bytes, FC2D sync,
+    // and the ten-byte payload up to (but not including) the checksum byte.
+    let sum = 0xaa * 3 + 0xfc + 0x2d;
+    for (let i = 0; i < 9; i++) sum += payload[i];
+    if ((sum % 255) !== payload[9]) return null;
+
+    const restaurantId = payload[0];
+    const stationId = payload[1] >>> 4;
+    const pagerId = ((payload[1] & 0x0f) << 8) | payload[2];
+    const alertType = payload[8];
+    return {
+        fields: { restaurantId, stationId, pagerId, alertType, checksum: payload[9] },
+        summary: `restaurant ${restaurantId} · station ${stationId} · pager ${pagerId} · alert ${alertType} · checksum ${payload[9].toString(16).padStart(2, "0").toUpperCase()}`,
+    };
+}
+
+function parseLrsFrame(frame) {
+    if (frame.length !== 15 ||
+        frame[0] !== 0xaa || frame[1] !== 0xaa || frame[2] !== 0xaa ||
+        frame[3] !== 0xfc || frame[4] !== 0x2d) return null;
+    return parseLrsPayload(frame.slice(5));
+}
+
+
+export function decodeLrsPager(bytes) {
+    if (!(bytes instanceof Uint8Array)) throw new TypeError("LRS RX payload must be a Uint8Array");
+
+    // Live RX locks on the first AA AA. The CC1111 strips those sync bytes and
+    // returns the remaining 13 bytes: AA FC 2D + the ten-byte LRS payload.
+    if (bytes.length === 13 &&
+        bytes[0] === 0xaa && bytes[1] === 0xfc && bytes[2] === 0x2d) {
+        return parseLrsPayload(bytes.slice(3));
+    }
+
+    // Also accept complete reference frames for imports/tests.
+    if (bytes.length === 15) return parseLrsFrame(bytes);
+
+    return null;
+}
+
 // ============================================================
 // Protocol definition
 // ============================================================
@@ -106,6 +150,34 @@ const lrs = {
 
     name: "LRS Pager",
     menuGroup: "Restaurant Pagers",
+
+    decode: decodeLrsPager,
+
+    rxPreset: {
+        frequency: 467_750_000,
+        // Match the known-good transmitter modem exactly. RFCat RX bytes come
+        // from the CC1111 packet engine, not from an ADC/discriminator sampler,
+        // so raising DRATE to 5000 does not create meaningful 8x samples.
+        dataRate: 625,
+        bandwidth: 93_750,
+        modulation: 0x00,
+        deviation: 15_000,
+        // RX needs a sync word to establish byte boundaries. The transmitter
+        // carries AA AA AA FC 2D inside its data, so lock on the first AA AA.
+        // CC1111 strips those two sync bytes and returns the remaining 13 bytes:
+        // AA FC 2D + the ten-byte LRS payload.
+        syncWord: 0xaaaa,
+        syncMode: 2,
+        manchester: true,
+        lengthMode: "fixed",
+        packetLength: 13,
+        crc: false,
+        whitening: false,
+        appendStatus: false,
+        addressCheck: 0,
+        deviceAddress: 0,
+        lowball: false,
+    },
 
     description:
         "LRS pager packet generator using 467.750 MHz 2-FSK with Manchester encoding.",
@@ -176,11 +248,11 @@ const lrs = {
         for (const bit of bits) waveform += bit === "0" ? "01" : "10";
         const analysis = buildWaveformAnalysis({
             waveform,
-            symbolRate: 1250,
+            symbolRate: 625,
             label: "LRS 2-FSK hardware Manchester",
             requestedTimings: [
-                { name: "Manchester half-bit", symbols: 1, requestedUs: 800 },
-                { name: "Logical bit", symbols: 2, requestedUs: 1600 },
+                { name: "Manchester chip", symbols: 1, requestedUs: 1600 },
+                { name: "Logical bit", symbols: 2, requestedUs: 3200 },
             ],
         });
 
