@@ -16,7 +16,7 @@ export function decodeRetekessT112(bytes) {
     for (let start = 0; start + 349 <= bits.length; start++) {
         const sync = bits.slice(start, start + 61);
         if (sync !== "11" + "0".repeat(59)) continue;
-        const payload = decodePulseBits(bits.slice(start + 61, start + 349));
+        const payload = decodePulseBits(bits.slice(start + 61, start + 349), { zero: "111000000000", one: "111111111000" });
         if (!payload || payload.length !== 24) continue;
         const systemId = valueFromBits(payload.slice(0, 13), { lsb: true });
         const pagerId = valueFromBits(payload.slice(13, 23), { lsb: true });
