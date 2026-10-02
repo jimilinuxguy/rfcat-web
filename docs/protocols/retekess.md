@@ -1,6 +1,6 @@
 # Retekess restaurant pagers
 
-**Status: source-derived TX/RX implementations; OTA validation pending**
+**Status: T112 and T119 TX/RX OTA validated; remaining models source-derived/synthetically tested pending OTA validation**
 
 RFCat Web keeps the documented Retekess families separate because model numbers use different RF modulation, timing and frame layouts. Retekess hardware can also exist in different protocol revisions under the same model name.
 
@@ -15,6 +15,10 @@ The BayCom RPS implementation resolves the T112 payload as 24 bits, LSB-first:
 OOK at 433.920 MHz. A frame uses a 220 µs high / ~6.49 ms low sync, then 24 data symbols. Zero is 330/990 µs high/low and one is 990/330 µs. RPS repeats the 349-sample frame 12 times. RFCat Web exposes system ID, pager ID, cancel and frame count, and can transmit a user-selected sequential pager range within the configured system. No separate T112 all-pagers address is asserted by the sources used here.
 
 The earlier published RFCat Pager 69 script is consistent with approximately 3.03 kbit/s T112 timing, but only supplied one fixed capture.
+
+T112 is OTA validated with YARD Stick One hardware. Known-good raw RX settings are 433.920 MHz, ASK/OOK, 9090.909 requested samples/s (approximately 9087 baud after CC1111 quantization), 93.750 kHz bandwidth, sync disabled, Manchester disabled, fixed 255-byte packets, CRC/whitening/status disabled, and lowball enabled. The rolling timing-tolerant decoder handles arbitrary RFCat receive-buffer boundaries, CC1111 slicer jitter, and a final LOW symbol tail merged with host-side inter-frame idle.
+
+Validated TX vectors include system 0 / pager 69 / page, logical payload 000510, independently observed by rtl_433 as the complemented 24-bit value FFFAEF, and system 0 / pager 70 / page, logical payload 000310, observed as FFFCEF.
 
 ## TD161
 
@@ -34,6 +38,8 @@ Pagger documents both as 24-bit 433.920 MHz OOK formats with a 13-bit station, 1
 
 RFCat Web supports a single explicit station/pager/action tuple, a user-selected sequential pager range within that station, and the documented pager 1005 all-pagers command.
 
+T119 TX and RX are OTA validated with YARD Stick One hardware. Known-good raw RX settings are 433.920 MHz, ASK/OOK, 3690.0369 requested samples/s, 93.750 kHz bandwidth, sync disabled, Manchester disabled, fixed 255-byte packets, CRC/whitening/status disabled, and lowball enabled. The T119 receiver uses a rolling raw capture buffer and timing-tolerant Princeton pulse decoding.
+
 ## TD157
 
 Pagger documents TD157 at 433.920 MHz OOK with 10 station bits, 10 pager bits and a four-bit action field. Its normal single-pager call uses action 0010 and Princeton TE 212 µs. RFCat Web exposes explicit station and pager values, supports a user-selected sequential range, fixes normal single/sequential paging to action 0010, and exposes the documented all-pagers command using pager 999 with action 1111.
@@ -48,7 +54,19 @@ The Retekess protocol modules also provide passive RX decoders for T112, T119, T
 
 OOK decoders search across bit alignment rather than requiring the frame to begin at byte offset zero. T112 validates its sync and 24 data symbols. TD161 validates the BCD fields, documented function range and trailing low symbols. The T119/TD157/TD165/TD174 family decoders recover their documented station, pager and action fields. TD164 detects its preamble and validates both checksum nibbles before reporting a frame.
 
-These decoders are synthetically tested by encoding known frames and decoding the resulting byte stream. They are not yet OTA validated against captures from physical Retekess transmitters.
+All Retekess decoders are covered by synthetic encode/decode regression tests. T112 and T119 have additionally been validated over the air with YARD Stick One hardware. TD157, TD161, TD164, TD165 and TD174 remain pending OTA validation.
+
+## OTA validation matrix
+
+| Model | TX | RX | Notes |
+| --- | --- | --- | --- |
+| T112 | OTA validated | OTA validated | 433.920 MHz OOK; pager 69 and 70 TX vectors independently captured; timing-tolerant rolling RX |
+| T119 | OTA validated | OTA validated | 433.920 MHz OOK; protocol-specific raw RX preset and timing-tolerant rolling RX |
+| TD157 | Pending | Pending | Source-derived and synthetically tested |
+| TD161 | Pending | Pending | Source-derived and synthetically tested |
+| TD164 | Pending | Pending | Source-derived and synthetically tested |
+| TD165 | Pending | Pending | Source-derived and synthetically tested |
+| TD174 | Pending | Pending | Source-derived and synthetically tested |
 
 ## Scope and validation
 
