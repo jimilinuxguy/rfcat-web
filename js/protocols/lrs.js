@@ -146,13 +146,17 @@ const lrs = {
 
     rxPreset: {
         frequency: 467_750_000,
-        dataRate: 625,
+        // In raw fixed-packet RX the CC1111 must sample the Manchester
+        // symbols themselves.  The validated TX logical rate is 625 baud,
+        // but each logical bit is two 800 us Manchester symbols, so sample
+        // at 1250 symbols/s and decode Manchester in software.
+        dataRate: 1250,
         bandwidth: 93_750,
         modulation: 0x00,
         deviation: 15_000,
         syncWord: 0x0000,
         syncMode: 0,
-        manchester: true,
+        manchester: false,
         lengthMode: "fixed",
         packetLength: 255,
         crc: false,
