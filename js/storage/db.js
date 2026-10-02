@@ -1,10 +1,11 @@
 export const RFCAT_DB_NAME = "rfcat-web";
 export const RFCAT_DB_VERSION = 1;
+export const RFCAT_DB_STORES = Object.freeze(["workspace"]);
 
 export function openDatabase({
     name = RFCAT_DB_NAME,
     version = RFCAT_DB_VERSION,
-    stores = [],
+    stores = RFCAT_DB_STORES,
 } = {}) {
     return new Promise((resolve, reject) => {
         if (!globalThis.indexedDB) return reject(new Error("IndexedDB unavailable"));
@@ -22,7 +23,7 @@ export function openDatabase({
 }
 
 export async function getStoredValue(storeName, key, options = {}) {
-    const database = await openDatabase({ ...options, stores: [storeName, ...(options.stores ?? [])] });
+    const database = await openDatabase(options);
     try {
         return await new Promise((resolve, reject) => {
             const request = database.transaction(storeName, "readonly").objectStore(storeName).get(key);
@@ -35,7 +36,7 @@ export async function getStoredValue(storeName, key, options = {}) {
 }
 
 export async function putStoredValue(storeName, key, value, options = {}) {
-    const database = await openDatabase({ ...options, stores: [storeName, ...(options.stores ?? [])] });
+    const database = await openDatabase(options);
     try {
         await new Promise((resolve, reject) => {
             const transaction = database.transaction(storeName, "readwrite");
@@ -50,7 +51,7 @@ export async function putStoredValue(storeName, key, value, options = {}) {
 }
 
 export async function deleteStoredValue(storeName, key, options = {}) {
-    const database = await openDatabase({ ...options, stores: [storeName, ...(options.stores ?? [])] });
+    const database = await openDatabase(options);
     try {
         await new Promise((resolve, reject) => {
             const transaction = database.transaction(storeName, "readwrite");
