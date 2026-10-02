@@ -28,16 +28,42 @@ export class RFCatUSB extends EventTarget {
 
         await this.device.open();
 
+        // A previous RFCat session can leave stale endpoint data queued in the
+        // CC1111. Reset the USB device before claiming the interface so a
+        // reconnect starts from a clean transport state.
+        await this.device.reset();
+
         if (!this.device.configuration)
             await this.device.selectConfiguration(1);
 
         await this.device.claimInterface(0);
 
+        this.buf = new Uint8Array();
+        this.waiters = [];
         this.running = true;
 
         this.readLoop();
 
-        await this.ping();
+        // After a browser reload/reconnect the RFCat firmware can emit one
+        // stale NIC frame before it is ready to answer system commands. Give
+        // the IN loop a short window to drain it, then retry the handshake.
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        let lastError;
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                await this.ping();
+                return;
+            } catch (error) {
+                lastError = error;
+                if (attempt < 2) {
+                    await new Promise((resolve) => setTimeout(resolve, 150));
+                }
+            }
+        }
+
+        await this.disconnect();
+        throw lastError;
     }
 
     async disconnect() {
