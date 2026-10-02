@@ -63,6 +63,7 @@ function renderRxProtocolModel() {
         rxProtocolModel.append(option);
     }
     rxProtocolModelLabel.hidden = models.length === 0;
+    rxProtocolModelLabel.style.display = models.length === 0 ? "none" : "";
 }
 renderRxProtocolModel();
 const rxCaptures = [];
@@ -584,9 +585,13 @@ function applySelectedRxProtocol() {
 }
 rxProtocolSelect.addEventListener("change", () => {
     renderRxProtocolModel();
+    redecodeOfflineCaptures();
     applySelectedRxProtocol();
 });
-rxProtocolModel.addEventListener("change", applySelectedRxProtocol);
+rxProtocolModel.addEventListener("change", () => {
+    redecodeOfflineCaptures();
+    applySelectedRxProtocol();
+});
 
 async function configurePocsagReceiver() {
     const frequencyMHz = Number($("pocsag-rx-frequency").value);
@@ -833,6 +838,11 @@ function renderRxCapture(capture) {
             fields.textContent = Object.entries(capture.fields).map(([k, v]) => `${k}=${v}`).join(" · ");
             el.append(fields);
         }
+    } else {
+        const rejected = document.createElement("div");
+        rejected.className = "rx-rejected";
+        rejected.textContent = capture.decodeMode === "raw" ? "Raw capture" : "Unknown / rejected";
+        el.append(rejected);
     }
 
     const raw = document.createElement("div");
@@ -921,6 +931,29 @@ function redecodeImportedCapture(item) {
         dataRate: item.dataRate ?? null,
         decodeMode: mode,
     };
+}
+
+function redecodeOfflineCaptures() {
+    const imported = rxCaptures.filter((capture) => capture.imported);
+    if (!imported.length) return;
+
+    const source = imported.map((capture) => ({
+        timestamp: capture.timestamp,
+        hex: hex(capture.bytes),
+        rssi: capture.rssi,
+        lqi: capture.lqi,
+        crcOk: capture.crcOk,
+        frequencyHz: capture.frequencyHz,
+        dataRate: capture.dataRate,
+    }));
+
+    rxCaptures.length = 0;
+    pc = bc = decodedCount = rejectedCount = duplicateCount = 0;
+    $("packetList").innerHTML = '<div class="empty">No packets captured.</div>';
+
+    for (const item of source) renderRxCapture(redecodeImportedCapture(item));
+    updateRxAnalyzerStats();
+    log(`Re-decoded ${source.length} imported capture${source.length === 1 ? "" : "s"} using ${selectedRxProtocolId()}`);
 }
 
 $("rx-import").onclick = () => $("rx-import-file").click();
