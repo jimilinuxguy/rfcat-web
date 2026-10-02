@@ -6,9 +6,9 @@ export function encodeRetekessT112({ systemId, pagerId, cancel = false, frames =
     if (!Number.isInteger(pagerId) || pagerId < 0 || pagerId > 1023) throw new Error("Pager ID must be 0–1023");
     const payload = bitsOf(systemId, 13, { lsb: true }) + bitsOf(pagerId, 10, { lsb: true }) + (cancel ? "1" : "0");
     const frame = pulseEncode(payload, { zero: [3, 9], one: [9, 3], prefix: "11" + "0".repeat(59) });
-    const waveform = frame.repeat(frames);
+    const waveform = frame;
     const { bytes, padding } = packWaveform(waveform);
-    return { bytes, waveform, padding, payload, systemId, pagerId, cancel: !!cancel, frames };
+    return { bytes, waveform, padding, payload, systemId, pagerId, cancel: !!cancel, frames, frameSymbols: frame.length };
 }
 
 export function decodeRetekessT112(bytes) {
@@ -39,6 +39,13 @@ const protocol = {
  ],
  encode(v){const e=encodeRetekessT112(v);return {...e,bits:e.payload,analysis:makeOokAnalysis(e.waveform,9090.909,"Retekess T112 OOK",[{name:"Base timing",symbols:1,requestedUs:110},{name:"Data bit",symbols:12,requestedUs:1320}]),modulation:"ASK/OOK",summary:`Retekess T112 TX: system ${e.systemId} · pager ${e.pagerId} · ${e.cancel?"cancel":"page"} · ${e.frames} frames`};},
  async configure(d){await configureOok(d,433_920_000,9090.909);},
- async transmit(d,e,v){const start=Number(v.pagerId),end=Math.max(start,Number(v.sequenceEnd??start));for(let pagerId=start;pagerId<=end;pagerId++){const next=encodeRetekessT112({...v,pagerId});await transmitOok(d,next.bytes,v);}}
+ async transmit(d,e,v){
+  const start=Number(v.pagerId),end=Math.max(start,Number(v.sequenceEnd??start));
+  const frames=Math.max(1,Math.trunc(Number(v.frames??12)));
+  for(let pagerId=start;pagerId<=end;pagerId++){
+   const next=encodeRetekessT112({...v,pagerId,frames:1});
+   for(let frame=0;frame<frames;frame++) await transmitOok(d,next.bytes,{...v,repeat:0});
+  }
+ }
 };
 export default protocol;
