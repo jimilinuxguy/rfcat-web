@@ -53,3 +53,21 @@ export const repeatFields = (value = 0) => [
     { id: "repeat", label: "Repeat count", type: "number", min: 0, max: 100, value },
     { id: "offset", label: "RFCat offset", type: "number", min: 0, value: 0 },
 ];
+
+export function bitsFromBytes(bytes) {
+    if (!(bytes instanceof Uint8Array)) throw new TypeError("RX payload must be a Uint8Array");
+    return Array.from(bytes, (b) => b.toString(2).padStart(8, "0")).join("");
+}
+export function decodePulseBits(bits, { zero = "1000", one = "1110" } = {}) {
+    if (bits.length % zero.length) return null;
+    let out = "";
+    for (let i = 0; i < bits.length; i += zero.length) {
+        const s = bits.slice(i, i + zero.length);
+        if (s === zero) out += "0"; else if (s === one) out += "1"; else return null;
+    }
+    return out;
+}
+export function valueFromBits(bits, { lsb = false } = {}) {
+    const s = lsb ? bits.split("").reverse().join("") : bits;
+    return parseInt(s || "0", 2);
+}
