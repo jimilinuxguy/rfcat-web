@@ -193,3 +193,12 @@ Select two or more captures with the existing **Compare** checkboxes, then choos
 When decoded numeric fields are available, the analyzer checks for exact value correlations between a changing byte and decoded field values across the entire selected set. For example, if a byte contains `01 02 03 04` while decoded `pagerId` values are `1 2 3 4`, it reports an exact correlation across all four captures.
 
 Field inference is intentionally descriptive. A correlation does not establish that a byte is the field, prove its encoding, or establish causality. Use controlled captures and protocol documentation or additional experiments before assigning meaning to an unknown byte or bit range. The feature works with live captures, imported JSON, and restored Capture Sessions and does not require connected hardware for offline analysis.
+
+
+## Protocol Preset Builder
+
+Select two or more captures, then choose **Build Protocol**. RFCat Web creates a draft byte layout from the selected set: byte positions that remain identical are suggested as constants, while changing positions are suggested as `uint8` fields. When Field Inference finds an exact decoded-field correlation, that decoded field name is used as the initial draft name.
+
+Each row can be changed to Constant, uint8, uint16 big-endian, uint16 little-endian, Bit field, Ignore, or Checksum sum mod 255. **Preview Selected** applies the draft declaratively to every selected capture and reports matched or rejected frames plus decoded field values. Presets do not execute JavaScript.
+
+**Save Local** stores the JSON definition in browser local storage. **Export Protocol JSON** downloads the definition for review, sharing, or later conversion into a permanent decoder under `js/protocols/`. Local presets are draft analysis artifacts and are not automatically added to the live RX decoder list or transmitter.
