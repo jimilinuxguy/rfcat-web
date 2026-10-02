@@ -153,7 +153,7 @@ Auto decoding is passive. A decoded capture does not cause retransmission.
 
 ## Offline capture import and RX analyzer
 
-Receiver exports can be imported back into RFCat Web without a connected YARD Stick One. Use **Import JSON** in the Receiver, select the decoder to evaluate, and choose a previously exported RX JSON file. Each capture is reconstructed from its hex payload and passed through the same protocol decoder entry point used by live RX.
+Receiver exports can be imported back into RFCat Web without a connected YARD Stick One. Use **Import JSON** in the Receiver and choose a previously exported RX JSON file. Each capture is reconstructed from its hex payload and passed through the same protocol decoder entry point used by live RX. Changing **Decode** or a grouped decoder's **Model** automatically re-runs all imported captures, so one capture set can be compared across decoders without re-importing it.
 
 New exports include the capture frequency, data rate, and selected decode mode so offline analysis retains useful acquisition context. Older exports remain importable; when those fields are absent, the current radio-form values are used as decoder context.
 
