@@ -188,12 +188,15 @@ function recoverAdaptiveLrs(bits) {
     const runs = runLengths(bits);
     if (runs.length < 20) return null;
 
-    // The TX is 625 baud with hardware Manchester, so the on-air chip rate is
-    // 1250 chips/s. Raw RX is 5000 samples/s: nominally four samples/chip.
-    // Do not assume the clocks are exact. Search a bounded clock range and
-    // quantize each transition-to-transition run independently. This prevents
-    // sample-clock error from accumulating across the 15-byte frame.
-    for (let width = 3.50; width <= 4.50 + 1e-9; width += 0.05) {
+    // Current RX clocks the 1250-symbol/s Manchester stream directly, so the
+    // nominal width is one sample/chip. Also retain the old 4x capture range
+    // so exported 5 kbaud captures remain decodable.
+    const widthRanges = [
+        [0.80, 1.20, 0.02],
+        [3.50, 4.50, 0.05],
+    ];
+    for (const [minWidth, maxWidth, step] of widthRanges) {
+      for (let width = minWidth; width <= maxWidth + 1e-9; width += step) {
         let chips = "";
         for (const run of runs) {
             const count = Math.max(1, Math.round(run.samples / width));
@@ -229,6 +232,7 @@ function recoverAdaptiveLrs(bits) {
                 from = at + 1;
             }
         }
+      }
     }
     return null;
 }
@@ -284,8 +288,9 @@ export function decodeLrsPager(bytes, { sampleScale = 1 } = {}) {
         if (parsed) return parsed;
     }
 
-    // Prefer adaptive transition-clock recovery. The known TX is 625 baud
-    // with hardware Manchester, while raw RX samples at 5000 baud.
+    // Prefer adaptive transition-clock recovery. Current raw RX is clocked at
+    // the 1250-symbol/s Manchester rate; legacy 5 kbaud captures are also
+    // supported by the adaptive width search.
     const bits = rawBits(bytes);
     const adaptive = recoverAdaptiveLrs(bits);
     if (adaptive) return adaptive;
