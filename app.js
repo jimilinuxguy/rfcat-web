@@ -37,6 +37,7 @@ let pocsagRolling = new Uint8Array();
 let t112Rolling = new Uint8Array();
 let t119Rolling = new Uint8Array();
 let td157Rolling = new Uint8Array();
+let td161Rolling = new Uint8Array();
 let lastPocsagFingerprint = null;
 const POCSAG_ROLLING_MAX = 1020;
 
@@ -52,6 +53,7 @@ function resetPocsagRolling() {
     t112Rolling = new Uint8Array();
     t119Rolling = new Uint8Array();
     td157Rolling = new Uint8Array();
+    td161Rolling = new Uint8Array();
     lastPocsagFingerprint = null;
 }
 
@@ -766,7 +768,9 @@ d.addEventListener("packet", (e) => {
                 ? (t119Rolling = appendRollingBytes(t119Rolling, b))
                 : decodeMode === "retekess-td157"
                     ? (td157Rolling = appendRollingBytes(td157Rolling, b))
-                    : b;
+                    : decodeMode === "retekess-td161"
+                        ? (td161Rolling = appendRollingBytes(td161Rolling, b))
+                        : b;
     const decoded = decodeRxPacket(decodeBytes, decodeMode, {
         frequencyHz: Number($("freq").value) * 1e6,
         dataRate: Number($("drate").value),
