@@ -188,12 +188,15 @@ function recoverAdaptiveLrs(bits) {
     const runs = runLengths(bits);
     if (runs.length < 20) return null;
 
-    // Current RX clocks the 1250-symbol/s Manchester stream directly, so the
-    // nominal width is one sample/chip. Also retain the old 4x capture range
-    // so exported 5 kbaud captures remain decodable.
+    // With CC1111 Manchester enabled, the configured 625-baud modem rate is
+    // the on-air baud rate; the logical data rate is half of that. Raw RX with
+    // Manchester disabled therefore also uses 625 baud and sees one chip per
+    // sample. Retain the legacy oversampled ranges for old captures.
     const widthRanges = [
         [0.80, 1.20, 0.02],
+        [1.70, 2.30, 0.025],
         [3.50, 4.50, 0.05],
+        [7.00, 9.00, 0.10],
     ];
     for (const [minWidth, maxWidth, step] of widthRanges) {
       for (let width = minWidth; width <= maxWidth + 1e-9; width += step) {
@@ -289,8 +292,8 @@ export function decodeLrsPager(bytes, { sampleScale = 1 } = {}) {
     }
 
     // Prefer adaptive transition-clock recovery. Current raw RX is clocked at
-    // the 1250-symbol/s Manchester rate; legacy 5 kbaud captures are also
-    // supported by the adaptive width search.
+    // the TX modem's 625-baud on-air rate; legacy oversampled captures are
+    // also supported by the adaptive width search.
     const bits = rawBits(bytes);
     const adaptive = recoverAdaptiveLrs(bits);
     if (adaptive) return adaptive;
@@ -328,18 +331,18 @@ const lrs = {
 
     rxPreset: {
         frequency: 467_750_000,
-        // TX is 625 logical bit/s with hardware Manchester. Manchester doubles
-        // the on-air symbol rate, so raw RX must clock the encoded symbols at
-        // 1250 baud when Manchester decoding is disabled.
-        dataRate: 1250,
+        // CC1111 Manchester makes the logical bit rate half the configured
+        // baud rate. The known transmitter sets 625 baud with Manchester on,
+        // so raw RX must also use 625 baud with Manchester off.
+        dataRate: 625,
         bandwidth: 93_750,
         modulation: 0x00,
         deviation: 15_000,
         syncWord: 0x0000,
         // Keep Manchester in software. The CC1111 hardware Manchester/sync
         // path did not lock onto the OTA LRS waveform even though raw RX sees
-        // it clearly. Receive the Manchester symbols raw at their actual
-        // 1250-symbol/s OTA rate and decode them in software. app.js gates
+        // it clearly. Receive the Manchester symbols raw at the transmitter's
+        // 625-baud OTA rate and decode them in software. app.js gates
         // noise before buffers are surfaced as user RX events.
         syncMode: 0,
         manchester: false,
