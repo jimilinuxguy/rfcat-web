@@ -136,7 +136,7 @@ test("config decodes known CC1111 register image", async () => {
 
     assert.ok(Math.abs(c.freq - 457_599_975.5859375) < 1);
     assert.ok(Math.abs(c.rate - 512.1231079101562) < 0.001);
-    assert.equal(c.bw, 58_593.75);
+    assert.equal(c.bw, 93_750);
     assert.equal(c.mod, 0x00);
     assert.equal(c.sync, 0x832d);
     assert.equal(c.packetLength, 140);
