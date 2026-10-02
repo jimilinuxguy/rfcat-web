@@ -86,9 +86,15 @@ function appendRollingBytes(existing, incoming, maxBytes = POCSAG_ROLLING_MAX) {
     return joined.length > maxBytes ? joined.slice(joined.length - maxBytes) : joined;
 }
 
-function lrsSignalScore(bytes) {
-    if (!(bytes instanceof Uint8Array) || bytes.length < 8) return 0;
+function lrsSignalCandidate(bytes) {
+    if (!(bytes instanceof Uint8Array) || bytes.length < 32) return false;
     const bits = Array.from(bytes, (byte) => byte.toString(2).padStart(8, "0")).join("");
+
+    // The OTA captures show the LRS AA preamble as a long oversampled
+    // Manchester 1001... chip pattern. At 5 kbaud that becomes alternating
+    // runs of roughly four samples. Require a sustained sequence instead of
+    // merely counting plausible run lengths, since idle discriminator noise
+    // can also contain many 3-9 sample runs.
     const runs = [];
     for (let start = 0; start < bits.length;) {
         let end = start + 1;
@@ -96,18 +102,17 @@ function lrsSignalScore(bytes) {
         runs.push(end - start);
         start = end;
     }
-    if (runs.length < 8) return 0;
 
-    // A real LRS transmission sampled at 5 kbaud is dominated by runs near
-    // one or two 4-sample Manchester chips. Random discriminator noise has
-    // mostly 1-2 sample runs, so reject it before it reaches the UI/log.
-    const plausible = runs.filter((n) => n >= 3 && n <= 9).length;
-    const tiny = runs.filter((n) => n <= 2).length;
-    return (plausible - tiny * 0.5) / runs.length;
-}
-
-function lrsSignalCandidate(bytes) {
-    return lrsSignalScore(bytes) >= 0.42;
+    let streak = 0;
+    for (const n of runs) {
+        if (n >= 3 && n <= 5) {
+            streak++;
+            if (streak >= 20) return true;
+        } else {
+            streak = 0;
+        }
+    }
+    return false;
 }
 
 function resetPocsagRolling() {
