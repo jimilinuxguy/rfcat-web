@@ -22,23 +22,34 @@ export function decodeRetekessT112(bytes) {
         i = end;
     }
 
+    // Suppress one-sample slicer glitches seen in real CC1111 raw OOK captures.
+    // A glitch between equal-level runs is absorbed into the surrounding run.
+    for (let i = 1; i + 1 < runs.length;) {
+        if (runs[i].length <= 1 && runs[i - 1].level === runs[i + 1].level) {
+            runs[i - 1].length += runs[i].length + runs[i + 1].length;
+            runs.splice(i, 2);
+            continue;
+        }
+        i++;
+    }
+
     // OTA captures are asynchronously sampled. Accept timing around the
     // nominal 2/59 sync and 3/9 or 9/3 data runs rather than exact bit strings.
     for (let r = 0; r + 49 < runs.length; r++) {
         const syncHigh = runs[r], syncLow = runs[r + 1];
         if (syncHigh.level !== "1" || syncLow.level !== "0") continue;
-        if (syncHigh.length < 1 || syncHigh.length > 4 || syncLow.length < 52) continue;
+        if (syncHigh.length < 1 || syncHigh.length > 5 || syncLow.length < 48) continue;
 
         let at = r + 2, payload = "", timingError = 0;
         for (let n = 0; n < 24 && at + 1 < runs.length; n++, at += 2) {
             const high = runs[at], low = runs[at + 1];
             if (high.level !== "1" || low.level !== "0") break;
             const total = high.length + low.length;
-            if (total < 9 || total > 15) break;
+            if (total < 8 || total > 16) break;
             const zeroError = Math.abs(high.length - 3) + Math.abs(low.length - 9);
             const oneError = Math.abs(high.length - 9) + Math.abs(low.length - 3);
             const best = Math.min(zeroError, oneError);
-            if (best > 4) break;
+            if (best > 5) break;
             payload += zeroError <= oneError ? "0" : "1";
             timingError += best;
         }
