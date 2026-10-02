@@ -89,11 +89,6 @@ function appendRollingBytes(existing, incoming, maxBytes = POCSAG_ROLLING_MAX) {
 function lrsSignalCandidate(bytes) {
     if (!(bytes instanceof Uint8Array) || bytes.length < 32) return false;
     const bits = Array.from(bytes, (byte) => byte.toString(2).padStart(8, "0")).join("");
-
-    // Search locally rather than requiring the entire RFCat buffer to look
-    // like LRS. Real captures contain noise before/after the transmission and
-    // timing can slide by a sample. The AA preamble produces a sustained
-    // Manchester cadence with runs centered near four raw samples.
     const runs = [];
     for (let start = 0; start < bits.length;) {
         let end = start + 1;
@@ -102,12 +97,17 @@ function lrsSignalCandidate(bytes) {
         start = end;
     }
 
+    // Measured OTA LRS captures at the current 5 kbaud raw setting produce
+    // sustained discriminator runs of about 8 samples per chip, with adjacent
+    // equal Manchester chips merging into ~16-sample runs. Idle noise does not
+    // sustain this 8/16 cadence. Search locally so buffer boundaries do not
+    // matter.
     for (let at = 0; at + 24 <= runs.length; at++) {
         const window = runs.slice(at, at + 24);
-        const nearChip = window.filter((n) => n >= 3 && n <= 6).length;
-        const glitches = window.filter((n) => n <= 2).length;
-        const longRuns = window.filter((n) => n > 9).length;
-        if (nearChip >= 18 && glitches <= 3 && longRuns === 0) return true;
+        const timed = window.filter((n) =>
+            (n >= 7 && n <= 9) || (n >= 15 && n <= 17)
+        ).length;
+        if (timed >= 20) return true;
     }
     return false;
 }
