@@ -175,3 +175,29 @@ test("continuous carrier preserves packet fields outside PKT_FORMAT", async () =
     assert.deepEqual(modes, [0x04, 0x03]);
     assert.deepEqual(writes, [[0xdf04, [0xe7]]]);
 });
+
+test("lowball matches upstream RFCat default register semantics", async () => {
+    const { d, writes } = harness({
+        0xdf04: 0x77,
+        0xdf0f: 0x95,
+        0xdf03: 0xe6,
+        0xdf0e: 0x3b,
+    });
+
+    await d.lowball();
+
+    assert.deepEqual(writes, [
+        [0xdf02, [0xfa]],
+        [0xdf04, [0x30]],
+        [0xdf0f, [0x15]],
+        [0xdf00, [0xaa, 0xaa]],
+        [0xdf03, [0x06]],
+        [0xdf0e, [0x3c]],
+    ]);
+});
+
+test("setTxPaPower uses verified FREND0 and preserves unrelated bits", async () => {
+    const { d, writes } = harness({ 0xdf1b: 0xae });
+    await d.setTxPaPower();
+    assert.deepEqual(writes, [[0xdf1b, [0xa9]]]);
+});
