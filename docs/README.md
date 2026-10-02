@@ -30,6 +30,37 @@ This document covers:
 - Known-good OTA validation setups
 - Retekess raw OOK oversampling and rolling-buffer decoding
 - Decoder development
+- Offline JSON import and automatic re-decoding
+- Capture statistics and TX handoff
+- Persistent Capture Sessions
+- Capture Compare
+- Multi-Capture Field Inference
+- Protocol Preset Builder
+- Automatic `sum-mod-255` checksum candidates
+- Positive, negative, and unknown preset validation
+- Versioned protocol JSON import/export
+
+### Receiver analysis workflow
+
+The browser can be used as an offline protocol-analysis workspace after captures have been collected:
+
+```text
+Capture
+  ↓
+Offline Analysis / Sessions
+  ↓
+Compare
+  ↓
+Infer Fields
+  ↓
+Build Protocol
+  ↓
+Validate positive + negative captures
+  ↓
+Save / Export Protocol JSON
+```
+
+The generated protocol presets are declarative analysis definitions. They are not automatically registered as live decoders and do not transmit.
 
 ### RFCat USB
 

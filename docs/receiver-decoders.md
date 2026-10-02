@@ -197,17 +197,40 @@ Field inference is intentionally descriptive. A correlation does not establish t
 
 ## Protocol Preset Builder
 
-Select two or more captures, then choose **Build Protocol**. RFCat Web creates a draft byte layout from the selected set: byte positions that remain identical are suggested as constants, while changing positions are suggested as `uint8` fields. When Field Inference finds an exact decoded-field correlation, that decoded field name is used as the initial draft name.
+Select two or more captures, then choose **Build Protocol**. RFCat Web turns the selected sample set into a declarative draft protocol definition. Byte positions that remain identical are initially suggested as constants; changing positions are suggested as `uint8` fields, and exact decoded-field correlations can supply initial field names.
 
-Each row can be changed to Constant, uint8, uint16 big-endian, uint16 little-endian, Bit field, Ignore, or Checksum sum mod 255. **Preview Selected** applies the draft declaratively to every selected capture and reports matched or rejected frames plus decoded field values. Presets do not execute JavaScript.
+Draft fields have explicit offsets and lengths. Available field types include Constant, `uint8`, `uint16` big-endian, `uint16` little-endian, arbitrary byte ranges, Bit field, Ignore, and Checksum sum mod 255. The builder also records an expected frame length.
 
-**Save Local** stores the JSON definition in browser local storage. **Export Protocol JSON** downloads the definition for review, sharing, or later conversion into a permanent decoder under `js/protocols/`. Local presets are draft analysis artifacts and are not automatically added to the live RX decoder list or transmitter.
+When a changing byte exactly equals the sum of every preceding byte modulo 255 across all selected captures, the builder can suggest that position as a `sum-mod-255` checksum candidate. This is evidence from the selected sample set, not proof that an undocumented protocol uses that checksum.
 
+### Validation sets
 
-### Expanded preset validation
+Each selected capture can be classified as **Should match**, **Should reject**, or **Unknown**. **Preview Selected** applies the draft to every selected capture and reports positive matches, correct negative rejections, unknown matches, decoded field values, and the reason for rejected frames. Using both positive and negative examples helps identify definitions that are too broad.
 
-The builder can infer a `sum-mod-255` checksum candidate when a changing byte exactly equals the sum of every preceding byte modulo 255 across all selected captures. Inferred checksums are candidates supported by the selected sample set, not proof of an undocumented protocol rule.
+### Preset storage and interchange
 
-Draft fields now carry explicit offset and length values and support arbitrary byte ranges in addition to integer and bit-field types. Presets include a required `rfcat-web-protocol` schema identifier, version 1, and frame-length validation. Exported preset JSON can be imported back into the builder; imports are schema-checked and remain declarative.
+**Save Local** stores the draft definition in browser local storage. Presets use the `rfcat-web-protocol` schema identifier and version 1. **Export Protocol JSON** downloads the definition, and **Import Protocol JSON** restores a compatible schema-checked definition into the builder.
 
-Selected captures can be classified as **Should match**, **Should reject**, or **Unknown**. Preview reports positive matches, correct negative rejections, and unknown matches separately, and gives the reason for each rejected frame. This makes it possible to test a draft against both examples of the protocol and deliberately invalid or unrelated frames.
+Imported presets are declarative and do not execute JavaScript. Saved or imported drafts are analysis artifacts: they are not automatically registered in the live RX decoder list, added to the transmitter, or executed as protocol modules. A reviewed definition can later be used as the basis for a permanent decoder under `js/protocols/`.
+
+### Analysis workflow
+
+The receiver tools are designed to compose into a repeatable reverse-engineering workflow:
+
+```text
+Capture
+  ↓
+Offline Analysis / Sessions
+  ↓
+Compare
+  ↓
+Infer Fields
+  ↓
+Build Protocol
+  ↓
+Validate positive + negative captures
+  ↓
+Save / Export Protocol JSON
+```
+
+Capture Compare and Field Inference remain descriptive tools. Protocol meaning should be established with controlled captures, documentation, additional experiments, and appropriate OTA validation rather than inferred from correlation alone.
