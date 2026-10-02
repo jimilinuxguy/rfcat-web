@@ -48,7 +48,7 @@ test("setFrequency(457.6 MHz) idles then writes expected synthesizer bytes", asy
 
     assert.equal(modes.length, 1);
     assert.deepEqual(writes, [
-        [0xdf09, [0x1e, 0x81, 0x11]],
+        [0xdf09, [0x13, 0x11, 0x11]],
         [0xdf1d, [0x2a]],
     ]);
 });
@@ -123,8 +123,8 @@ test("config decodes known CC1111 register image", async () => {
     image[3] = 0x40;
     image[4] = 0x00;
     image[5] = 0x00;
-    image[9] = 0x1e;
-    image[10] = 0x81;
+    image[9] = 0x13;
+    image[10] = 0x11;
     image[11] = 0x11;
     image[12] = 0xc4;
     image[13] = 0x66;
