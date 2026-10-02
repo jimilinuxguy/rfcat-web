@@ -777,8 +777,8 @@ renderPulseAnalyzer();
 
 function rxCaptureVisible(capture) {
     const filter = $("rx-filter").value;
-    if (filter === "decoded") return !!capture.decoded && !capture.decoded.error;
-    if (filter === "unknown") return !capture.decoded || !!capture.decoded.error;
+    if (filter === "decoded") return !!capture.decoder && !capture.error;
+    if (filter === "unknown") return !capture.decoder || !!capture.error;
     return true;
 }
 
