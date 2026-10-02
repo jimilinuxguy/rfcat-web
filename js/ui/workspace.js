@@ -166,7 +166,9 @@ export async function initWorkspace() {
     sourceOrder.forEach((panel) => workspace.append(panel));
 
     let saveTimer = null;
+    let restoring = true;
     const scheduleSave = () => {
+        if (restoring) return;
         clearTimeout(saveTimer);
         saveTimer = setTimeout(() => {
             writeLayout(captureLayout(workspace)).catch(() => {});
@@ -224,4 +226,5 @@ export async function initWorkspace() {
 
     const layout = await readLayout().catch(() => null);
     applyLayout(workspace, layout);
+    restoring = false;
 }
