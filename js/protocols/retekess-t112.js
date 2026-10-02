@@ -16,13 +16,13 @@ const protocol = {
  description:"Retekess T112 24-bit OOK: 13-bit system ID, 10-bit pager ID, cancel flag.",
  fields:[
   {id:"systemId",label:"System ID",type:"number",min:0,max:8191,value:0},
-  {id:"pagerId",label:"Pager ID",type:"number",min:0,max:1023,value:69},
+  {id:"pagerId",label:"Pager ID",type:"number",min:0,max:1023,value:69},{id:"sequenceEnd",label:"Sequence through pager",type:"number",min:0,max:1023,value:69},
   {id:"cancel",label:"Cancel alert",type:"checkbox",value:false},
   {id:"frames",label:"Frames",type:"number",min:1,max:30,value:12},
   ...repeatFields(0)
  ],
  encode(v){const e=encodeRetekessT112(v);return {...e,bits:e.payload,analysis:makeOokAnalysis(e.waveform,9090.909,"Retekess T112 OOK",[{name:"Base timing",symbols:1,requestedUs:110},{name:"Data bit",symbols:12,requestedUs:1320}]),modulation:"ASK/OOK",summary:`Retekess T112 TX: system ${e.systemId} · pager ${e.pagerId} · ${e.cancel?"cancel":"page"} · ${e.frames} frames`};},
  async configure(d){await configureOok(d,433_920_000,9090.909);},
- async transmit(d,e,v){await transmitOok(d,e.bytes,v);}
+ async transmit(d,e,v){const start=Number(v.pagerId),end=Math.max(start,Number(v.sequenceEnd??start));for(let pagerId=start;pagerId<=end;pagerId++){const next=encodeRetekessT112({...v,pagerId});await transmitOok(d,next.bytes,v);}}
 };
 export default protocol;
