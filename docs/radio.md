@@ -18,15 +18,15 @@ FREQ2     0xDF09
 MDMCFG4   0xDF0C
 MDMCFG3   0xDF0D
 MDMCFG2   0xDF0E
-DEVIATN   0xDF15
+DEVIATN   0xDF11
 FREND1    0xDF1A
 FREND0    0xDF1B
 FSCAL2    0xDF1D
 TEST2     0xDF23
 TEST1     0xDF24
 PATABLE   0xDF2D
-LQI       0xDF33
-RSSI      0xDF34
+LQI       0xDF39
+RSSI      0xDF3A
 MARCSTATE 0xDF3B
 ```
 
@@ -61,21 +61,21 @@ amplifier enabled unintentionally.
 
 ## Lowball RX
 
-The optional Lowball configuration uses these known register changes:
+Lowball follows upstream RFCat semantics rather than writing status registers directly. The current implementation configures:
 
-``` text
-DF00  0C -> AA
-DF01  4E -> AA
-DF02  00 -> FA
-DF03  40 -> 00
-DF0E  30 -> 34
-DF38  1F -> 00
-DF3A  B5 -> C5
+```text
+fixed packet length: 250 bytes
+CRC:                 off
+FEC:                 off
+data whitening:      off
+sync word:           0xAAAA
+PQT:                 0
+sync mode:           carrier sense
 ```
 
-Lowball is intended as an optional/manual RX configuration.
+It updates the relevant packet/sync fields while preserving unrelated register bits. In particular, it does not write RSSI or other read-only/status values as configuration.
 
-Do not apply Lowball to normal TX operation.
+Lowball is intended as an optional/manual RX configuration. Do not apply Lowball to normal TX operation.
 
 ## RX Register Access
 
