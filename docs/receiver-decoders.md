@@ -166,3 +166,12 @@ Offline re-decoding is intended for decoder development and regression work. It 
 ### Validated offline workflow
 
 The offline analyzer was validated with exported 13-byte LRS hardware-sync captures while no YARD Stick One was connected. Two imported frames (`AA FC 2D 01 00 01 00 00 00 00 00 01 2D`) were re-decoded as two valid LRS Pager events with zero rejected events, recovering restaurant 1, station 0, pager 1, alert 1, and checksum `2D`.
+
+
+## Capture Compare
+
+Select two or more Receiver captures with their **Compare** checkboxes, then choose **Compare (N)**. RFCat Web displays the captures side by side and highlights byte positions whose values differ. Byte positions are zero-based in the hover label.
+
+When selected captures contain decoded fields, the comparison also builds a field table. Rows whose values differ between captures are highlighted, making protocol-level changes such as pager IDs, alert types, addresses, and checksums visible without manually comparing hex strings.
+
+Capture Compare works with live and imported captures and requires no connected radio for offline analysis. Comparison is intentionally descriptive: it shows which bytes and decoded fields changed but does not assume that correlation proves a field's encoding. Repeated controlled captures can be used to establish those relationships during protocol research.
