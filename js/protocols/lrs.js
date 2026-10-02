@@ -188,10 +188,10 @@ function recoverAdaptiveLrs(bits) {
     const runs = runLengths(bits);
     if (runs.length < 20) return null;
 
-    // With CC1111 Manchester enabled, the configured 625-baud modem rate is
-    // the on-air baud rate; the logical data rate is half of that. Raw RX with
-    // Manchester disabled therefore also uses 625 baud and sees one chip per
-    // sample. Retain the legacy oversampled ranges for old captures.
+    // The transmitter's Manchester chip clock is 625 baud. Capture raw at
+    // 5000 baud (8 samples/chip) so clock phase and drift are observable instead
+    // of trying to make one asynchronous RX sample represent one whole chip.
+    // Keep the other ranges so saved captures from earlier experiments decode.
     const widthRanges = [
         [0.80, 1.20, 0.02],
         [1.70, 2.30, 0.025],
@@ -291,9 +291,9 @@ export function decodeLrsPager(bytes, { sampleScale = 1 } = {}) {
         if (parsed) return parsed;
     }
 
-    // Prefer adaptive transition-clock recovery. Current raw RX is clocked at
-    // the TX modem's 625-baud on-air rate; legacy oversampled captures are
-    // also supported by the adaptive width search.
+    // Prefer adaptive transition-clock recovery. Live RX oversamples the
+    // 625-baud Manchester chip stream at 5000 baud (nominally 8 samples/chip);
+    // saved captures at the earlier rates remain supported.
     const bits = rawBits(bytes);
     const adaptive = recoverAdaptiveLrs(bits);
     if (adaptive) return adaptive;
@@ -331,10 +331,11 @@ const lrs = {
 
     rxPreset: {
         frequency: 467_750_000,
-        // CC1111 Manchester makes the logical bit rate half the configured
-        // baud rate. The known transmitter sets 625 baud with Manchester on,
-        // so raw RX must also use 625 baud with Manchester off.
-        dataRate: 625,
+        // The transmitter's Manchester chip clock is 625 baud. Raw RX runs at
+        // 8x that rate so software timing recovery has phase/drift information.
+        // Sampling at 625 gave only one asynchronous decision per chip and the
+        // real OTA capture lost Manchester validity after the repetitive preamble.
+        dataRate: 5_000,
         bandwidth: 93_750,
         modulation: 0x00,
         deviation: 15_000,
@@ -354,7 +355,7 @@ const lrs = {
         addressCheck: 0,
         deviceAddress: 0,
         lowball: false,
-        sampleScale: 1,
+        sampleScale: 8,
     },
 
     description:
@@ -426,11 +427,11 @@ const lrs = {
         for (const bit of bits) waveform += bit === "0" ? "01" : "10";
         const analysis = buildWaveformAnalysis({
             waveform,
-            symbolRate: 1250,
+            symbolRate: 625,
             label: "LRS 2-FSK hardware Manchester",
             requestedTimings: [
-                { name: "Manchester half-bit", symbols: 1, requestedUs: 800 },
-                { name: "Logical bit", symbols: 2, requestedUs: 1600 },
+                { name: "Manchester chip", symbols: 1, requestedUs: 1600 },
+                { name: "Logical bit", symbols: 2, requestedUs: 3200 },
             ],
         });
 
