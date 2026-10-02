@@ -383,22 +383,21 @@ const lrs = {
 
     rxPreset: {
         frequency: 467_750_000,
-        // The transmitter's Manchester chip clock is 625 baud. Raw RX runs at
-        // 8x that rate so software timing recovery has phase/drift information.
-        // Sampling at 625 gave only one asynchronous decision per chip and the
-        // real OTA capture lost Manchester validity after the repetitive preamble.
-        dataRate: 5_000,
+        // Match the known-good transmitter modem exactly. RFCat RX bytes come
+        // from the CC1111 packet engine, not from an ADC/discriminator sampler,
+        // so raising DRATE to 5000 does not create meaningful 8x samples.
+        dataRate: 625,
         bandwidth: 93_750,
         modulation: 0x00,
         deviation: 15_000,
+        // The transmitter sends AA AA AA FC 2D as packet data with hardware
+        // Manchester enabled and CC1111 sync disabled. Receive the same way:
+        // let hardware recover/decode Manchester, but do not require a hardware
+        // sync word. The software decoder searches the returned byte stream for
+        // the complete 15-byte frame and validates its checksum.
         syncWord: 0x0000,
-        // Keep Manchester in software. The CC1111 hardware Manchester/sync
-        // path did not lock onto the OTA LRS waveform even though raw RX sees
-        // it clearly. Oversample the Manchester stream and recover its drifting
-        // clock continuously in software. app.js keeps raw buffers internal
-        // until a checksum-valid LRS frame is recovered.
         syncMode: 0,
-        manchester: false,
+        manchester: true,
         lengthMode: "fixed",
         packetLength: 64,
         crc: false,
@@ -407,7 +406,7 @@ const lrs = {
         addressCheck: 0,
         deviceAddress: 0,
         lowball: false,
-        sampleScale: 8,
+        sampleScale: 1,
     },
 
     description:
