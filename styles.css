@@ -70,3 +70,5 @@
 
 /* Offline RX analyzer */
 .receiver-controls{grid-template-columns:minmax(140px,1fr) minmax(140px,1fr) auto auto}.stats{flex-wrap:wrap}.packet .meta{display:flex;gap:8px;align-items:center}.packet .hex{margin-top:7px}.packet .decoded strong:before{content:"✓ ";color:#75d69c}@media(max-width:760px){.receiver-controls{grid-template-columns:1fr 1fr}.receiver-controls button{grid-column:auto}}@media(max-width:520px){.receiver-controls{grid-template-columns:1fr}.receiver-controls button{grid-column:1}}
+
+.rx-capture-actions{display:flex;gap:8px;margin-top:9px}.rx-capture-actions button{padding:5px 9px;font-size:11px}
