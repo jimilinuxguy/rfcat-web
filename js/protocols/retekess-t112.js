@@ -1,4 +1,4 @@
-import { bitsOf, packWaveform, pulseEncode, makeOokAnalysis, configureOok, transmitOok, repeatFields } from "./retekess-common.js";
+import { bitsOf, packWaveform, pulseEncode, makeOokAnalysis, configureOok, transmitOok, repeatFields, bitsFromBytes, decodePulseBits, valueFromBits } from "./retekess-common.js";
 
 export function encodeRetekessT112({ systemId, pagerId, cancel = false, frames = 12 }) {
     systemId = Number(systemId); pagerId = Number(pagerId); frames = Number(frames);
@@ -11,9 +11,25 @@ export function encodeRetekessT112({ systemId, pagerId, cancel = false, frames =
     return { bytes, waveform, padding, payload, systemId, pagerId, cancel: !!cancel, frames };
 }
 
+export function decodeRetekessT112(bytes) {
+    const bits = bitsFromBytes(bytes);
+    for (let start = 0; start + 349 <= bits.length; start++) {
+        const sync = bits.slice(start, start + 61);
+        if (sync !== "11" + "0".repeat(59)) continue;
+        const payload = decodePulseBits(bits.slice(start + 61, start + 349));
+        if (!payload || payload.length !== 24) continue;
+        const systemId = valueFromBits(payload.slice(0, 13), { lsb: true });
+        const pagerId = valueFromBits(payload.slice(13, 23), { lsb: true });
+        const cancel = payload[23] === "1";
+        return { fields: { systemId, pagerId, cancel }, summary: `T112 system ${systemId} · pager ${pagerId} · ${cancel ? "cancel" : "page"}`, bitOffset: start };
+    }
+    return null;
+}
+
 const protocol = {
  id:"retekess-t112", name:"Retekess T112", menuGroup:"Restaurant Pagers",
  description:"Retekess T112 24-bit OOK: 13-bit system ID, 10-bit pager ID, cancel flag.",
+ decode(bytes){return decodeRetekessT112(bytes);},
  fields:[
   {id:"systemId",label:"System ID",type:"number",min:0,max:8191,value:0},
   {id:"pagerId",label:"Pager ID",type:"number",min:0,max:1023,value:69},{id:"sequenceEnd",label:"Sequence through pager",type:"number",min:0,max:1023,value:69},
