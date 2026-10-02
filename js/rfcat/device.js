@@ -28,11 +28,18 @@ export class RFCatUSB extends EventTarget {
 
         await this.device.open();
 
+        // A previous RFCat session can leave stale endpoint data queued in the
+        // CC1111. Reset the USB device before claiming the interface so a
+        // reconnect starts from a clean transport state.
+        await this.device.reset();
+
         if (!this.device.configuration)
             await this.device.selectConfiguration(1);
 
         await this.device.claimInterface(0);
 
+        this.buf = new Uint8Array();
+        this.waiters = [];
         this.running = true;
 
         this.readLoop();
