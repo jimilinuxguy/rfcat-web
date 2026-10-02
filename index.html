@@ -342,6 +342,24 @@
                     </div>
                 </div>
 
+                <details class="rx-sessions" open>
+                    <summary>Capture Sessions <span id="session-status">Unsaved</span></summary>
+                    <div class="rx-session-toolbar">
+                        <select id="session-select" aria-label="Saved capture session">
+                            <option value="">No saved sessions</option>
+                        </select>
+                        <button id="session-new" type="button">New</button>
+                        <button id="session-save" type="button">Save</button>
+                        <button id="session-open" type="button">Open</button>
+                        <button id="session-rename" type="button">Rename</button>
+                        <button id="session-delete" type="button">Delete</button>
+                    </div>
+                    <label class="session-notes-label">
+                        Session notes
+                        <textarea id="session-notes" rows="2" placeholder="Optional notes about this capture set"></textarea>
+                    </label>
+                </details>
+
                 <div class="stats">
                     <span>
                         RX events
