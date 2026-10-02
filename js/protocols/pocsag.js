@@ -300,6 +300,10 @@ const pocsag = {
             addressCheck: 0,
             deviceAddress: 0,
         });
+        // Refresh FSK PA state immediately before TX. This mirrors the
+        // known-good ASK/OOK path and prevents stale PA state from a prior
+        // modulation/configuration from carrying into packet transmission.
+        await device.setMaxPower();
         await device.logTxDiagnostics?.("POCSAG PRE-TX");
         await device.setAmpMode(true);
         try {
