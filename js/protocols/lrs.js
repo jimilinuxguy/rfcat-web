@@ -240,6 +240,55 @@ function recoverAdaptiveLrs(bits) {
     return null;
 }
 
+function recoverTrackedLrs(bits) {
+    const runs = runLengths(bits);
+    if (runs.length < 20) return null;
+
+    // Real 5000-baud captures show the apparent chip width walking across a
+    // transmission (for example 0F/F0 -> 1F/E0 -> 3F/C0). Manchester limits a
+    // valid run to one or two chips, so track that clock continuously instead
+    // of forcing one width on the whole capture.
+    for (let initialWidth = 3; initialWidth <= 9; initialWidth += 0.25) {
+        for (const alpha of [0.08, 0.15, 0.25]) {
+            let width = initialWidth;
+            let chips = "";
+            for (const run of runs) {
+                const oneError = Math.abs(run.samples - width);
+                const twoError = Math.abs(run.samples - 2 * width);
+                const count = oneError <= twoError ? 1 : 2;
+                const error = count === 1 ? oneError : twoError;
+
+                // A run that is nowhere near one/two chips is a boundary/noise
+                // separator. Re-seed after it rather than letting it drag the PLL.
+                if (error > Math.max(2.5, width * 0.55)) {
+                    chips += "?";
+                    if (run.samples >= 3 && run.samples <= 9) width = run.samples;
+                    continue;
+                }
+
+                chips += run.level.repeat(count);
+                const measuredWidth = run.samples / count;
+                width += alpha * (measuredWidth - width);
+                width = Math.max(2.5, Math.min(10, width));
+            }
+
+            for (const inverted of [false, true]) {
+                let tracked = chips;
+                if (inverted) {
+                    tracked = Array.from(tracked, (bit) =>
+                        bit === "0" ? "1" : bit === "1" ? "0" : bit
+                    ).join("");
+                }
+                for (let phase = 0; phase < 2; phase++) {
+                    const parsed = findLrsFrame(decodeManchesterChips(tracked, phase));
+                    if (parsed) return parsed;
+                }
+            }
+        }
+    }
+    return null;
+}
+
 function recoverChipsFromRuns(bits, samplesPerChip = 4, inverted = false) {
     if (!bits.length) return "";
     let chips = "";
@@ -295,6 +344,9 @@ export function decodeLrsPager(bytes, { sampleScale = 1 } = {}) {
     // 625-baud Manchester chip stream at 5000 baud (nominally 8 samples/chip);
     // saved captures at the earlier rates remain supported.
     const bits = rawBits(bytes);
+    const tracked = recoverTrackedLrs(bits);
+    if (tracked) return tracked;
+
     const adaptive = recoverAdaptiveLrs(bits);
     if (adaptive) return adaptive;
 
@@ -342,9 +394,9 @@ const lrs = {
         syncWord: 0x0000,
         // Keep Manchester in software. The CC1111 hardware Manchester/sync
         // path did not lock onto the OTA LRS waveform even though raw RX sees
-        // it clearly. Receive the Manchester symbols raw at the transmitter's
-        // 625-baud OTA rate and decode them in software. app.js gates
-        // noise before buffers are surfaced as user RX events.
+        // it clearly. Oversample the Manchester stream and recover its drifting
+        // clock continuously in software. app.js keeps raw buffers internal
+        // until a checksum-valid LRS frame is recovered.
         syncMode: 0,
         manchester: false,
         lengthMode: "fixed",
