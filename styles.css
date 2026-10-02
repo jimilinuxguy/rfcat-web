@@ -66,3 +66,7 @@
 
 /* POCSAG receiver preset */
 .pocsag-rx-preset{display:grid;grid-template-columns:auto minmax(130px,1fr) minmax(110px,.7fr) auto;gap:10px;align-items:end;margin-top:16px;padding:12px;border:1px solid #253143;border-radius:8px;background:#0b111a}.pocsag-rx-preset>span{align-self:center;color:#75d69c;font-size:12px;font-weight:700;letter-spacing:.04em}.pocsag-rx-preset button{height:38px}@media(max-width:700px){.pocsag-rx-preset{grid-template-columns:1fr 1fr}.pocsag-rx-preset>span{grid-column:1/-1}.pocsag-rx-preset button{grid-column:1/-1}}
+
+
+/* Offline RX analyzer */
+.receiver-controls{grid-template-columns:minmax(140px,1fr) minmax(140px,1fr) auto auto}.stats{flex-wrap:wrap}.packet .meta{display:flex;gap:8px;align-items:center}.packet .hex{margin-top:7px}.packet .decoded strong:before{content:"✓ ";color:#75d69c}@media(max-width:760px){.receiver-controls{grid-template-columns:1fr 1fr}.receiver-controls button{grid-column:auto}}@media(max-width:520px){.receiver-controls{grid-template-columns:1fr}.receiver-controls button{grid-column:1}}
