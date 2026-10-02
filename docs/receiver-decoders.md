@@ -175,3 +175,12 @@ Select two or more Receiver captures with their **Compare** checkboxes, then cho
 When selected captures contain decoded fields, the comparison also builds a field table. Rows whose values differ between captures are highlighted, making protocol-level changes such as pager IDs, alert types, addresses, and checksums visible without manually comparing hex strings.
 
 Capture Compare works with live and imported captures and requires no connected radio for offline analysis. Comparison is intentionally descriptive: it shows which bytes and decoded fields changed but does not assume that correlation proves a field's encoding. Repeated controlled captures can be used to establish those relationships during protocol research.
+
+
+## Capture Sessions
+
+Capture Sessions provide a persistent browser-local workspace for receiver research. Sessions are stored in IndexedDB and do not require a server or connected radio. A saved session includes its capture set, notes, selected decoder/model, capture filter, frequency, data rate, and timestamps.
+
+Use **New** to start an empty workspace, **Save** to create or update the active session, **Open** to restore the selected saved session, **Rename** to change its name, and **Delete** to remove it from browser storage. The session status changes to **Modified** when captures or notes change after saving.
+
+Opening a session reconstructs its stored capture bytes and runs them through the current decoder pipeline, so saved captures benefit from decoder improvements. Capture Compare, Copy hex, and Use for TX continue to work on restored sessions. Session data remains in the browser profile's IndexedDB until the user deletes the session or clears the site's browser storage. JSON export remains the portable backup/interchange format.
