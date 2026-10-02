@@ -336,6 +336,7 @@
                     </label>
                     <div class="rx-file-actions">
                         <button id="rx-compare" disabled>Compare (0)</button>
+                        <button id="rx-infer" disabled>Infer Fields</button>
                         <button id="rx-import">Import JSON</button>
                         <input id="rx-import-file" type="file" accept="application/json,.json" hidden>
                         <button id="rx-export">Export JSON</button>
@@ -412,6 +413,14 @@
                         <button id="rx-compare-close" type="button">Close</button>
                     </div>
                     <div id="rx-compare-body"></div>
+                </div>
+
+                <div id="rx-infer-panel" class="rx-compare-panel rx-infer-panel" hidden>
+                    <div class="rx-compare-head">
+                        <strong>Field Inference</strong>
+                        <button id="rx-infer-close" type="button">Close</button>
+                    </div>
+                    <div id="rx-infer-body"></div>
                 </div>
 
                 <div
