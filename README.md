@@ -72,3 +72,8 @@ For asynchronous OOK exploration, disable sync and enable **Lowball / raw OOK re
 ## Configurable workspace
 
 The main RFCat Web panels can be dragged into a preferred order and resized from the lower-right corner on desktop-sized displays. Panel order, dimensions, and collapsed/open state are saved automatically in browser IndexedDB and restored on the next visit. **Reset layout** clears the saved workspace and restores the built-in arrangement. Mobile layouts intentionally use a single column and ignore saved desktop dimensions.
+
+
+## Capture Library
+
+Saved RX capture sessions are stored locally in the browser using the shared RFCat Web IndexedDB database. The Capture Library is a configurable workspace panel and supports filtering by session name, notes, decoder, or frequency. A saved session retains its captures, decoder/model selection, filter, frequency, data rate, and notes. Sessions can be reopened for comparison and field inference, renamed, deleted, or exported as JSON. Existing capture-session databases are supported when upgrading to the shared storage schema.

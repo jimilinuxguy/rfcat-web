@@ -8,6 +8,7 @@ import {
 const PANEL_DEFINITIONS = [
     ["radio", ".radio"],
     ["receiver", ".receiver-card"],
+    ["capture-library", ".capture-library"],
     ["pulse-analyzer", ".pulse-analyzer-card"],
     ["transmitter", ".transmitter-card"],
     ["waveform", ".waveform-card"],

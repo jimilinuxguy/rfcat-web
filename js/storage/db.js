@@ -1,6 +1,6 @@
 export const RFCAT_DB_NAME = "rfcat-web";
-export const RFCAT_DB_VERSION = 1;
-export const RFCAT_DB_STORES = Object.freeze(["workspace"]);
+export const RFCAT_DB_VERSION = 2;
+export const RFCAT_DB_STORES = Object.freeze(["workspace", "capture-sessions"]);
 
 export function openDatabase({
     name = RFCAT_DB_NAME,
@@ -35,12 +35,27 @@ export async function getStoredValue(storeName, key, options = {}) {
     }
 }
 
+export async function getAllStoredValues(storeName, options = {}) {
+    const database = await openDatabase(options);
+    try {
+        return await new Promise((resolve, reject) => {
+            const request = database.transaction(storeName, "readonly").objectStore(storeName).getAll();
+            request.onsuccess = () => resolve(request.result ?? []);
+            request.onerror = () => reject(request.error);
+        });
+    } finally {
+        database.close();
+    }
+}
+
 export async function putStoredValue(storeName, key, value, options = {}) {
     const database = await openDatabase(options);
     try {
         await new Promise((resolve, reject) => {
             const transaction = database.transaction(storeName, "readwrite");
-            transaction.objectStore(storeName).put(value, key);
+            const store = transaction.objectStore(storeName);
+            if (store.keyPath == null) store.put(value, key);
+            else store.put(value);
             transaction.oncomplete = resolve;
             transaction.onerror = () => reject(transaction.error);
             transaction.onabort = () => reject(transaction.error);

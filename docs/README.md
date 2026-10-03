@@ -32,7 +32,7 @@ This document covers:
 - Decoder development
 - Offline JSON import and automatic re-decoding
 - Capture statistics and TX handoff
-- Persistent Capture Sessions
+- Persistent Capture Library with saved RF configuration, filtering, reopen, delete, rename, and JSON export
 - Capture Compare
 - Multi-Capture Field Inference
 - Protocol Preset Builder
@@ -47,7 +47,7 @@ The browser can be used as an offline protocol-analysis workspace after captures
 ```text
 Capture
   ↓
-Offline Analysis / Sessions
+Capture Library
   ↓
 Compare
   ↓

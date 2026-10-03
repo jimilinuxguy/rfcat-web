@@ -123,7 +123,7 @@
 .rx-sessions{margin:12px 0;border:1px solid #26364a;border-radius:8px;background:#0a111a}
 .rx-sessions summary{cursor:pointer;padding:9px 11px;color:#c9d8ea;font-size:12px;font-weight:700}
 .rx-sessions summary span{float:right;color:#73849a;font-weight:400}
-.rx-session-toolbar{display:grid;grid-template-columns:minmax(150px,1fr) repeat(5,auto);gap:7px;padding:0 10px 9px}
+.rx-session-toolbar{display:grid;grid-template-columns:minmax(150px,1fr) repeat(6,auto);gap:7px;padding:0 10px 9px}
 .rx-session-toolbar select{min-width:0}.rx-session-toolbar button{padding:6px 9px;font-size:11px}
 .session-notes-label{display:block;padding:0 10px 10px;color:#8191a7;font-size:11px}
 .session-notes-label textarea{display:block;width:100%;box-sizing:border-box;margin-top:5px;resize:vertical;min-height:48px}
@@ -177,3 +177,5 @@ main[data-workspace-ready="true"]{display:block;max-width:1440px}
 .workspace>.receiver-card{grid-column:auto}.workspace+.rx-tx-tools{display:none}
 .workspace>.collapsible .section-summary{padding-right:56px}.workspace>.receiver-card>.title-row{padding-right:44px}
 @media(max-width:800px){.workspace-toolbar span{display:none}.workspace{display:block}.workspace>.workspace-panel{width:100%!important;height:auto!important;min-width:0;max-width:none;margin-bottom:12px;resize:none}.workspace>details.workspace-panel:not([open]){height:58px!important}}
+
+.capture-library-search{padding:0 10px 9px}.capture-library-search input{width:100%;box-sizing:border-box}.workspace>.capture-library{flex-basis:100%;width:100%}
