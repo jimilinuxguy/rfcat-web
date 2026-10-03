@@ -344,8 +344,9 @@
                     </div>
                 </div>
 
-                <details class="rx-sessions" open>
-                    <summary>Capture Sessions <span id="session-status">Unsaved</span></summary>
+                <details class="card rx-sessions capture-library collapsible" open>
+                    <summary class="section-summary"><span>Capture Library</span><span id="session-status" class="summary-note">Unsaved</span></summary>
+                    <div class="capture-library-search"><input id="library-search" type="search" placeholder="Filter by name, notes, decoder, or frequency"></div>
                     <div class="rx-session-toolbar">
                         <select id="session-select" aria-label="Saved capture session">
                             <option value="">No saved sessions</option>
@@ -355,6 +356,7 @@
                         <button id="session-open" type="button">Open</button>
                         <button id="session-rename" type="button">Rename</button>
                         <button id="session-delete" type="button">Delete</button>
+                        <button id="session-export" type="button">Export</button>
                     </div>
                     <label class="session-notes-label">
                         Session notes
