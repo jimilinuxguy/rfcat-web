@@ -77,3 +77,8 @@ The main RFCat Web panels can be dragged into a preferred order and resized from
 ## Capture Library
 
 Saved RX capture sessions are stored locally in the browser using the shared RFCat Web IndexedDB database. The Capture Library is a configurable workspace panel and supports filtering by session name, notes, decoder, or frequency. A saved session retains its captures, decoder/model selection, filter, frequency, data rate, and notes. Sessions can be reopened for comparison and field inference, renamed, deleted, or exported as JSON. Existing capture-session databases are supported when upgrading to the shared storage schema.
+
+
+## Flipper Zero Sub-GHz RAW interoperability
+
+The OOK Pulse Analyzer can import and export Flipper Zero RAW `.sub` files. Import reads version 1 RAW timing data, applies the file frequency to the radio form, and displays the HIGH/LOW timing sequence for offline analysis. Import never transmits automatically. Export converts the current pulse runs to signed microsecond `RAW_Data` values and writes a standard OOK 650 kHz asynchronous preset. Custom Flipper CC1101 presets and decoded/key protocols are intentionally not supported yet.
