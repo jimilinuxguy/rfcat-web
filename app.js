@@ -9,6 +9,7 @@ import { exportProtocolToIPython } from "./js/export/ipython.js";
 import { decodeRxPacket, decoderProtocols, splitRxStatus } from "./js/rx/decode.js";
 import { bytesToPulseRuns, pulseDistribution, estimateBasePulse } from "./js/rx/pulses.js";
 import { initWorkspace } from "./js/ui/workspace.js";
+import { deleteCaptureSession, getCaptureSession, listCaptureSessions, saveCaptureSession } from "./js/storage/capture-session-store.js";
 
 import { protocols, getProtocol } from "./js/protocols/index.js";
 
@@ -807,45 +808,16 @@ function updateRxAnalyzerStats() {
     $("rx-duplicates").textContent = String(duplicateCount);
 }
 
-const SESSION_DB = "rfcat-web";
-const SESSION_STORE = "capture-sessions";
 let activeSessionId = null;
 
-function openSessionDb() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(SESSION_DB, 1);
-        request.onupgradeneeded = () => {
-            const db = request.result;
-            if (!db.objectStoreNames.contains(SESSION_STORE)) {
-                const store = db.createObjectStore(SESSION_STORE, { keyPath: "id" });
-                store.createIndex("updatedAt", "updatedAt");
-            }
-        };
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-    });
-}
 
-async function sessionStore(mode, fn) {
-    const db = await openSessionDb();
-    try {
-        return await new Promise((resolve, reject) => {
-            const tx = db.transaction(SESSION_STORE, mode);
-            const store = tx.objectStore(SESSION_STORE);
-            let result;
-            try { result = fn(store); } catch (error) { reject(error); return; }
-            tx.oncomplete = () => resolve(result?.result);
-            tx.onerror = () => reject(tx.error);
-            tx.onabort = () => reject(tx.error);
-        });
-    } finally {
-        db.close();
-    }
-}
 
 async function listSessions() {
-    const sessions = await sessionStore("readonly", (store) => store.getAll()) ?? [];
-    return sessions.sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+    return listCaptureSessions();
+}
+
+async function getSession(id) {
+    return id ? getCaptureSession(id) : null;
 }
 
 function sessionCaptureData() {
@@ -870,28 +842,25 @@ function currentSessionSnapshot(name, id = activeSessionId ?? crypto.randomUUID(
 
 async function refreshSessionList(selectId = activeSessionId) {
     const sessions = await listSessions();
+    const query = $("library-search")?.value.trim().toLowerCase() ?? "";
+    const visibleSessions = query ? sessions.filter((session) => `${session.name} ${session.notes} ${session.decoder ?? ""} ${session.frequencyMHz ?? ""}`.toLowerCase().includes(query)) : sessions;
     const select = $("session-select");
     select.replaceChildren();
-    if (!sessions.length) {
+    if (!visibleSessions.length) {
         const option = document.createElement("option");
         option.value = "";
-        option.textContent = "No saved sessions";
+        option.textContent = query ? "No matching captures" : "No saved sessions";
         select.append(option);
     } else {
-        for (const session of sessions) {
+        for (const session of visibleSessions) {
             const option = document.createElement("option");
             option.value = session.id;
             option.textContent = `${session.name} · ${session.captures?.length ?? 0} captures`;
             select.append(option);
         }
-        if (selectId && sessions.some((session) => session.id === selectId)) select.value = selectId;
+        if (selectId && visibleSessions.some((session) => session.id === selectId)) select.value = selectId;
     }
     $("session-status").textContent = activeSessionId ? "Saved" : "Unsaved";
-}
-
-async function getSession(id) {
-    if (!id) return null;
-    return await sessionStore("readonly", (store) => store.get(id));
 }
 
 async function saveSession() {
@@ -900,7 +869,7 @@ async function saveSession() {
     if (!name?.trim()) return;
     const snapshot = currentSessionSnapshot(name.trim(), existing?.id);
     if (existing?.createdAt) snapshot.createdAt = existing.createdAt;
-    await sessionStore("readwrite", (store) => store.put(snapshot));
+    await saveCaptureSession(snapshot);
     activeSessionId = snapshot.id;
     await refreshSessionList(activeSessionId);
     log(`Saved capture session "${snapshot.name}" with ${snapshot.captures.length} captures`);
@@ -960,7 +929,7 @@ $("session-rename").onclick = async () => {
     if (!name?.trim()) return;
     session.name = name.trim();
     session.updatedAt = new Date().toISOString();
-    await sessionStore("readwrite", (store) => store.put(session));
+    await saveCaptureSession(session);
     activeSessionId = session.id;
     await refreshSessionList(activeSessionId);
 };
@@ -968,7 +937,7 @@ $("session-delete").onclick = async () => {
     const id = $("session-select").value;
     const session = await getSession(id);
     if (!session || !confirm(`Delete session "${session.name}"?`)) return;
-    await sessionStore("readwrite", (store) => store.delete(id));
+    await deleteCaptureSession(id);
     if (activeSessionId === id) activeSessionId = null;
     await refreshSessionList();
     log(`Deleted capture session "${session.name}"`);
@@ -976,7 +945,19 @@ $("session-delete").onclick = async () => {
 $("session-notes").addEventListener("input", () => {
     if (activeSessionId) $("session-status").textContent = "Modified";
 });
-refreshSessionList().catch((error) => log(`Session database error: ${error.message}`));
+$("library-search").addEventListener("input", debounce(() => refreshSessionList(), 120));
+$("session-export").onclick = async () => {
+    const session = await getSession($("session-select").value);
+    if (!session) return log("Select a saved capture session to export");
+    const blob = new Blob([JSON.stringify(session, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `rfcat-session-${session.name.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "capture"}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+};
+refreshSessionList().catch((error) => log(`Capture library error: ${error.message}`));
 
 const comparedCaptureIndexes = new Set();
 
