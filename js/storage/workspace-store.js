@@ -7,6 +7,7 @@ export const WORKSPACE_SCHEMA_VERSION = 1;
 export const WORKSPACE_PANEL_IDS = Object.freeze([
     "radio",
     "receiver",
+    "capture-library",
     "pulse-analyzer",
     "transmitter",
     "waveform",
