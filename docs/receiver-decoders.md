@@ -177,13 +177,13 @@ When selected captures contain decoded fields, the comparison also builds a fiel
 Capture Compare works with live and imported captures and requires no connected radio for offline analysis. Comparison is intentionally descriptive: it shows which bytes and decoded fields changed but does not assume that correlation proves a field's encoding. Repeated controlled captures can be used to establish those relationships during protocol research.
 
 
-## Capture Sessions
+## Capture Library
 
-Capture Sessions provide a persistent browser-local workspace for receiver research. Sessions are stored in IndexedDB and do not require a server or connected radio. A saved session includes its capture set, notes, selected decoder/model, capture filter, frequency, data rate, and timestamps.
+The Capture Library provides a persistent browser-local workspace for receiver research. It is a draggable/resizable workspace panel backed by the shared RFCat Web IndexedDB database and does not require a server or connected radio. A saved session includes its capture set, notes, selected decoder/model, capture filter, timestamps, and RF configuration including frequency, data rate, bandwidth, modulation, sync settings, packet settings, CRC/whitening/status options, and lowball state.
 
-Use **New** to start an empty workspace, **Save** to create or update the active session, **Open** to restore the selected saved session, **Rename** to change its name, and **Delete** to remove it from browser storage. The session status changes to **Modified** when captures or notes change after saving.
+Use **New** to start an empty workspace, **Save** to create or update the active session, **Open** to restore the selected saved session and its RF form settings, **Rename** to change its name, **Delete** to remove it from browser storage, and **Export** to download the complete saved session as JSON. The library search field filters saved sessions by name, notes, decoder, or frequency. The session status changes to **Modified** when captures or notes change after saving.
 
-Opening a session reconstructs its stored capture bytes and runs them through the current decoder pipeline, so saved captures benefit from decoder improvements. Capture Compare, Copy hex, and Use for TX continue to work on restored sessions. Session data remains in the browser profile's IndexedDB until the user deletes the session or clears the site's browser storage. JSON export remains the portable backup/interchange format.
+Opening a session reconstructs its stored capture bytes and runs them through the current decoder pipeline, so saved captures benefit from decoder improvements. Capture Compare, Field Inference, Protocol Preset Builder, Copy hex, and Use for TX continue to work on restored sessions. Session data remains in the browser profile's IndexedDB until the user deletes the session or clears the site's browser storage. The IndexedDB schema is upgraded centrally so workspace and capture persistence can coexist for existing browser profiles.
 
 
 ## Multi-Capture Field Inference
@@ -192,7 +192,7 @@ Select two or more captures with the existing **Compare** checkboxes, then choos
 
 When decoded numeric fields are available, the analyzer checks for exact value correlations between a changing byte and decoded field values across the entire selected set. For example, if a byte contains `01 02 03 04` while decoded `pagerId` values are `1 2 3 4`, it reports an exact correlation across all four captures.
 
-Field inference is intentionally descriptive. A correlation does not establish that a byte is the field, prove its encoding, or establish causality. Use controlled captures and protocol documentation or additional experiments before assigning meaning to an unknown byte or bit range. The feature works with live captures, imported JSON, and restored Capture Sessions and does not require connected hardware for offline analysis.
+Field inference is intentionally descriptive. A correlation does not establish that a byte is the field, prove its encoding, or establish causality. Use controlled captures and protocol documentation or additional experiments before assigning meaning to an unknown byte or bit range. The feature works with live captures, imported JSON, and restored Capture Library sessions and does not require connected hardware for offline analysis.
 
 
 ## Protocol Preset Builder
@@ -220,7 +220,7 @@ The receiver tools are designed to compose into a repeatable reverse-engineering
 ```text
 Capture
   ↓
-Offline Analysis / Sessions
+Capture Library
   ↓
 Compare
   ↓
