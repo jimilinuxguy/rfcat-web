@@ -168,6 +168,14 @@ Offline re-decoding is intended for decoder development and regression work. It 
 The offline analyzer was validated with exported 13-byte LRS hardware-sync captures while no YARD Stick One was connected. Two imported frames (`AA FC 2D 01 00 01 00 00 00 00 00 01 2D`) were re-decoded as two valid LRS Pager events with zero rejected events, recovering restaurant 1, station 0, pager 1, alert 1, and checksum `2D`.
 
 
+## Flipper Zero RAW .sub interoperability
+
+The OOK Pulse Analyzer can import Flipper Zero version 1 RAW `.sub` files for offline timing analysis. RFCat Web reads the frequency, standard preset name, and all `RAW_Data` timing lines. Imported timings replace the current pulse-analyzer runs and update the frequency field. Import does not connect to hardware or transmit.
+
+**Export Flipper .sub** converts the current pulse runs to alternating signed microsecond timings and emits a RAW file using `FuriHalSubGhzPresetOok650Async`. A HIGH run is positive and a LOW run is negative. Export requires a leading HIGH run because that is required by the Flipper RAW format.
+
+The first implementation rejects custom Flipper CC1101 presets and non-RAW protocol/key files. A custom CC1101 register configuration should not be treated as an equivalent CC1111 RFCat configuration without an explicit mapping and validation.
+
 ## Capture Compare
 
 Select two or more Receiver captures with their **Compare** checkboxes, then choose **Compare (N)**. RFCat Web displays the captures side by side and highlights byte positions whose values differ. Byte positions are zero-based in the hover label.
