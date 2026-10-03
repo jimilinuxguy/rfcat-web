@@ -10,6 +10,7 @@ import { decodeRxPacket, decoderProtocols, splitRxStatus } from "./js/rx/decode.
 import { bytesToPulseRuns, pulseDistribution, estimateBasePulse } from "./js/rx/pulses.js";
 import { initWorkspace } from "./js/ui/workspace.js";
 import { deleteCaptureSession, getCaptureSession, listCaptureSessions, saveCaptureSession } from "./js/storage/capture-session-store.js";
+import { parseFlipperRawSub, pulseRunsToFlipperTimings, serializeFlipperRawSub } from "./js/flipper/subghz.js";
 
 import { protocols, getProtocol } from "./js/protocols/index.js";
 
@@ -780,6 +781,44 @@ $("pulse-export").onclick = () => {
     a.download = `rfcat-pulses-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
     a.click();
     URL.revokeObjectURL(url);
+};
+$("flipper-import").onclick = () => $("flipper-file").click();
+$("flipper-file").onchange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    try {
+        const raw = parseFlipperRawSub(await file.text());
+        $("freq").value = String(raw.frequency / 1e6);
+        pulseRuns = raw.timings.map((timing) => ({
+            level: timing > 0 ? 1 : 0,
+            symbols: null,
+            durationUs: Math.abs(timing),
+        }));
+        renderPulseAnalyzer();
+        log(`Imported Flipper RAW .sub: ${raw.timings.length} runs at ${(raw.frequency / 1e6).toFixed(6)} MHz (${raw.preset})`);
+    } catch (error) {
+        log(`Flipper .sub import error: ${error.message}`);
+    }
+};
+$("flipper-export").onclick = () => {
+    if (!pulseRuns.length) return log("No pulse data to export to Flipper");
+    try {
+        const text = serializeFlipperRawSub({
+            frequency: Number($("freq").value) * 1e6,
+            timings: pulseRunsToFlipperTimings(pulseRuns),
+        });
+        const blob = new Blob([text], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `rfcat-raw-${new Date().toISOString().replace(/[:.]/g, "-")}.sub`;
+        a.click();
+        URL.revokeObjectURL(url);
+        log("Exported pulse analyzer data as Flipper RAW .sub");
+    } catch (error) {
+        log(`Flipper .sub export error: ${error.message}`);
+    }
 };
 window.addEventListener("resize", debounce(renderPulseAnalyzer, 100));
 renderPulseAnalyzer();
