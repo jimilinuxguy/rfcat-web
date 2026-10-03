@@ -52,10 +52,15 @@ rfcat-web/
 │   ├── rfcat/
 │   │   ├── constants.js
 │   │   └── device.js
+│   ├── storage/
+│   │   ├── db.js
+│   │   ├── workspace-store.js
+│   │   └── capture-session-store.js
 │   └── ui/
 │       ├── log.js
 │       ├── protocols.js
-│       └── waveform.js
+│       ├── waveform.js
+│       └── workspace.js
 ├── docs/
 │   ├── README.md
 │   ├── rfcat-usb.md
@@ -194,6 +199,14 @@ A protocol participates in **Auto** and protocol-specific RX modes by implementi
 The current receive path uses the CC1111 packet engine. Packet length, sync configuration, modulation, data rate, and related radio settings can determine whether RFCat delivers a complete buffer at all. Decoder success does not remove that framing requirement. For asynchronous OOK remotes, a future pulse-oriented RX path may be needed when real transmitters do not map cleanly to CC1111 packet boundaries.
 
 See `docs/receiver-decoders.md` for the decoder contract and CAME-12 RX validation notes.
+
+## Browser persistence
+
+Browser-local persistence is centralized under `js/storage/`. `db.js` owns the IndexedDB database name, version, object-store creation, and generic storage operations. Feature code should use a feature-specific store module rather than opening `indexedDB` directly.
+
+The current database schema is version 2 and contains `workspace` and `capture-sessions` stores. Workspace layout data is handled by `workspace-store.js`; Capture Library sessions are handled by `capture-session-store.js`. When adding a new object store, increment the database version and add the store to the centralized schema so existing browser profiles receive the upgrade.
+
+Capture Library sessions preserve the capture set plus decoder selection, notes, timestamps, and RF configuration. Restored captures are re-decoded through the current decoder pipeline rather than persisting decoder behavior.
 
 ## RX Rule
 
