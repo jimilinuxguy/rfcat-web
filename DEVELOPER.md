@@ -32,6 +32,8 @@ rfcat-web/
 ├── js/
 │   ├── core/
 │   │   └── bytes.js
+│   ├── flipper/
+│   │   └── subghz.js
 │   ├── encoding/
 │   │   ├── manchester.js
 │   │   ├── pwm.js
@@ -274,3 +276,8 @@ Use:
 -   `docs/README.md` as the documentation index.
 -   `docs/protocols/*.md` for protocol research, packet layouts, RF
     timing, test vectors, and validation notes.
+
+
+## Flipper Sub-GHz files
+
+`js/flipper/subghz.js` owns Flipper Zero Sub-GHz file parsing and serialization. The initial interoperability surface is deliberately limited to version 1 RAW `.sub` files with standard presets. Keep file-format parsing independent from DOM and RFCat device code. Import is analysis-only; transmission must remain an explicit user action through existing RFCat Web TX controls. Do not infer CC1111 settings from a Flipper custom CC1101 preset without an explicit, tested mapping.
