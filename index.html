@@ -477,11 +477,14 @@
                     <div>
                         <button id="pulse-clear">Clear pulses</button>
                         <button id="pulse-export">Export JSON</button>
+                        <button id="flipper-import">Import Flipper .sub</button>
+                        <button id="flipper-export">Export Flipper .sub</button>
+                        <input id="flipper-file" type="file" accept=".sub,text/plain" hidden>
                     </div>
                 </div>
 
                 <p class="hint pulse-hint">
-                    Analyzes HIGH/LOW runs from raw receive bytes using the configured data rate as the sampling clock. For asynchronous OOK work, enable Lowball / raw OOK receive and disable sync.
+                    Analyzes HIGH/LOW runs from raw receive bytes using the configured data rate as the sampling clock. Import/export supports Flipper Zero RAW .sub files with standard presets. Import loads pulse timing and frequency for offline analysis and does not transmit. For asynchronous OOK work, enable Lowball / raw OOK receive and disable sync.
                 </p>
 
                 <div class="pulse-stats">
