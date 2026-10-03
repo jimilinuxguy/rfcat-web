@@ -836,6 +836,20 @@ function currentSessionSnapshot(name, id = activeSessionId ?? crypto.randomUUID(
         filter: $("rx-filter").value,
         frequencyMHz: $("freq").value,
         dataRate: $("drate").value,
+        radio: {
+            frequencyMHz: $("freq").value,
+            dataRate: $("drate").value,
+            bandwidthKHz: $("bw").value,
+            modulation: $("mod").value,
+            syncWord: $("sync").value,
+            syncMode: $("syncmode").value,
+            lengthMode: $("lengthmode").value,
+            packetLength: $("pktlen").value,
+            crc: $("crc").checked,
+            whitening: $("whitening").checked,
+            appendStatus: $("appendstatus").checked,
+            lowball: $("lowball")?.checked ?? false,
+        },
         captures: sessionCaptureData(),
     };
 }
@@ -888,8 +902,20 @@ async function openSavedSession(id) {
         }
     }
     if (session.filter) $("rx-filter").value = session.filter;
-    if (session.frequencyMHz != null) $("freq").value = session.frequencyMHz;
-    if (session.dataRate != null) $("drate").value = session.dataRate;
+    const radio = session.radio ?? {};
+    if (radio.frequencyMHz ?? session.frequencyMHz) $("freq").value = radio.frequencyMHz ?? session.frequencyMHz;
+    if (radio.dataRate ?? session.dataRate) $("drate").value = radio.dataRate ?? session.dataRate;
+    if (radio.bandwidthKHz != null) $("bw").value = radio.bandwidthKHz;
+    if (radio.modulation != null) $("mod").value = radio.modulation;
+    if (radio.syncWord != null) $("sync").value = radio.syncWord;
+    if (radio.syncMode != null) $("syncmode").value = radio.syncMode;
+    if (radio.lengthMode != null) $("lengthmode").value = radio.lengthMode;
+    if (radio.packetLength != null) $("pktlen").value = radio.packetLength;
+    if (typeof radio.crc === "boolean") $("crc").checked = radio.crc;
+    if (typeof radio.whitening === "boolean") $("whitening").checked = radio.whitening;
+    if (typeof radio.appendStatus === "boolean") $("appendstatus").checked = radio.appendStatus;
+    if (typeof radio.lowball === "boolean" && $("lowball")) $("lowball").checked = radio.lowball;
+    updatePacketControlState();
 
     rxCaptures.length = 0;
     comparedCaptureIndexes.clear();
@@ -1466,6 +1492,9 @@ function redecodeImportedCapture(item) {
         imported: true,
         frequencyHz: item.frequencyHz ?? null,
         dataRate: item.dataRate ?? null,
+        bandwidthKHz: item.bandwidthKHz ?? null,
+        modulation: item.modulation ?? null,
+        syncWord: item.syncWord ?? null,
         decodeMode: mode,
     };
 }
@@ -1482,6 +1511,9 @@ function redecodeOfflineCaptures() {
         crcOk: capture.crcOk,
         frequencyHz: capture.frequencyHz,
         dataRate: capture.dataRate,
+        bandwidthKHz: capture.bandwidthKHz,
+        modulation: capture.modulation,
+        syncWord: capture.syncWord,
     }));
 
     rxCaptures.length = 0;
@@ -1611,6 +1643,9 @@ d.addEventListener("packet", (e) => {
         error: decoded?.error ?? null,
         frequencyHz: Number($("freq").value) * 1e6,
         dataRate: Number($("drate").value),
+        bandwidthKHz: Number($("bw").value),
+        modulation: Number($("mod").value),
+        syncWord: $("sync").value,
         decodeMode,
     };
     renderRxCapture(capture);
