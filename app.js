@@ -38,10 +38,11 @@ async function configureMomentumChat() {
     }
     await d.mode(C.RF_IDLE);
     await d.setFrequency(mhz * 1e6);
-    await d.setDataRate(9996);
-    await d.setBandwidth(101562.5);
+    // Match Flipper CC1101 GFSK9_99KbAsync modem registers exactly.
+    // Its RX bandwidth is ~203 kHz, not ~107 kHz.
+    await d.poke(R.MDMCFG4, new Uint8Array([0xc8, 0x93]));
     await d.setModulation(0x10); // GFSK
-    await d.setDeviation(19043);
+    await d.poke(R.DEVIATN, new Uint8Array([0x34]));
     await d.setSync(0x464c, 2); // 16/16 sync
     await d.setManchester(false);
     await d.setPacketConfig({
@@ -51,6 +52,7 @@ async function configureMomentumChat() {
     // Flipper's preset also uses FSCTRL1=0x06 for frequency compensation.
     await d.poke(R.FSCTRL1, new Uint8Array([0x06]));
     await d.setMaxPower(); // Ensure FSK PA_TABLE0 and FREND0.PA_POWER=0 for TX
+    await d.poke(R.PKTCTRL1, new Uint8Array([0x00])); // Match Flipper preset; no RX append status
     await d.setAmpMode(true); // YARD Stick One external RF amplifier
     await d.mode(C.RF_RX);
     momentumChatActive = true;
@@ -80,7 +82,10 @@ $("momentum-chat-send").onclick = async () => {
         await d.mode(C.RF_IDLE);
         await d.setMaxPower();
         await d.setAmpMode(true);
-        await d.transmit(bytes);
+        const txReply = await d.transmit(bytes);
+        const txResult = txReply[0];
+        log(`Momentum chat firmware TX result: ${txResult == null ? "empty response" : `0x${txResult.toString(16).padStart(2, "0")}`}`);
+        if (txResult !== 0) throw new Error(`RFCat firmware TX failed: ${txResult == null ? "empty response" : `0x${txResult.toString(16)}`}`);
         const txState = (await d.peek(R.MARCSTATE))[0] & 0x1f;
         log(`Momentum chat TX accepted ${bytes.length} bytes; MARCSTATE=0x${txState.toString(16)}`);
         await d.mode(C.RF_RX);
