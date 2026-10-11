@@ -40,9 +40,9 @@ async function logMomentumRadio(label, expectedMHz) {
     const deltaKhz = (actualMHz - expectedMHz) * 1000;
     const hexByte = (n) => n.toString(16).padStart(2, "0");
     log(`Momentum ${label}: FREQ=${[...freqBytes].map(hexByte).join(" ")} ${actualMHz.toFixed(6)} MHz (offset ${deltaKhz.toFixed(2)} kHz), ${cfg.rate.toFixed(0)} baud, RX BW ${(cfg.bw / 1000).toFixed(2)} kHz, sync 0x${cfg.sync.toString(16)}, PKTCTRL0=0x${hexByte(cfg.pktctrl0)}, PKTCTRL1=0x${hexByte(cfg.pktctrl1)}, DEVIATN=0x${hexByte(regs[0x11])}, FREND0=0x${hexByte(regs[0x1b])}, PA0=0x${hexByte(regs[0x2e])}, MARCSTATE=0x${hexByte(cfg.marc)}`);
-    if (Math.abs(deltaKhz) > 2) throw new Error(`Radio frequency readback differs from requested ${expectedMHz} MHz by ${deltaKhz.toFixed(2)} kHz`);
+    if (Math.abs(deltaKhz) > 2) log(`Momentum warning: frequency readback differs from requested ${expectedMHz} MHz by ${deltaKhz.toFixed(2)} kHz; chat remains enabled for RF troubleshooting`);
     if (cfg.mod !== 0x10 || cfg.sync !== 0x464c || cfg.lengthMode !== "variable" || !cfg.crc) {
-        throw new Error("Momentum radio modem readback does not match chat settings");
+        log("Momentum warning: radio modem readback does not match chat settings; chat remains enabled for RF troubleshooting");
     }
 }
 async function configureMomentumChat() {
