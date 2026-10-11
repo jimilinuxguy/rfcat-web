@@ -541,6 +541,21 @@
                 </div>
             </details>
 
+            <details class="card collapsible flipper-tx-card">
+                <summary class="section-summary"><span>Flipper Zero TX</span><span class="summary-note">USB serial · Princeton 24-bit</span></summary>
+                <div class="section-body">
+                    <p class="hint">Stock Flipper firmware Princeton TX only. Requires desktop Chrome/Edge, USB, and Web Serial.</p>
+                    <div class="actions"><button id="flipper-connect" type="button">Connect Flipper</button><span id="flipper-status" role="status">Disconnected</span></div>
+                    <label>Key (24-bit hex) <input id="flipper-key" value="74BADE" maxlength="6" spellcheck="false"></label>
+                    <label>Frequency (MHz) <input id="flipper-frequency" type="number" min="300" max="928" step="0.000001" value="433.920"></label>
+                    <label>TE (microseconds) <input id="flipper-te" type="number" min="100" max="10000" value="403"></label>
+                    <label>Repeat <input id="flipper-repeat" type="number" min="1" max="100" value="3"></label>
+                    <label>Radio <select id="flipper-radio"><option value="0">Internal CC1101</option><option value="1">External CC1101</option></select></label>
+                    <div class="actions"><button id="flipper-transmit" class="danger" disabled>Transmit via Flipper</button></div>
+                    <p class="hint">Firmware may reject TX due to regional restrictions. Serial output appears in Activity. Only transmit where authorized.</p>
+                </div>
+            </details>
+
             </div>
 
 
