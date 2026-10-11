@@ -50,6 +50,7 @@ async function configureMomentumChat() {
     });
     // Flipper's preset also uses FSCTRL1=0x06 for frequency compensation.
     await d.poke(R.FSCTRL1, new Uint8Array([0x06]));
+    await d.setMaxPower(); // Ensure FSK PA_TABLE0 and FREND0.PA_POWER=0 for TX
     await d.mode(C.RF_RX);
     momentumChatActive = true;
     listening = false;
@@ -74,9 +75,13 @@ $("momentum-chat-send").onclick = async () => {
         const message = $("momentum-chat-message").value;
         const bytes = encodePlaintextChat(message);
         if (bytes.length > 60) throw new Error("Message exceeds Flipper's 60-byte radio packet limit");
+        await d.mode(C.RF_IDLE);
+        await d.setMaxPower();
         await d.transmit(bytes);
+        const txState = (await d.peek(R.MARCSTATE))[0] & 0x1f;
+        log(`Momentum chat TX accepted ${bytes.length} bytes; MARCSTATE=0x${txState.toString(16)}`);
         await d.mode(C.RF_RX);
-        appendChatMessage("You", message);
+        appendChatMessage("You (sent, unconfirmed)", message);
         $("momentum-chat-message").value = "";
     } catch (error) {
         log(`Momentum chat TX error: ${error.message}`);
