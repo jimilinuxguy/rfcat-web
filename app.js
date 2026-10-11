@@ -30,6 +30,18 @@ function appendChatMessage(direction, message) {
     chatHistory.append(entry);
     chatHistory.scrollTop = chatHistory.scrollHeight;
 }
+async function logMomentumRadio(label, expectedMHz) {
+    const cfg = await d.config();
+    const regs = cfg.raw;
+    const actualMHz = cfg.freq / 1e6;
+    const deltaKhz = (actualMHz - expectedMHz) * 1000;
+    const hexByte = (n) => n.toString(16).padStart(2, "0");
+    log(`Momentum ${label}: ${actualMHz.toFixed(6)} MHz (offset ${deltaKhz.toFixed(2)} kHz), ${cfg.rate.toFixed(0)} baud, RX BW ${(cfg.bw / 1000).toFixed(2)} kHz, sync 0x${cfg.sync.toString(16)}, PKTCTRL0=0x${hexByte(cfg.pktctrl0)}, PKTCTRL1=0x${hexByte(cfg.pktctrl1)}, DEVIATN=0x${hexByte(regs[0x11])}, FREND0=0x${hexByte(regs[0x1b])}, PA0=0x${hexByte(regs[0x2e])}, MARCSTATE=0x${hexByte(cfg.marc)}`);
+    if (Math.abs(deltaKhz) > 2) throw new Error(`Radio frequency readback differs from requested ${expectedMHz} MHz by ${deltaKhz.toFixed(2)} kHz`);
+    if (cfg.mod !== 0x10 || cfg.sync !== 0x464c || cfg.lengthMode !== "variable" || !cfg.crc) {
+        throw new Error("Momentum radio modem readback does not match chat settings");
+    }
+}
 async function configureMomentumChat() {
     if (!d.device?.opened) throw new Error("Connect YARD Stick One first");
     const mhz = Number($("momentum-chat-frequency").value);
@@ -54,6 +66,7 @@ async function configureMomentumChat() {
     await d.setMaxPower(); // Ensure FSK PA_TABLE0 and FREND0.PA_POWER=0 for TX
     await d.poke(R.PKTCTRL1, new Uint8Array([0x00])); // No RX append status
     await d.setAmpMode(true); // YARD Stick One external RF amplifier
+    await logMomentumRadio("configured", mhz);
     await d.mode(C.RF_RX);
     momentumChatActive = true;
     listening = false;
@@ -82,13 +95,14 @@ $("momentum-chat-send").onclick = async () => {
         await d.mode(C.RF_IDLE);
         await d.setMaxPower();
         await d.setAmpMode(true);
+        await logMomentumRadio("pre-TX", Number($("momentum-chat-frequency").value));
         const txReply = await d.transmit(bytes);
         const txResult = txReply[0];
         log(`Momentum chat firmware TX result: ${txResult == null ? "empty response" : `0x${txResult.toString(16).padStart(2, "0")}`}`);
         // RFCat cc1111rf.c transmit() returns 1 after its TX wait loop.
         if (txResult !== 1) throw new Error(`Unexpected RFCat firmware TX result: ${txResult == null ? "empty response" : `0x${txResult.toString(16)}`}`);
         const txState = (await d.peek(R.MARCSTATE))[0] & 0x1f;
-        log(`Momentum chat TX accepted ${bytes.length} bytes; MARCSTATE=0x${txState.toString(16)}`);
+        log(`Momentum chat TX routine completed for ${bytes.length} bytes; MARCSTATE=0x${txState.toString(16)} (over-the-air reception not confirmed)`);
         await d.mode(C.RF_RX);
         appendChatMessage("You (sent, unconfirmed)", message);
         $("momentum-chat-message").value = "";
