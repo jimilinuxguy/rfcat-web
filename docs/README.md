@@ -4,6 +4,12 @@ This directory contains implementation notes and protocol documentation for RFCa
 
 RFCat Web is a browser-based WebUSB controller for RFCat-compatible CC1111 hardware such as the YARD Stick One.
 
+## Momentum Enhanced Sub-GHz Chat
+
+See [momentum-subghz-chat.md](momentum-subghz-chat.md) for the dedicated plaintext YARD Stick One ↔ Flipper Zero chat workflow, including **No encryption**, matching frequencies (hardware-tested at **433.920 MHz**), username-prefixed CRLF-terminated UTF-8 payloads, 60-byte packet limit, radio configuration, and test procedure.
+
+**Validation:** A user confirmed Flipper reception of RFCat Web TX, and RFCat Web has decoded plaintext Flipper RX packets. Long-term reliability and occasional empty/invalid RX frames remain under investigation. This is a dedicated chat panel rather than a module in `js/protocols/`.
+
 ## Core documentation
 
 ### Receiver and protocol decoders
@@ -275,6 +281,10 @@ When adding a new protocol:
 Keep generic CC1111 and RFCat operations in the device/radio layers.
 
 Keep protocol-specific behavior in the protocol module.
+
+## Testing and CI
+
+Run `npm test` for the Node.js test suite. GitHub Actions runs it on pull requests and pushes to `main` and `feature/momentum-subghz-chat`. Frequency regression tests verify CC1111 synthesizer register addresses, 433.920 MHz programming, and readback mismatch handling. Check CI results before merging; automated tests do not establish over-the-air interoperability.
 
 ## Validation
 
