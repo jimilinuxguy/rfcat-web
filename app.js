@@ -85,7 +85,8 @@ $("momentum-chat-send").onclick = async () => {
         const txReply = await d.transmit(bytes);
         const txResult = txReply[0];
         log(`Momentum chat firmware TX result: ${txResult == null ? "empty response" : `0x${txResult.toString(16).padStart(2, "0")}`}`);
-        if (txResult !== 0) throw new Error(`RFCat firmware TX failed: ${txResult == null ? "empty response" : `0x${txResult.toString(16)}`}`);
+        // RFCat cc1111rf.c transmit() returns 1 after its TX wait loop.
+        if (txResult !== 1) throw new Error(`Unexpected RFCat firmware TX result: ${txResult == null ? "empty response" : `0x${txResult.toString(16)}`}`);
         const txState = (await d.peek(R.MARCSTATE))[0] & 0x1f;
         log(`Momentum chat TX accepted ${bytes.length} bytes; MARCSTATE=0x${txState.toString(16)}`);
         await d.mode(C.RF_RX);
@@ -1652,7 +1653,8 @@ $("rx-export").onclick = () => {
 
 d.addEventListener("packet", (e) => {
     if (momentumChatActive) {
-        try { appendChatMessage("Flipper", decodePlaintextChat(e.detail)); }
+        if (!e.detail?.length) return;
+        try { const message = decodePlaintextChat(e.detail); if (message) appendChatMessage("Flipper", message); }
         catch (error) { log(`Momentum chat RX decode error: ${error.message}`); }
         return;
     }
