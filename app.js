@@ -33,10 +33,13 @@ function appendChatMessage(direction, message) {
 async function logMomentumRadio(label, expectedMHz) {
     const cfg = await d.config();
     const regs = cfg.raw;
-    const actualMHz = cfg.freq / 1e6;
+    // Read the three frequency registers directly rather than trusting a bulk register snapshot.
+    const freqBytes = await d.peek(R.FREQ2, 3);
+    const freqWord = freqBytes[0] * 65536 + freqBytes[1] * 256 + freqBytes[2];
+    const actualMHz = freqWord * 24 / 65536;
     const deltaKhz = (actualMHz - expectedMHz) * 1000;
     const hexByte = (n) => n.toString(16).padStart(2, "0");
-    log(`Momentum ${label}: ${actualMHz.toFixed(6)} MHz (offset ${deltaKhz.toFixed(2)} kHz), ${cfg.rate.toFixed(0)} baud, RX BW ${(cfg.bw / 1000).toFixed(2)} kHz, sync 0x${cfg.sync.toString(16)}, PKTCTRL0=0x${hexByte(cfg.pktctrl0)}, PKTCTRL1=0x${hexByte(cfg.pktctrl1)}, DEVIATN=0x${hexByte(regs[0x11])}, FREND0=0x${hexByte(regs[0x1b])}, PA0=0x${hexByte(regs[0x2e])}, MARCSTATE=0x${hexByte(cfg.marc)}`);
+    log(`Momentum ${label}: FREQ=${[...freqBytes].map(hexByte).join(" ")} ${actualMHz.toFixed(6)} MHz (offset ${deltaKhz.toFixed(2)} kHz), ${cfg.rate.toFixed(0)} baud, RX BW ${(cfg.bw / 1000).toFixed(2)} kHz, sync 0x${cfg.sync.toString(16)}, PKTCTRL0=0x${hexByte(cfg.pktctrl0)}, PKTCTRL1=0x${hexByte(cfg.pktctrl1)}, DEVIATN=0x${hexByte(regs[0x11])}, FREND0=0x${hexByte(regs[0x1b])}, PA0=0x${hexByte(regs[0x2e])}, MARCSTATE=0x${hexByte(cfg.marc)}`);
     if (Math.abs(deltaKhz) > 2) throw new Error(`Radio frequency readback differs from requested ${expectedMHz} MHz by ${deltaKhz.toFixed(2)} kHz`);
     if (cfg.mod !== 0x10 || cfg.sync !== 0x464c || cfg.lengthMode !== "variable" || !cfg.crc) {
         throw new Error("Momentum radio modem readback does not match chat settings");
