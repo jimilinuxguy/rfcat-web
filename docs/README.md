@@ -1,310 +1,58 @@
-# RFCat Web Documentation
+# RFCat Web documentation
 
-This directory contains implementation notes and protocol documentation for RFCat Web.
+Technical reference, protocol notes, and validation guidance for the [RFCat Web RF development workspace](../README.md).
 
-RFCat Web is a browser-based WebUSB controller for RFCat-compatible CC1111 hardware such as the YARD Stick One.
+## Start here
 
-## Momentum Enhanced Sub-GHz Chat (plaintext and encrypted)
+| Guide | Covers |
+| --- | --- |
+| [Receiver and Protocol Decoders](receiver-decoders.md) | Capture, raw/auto decode, POCSAG/CAME/Retekess RX, offline import, sessions, compare, inference, and preset builder |
+| [Radio Configuration](radio.md) | CC1111 registers, RF settings, amplifier behavior, lowball receive, and timing quantization |
+| [RFCat USB Protocol](rfcat-usb.md) | WebUSB endpoints, framing, commands, connect/reconnect, and TX/RX transport |
+| [Momentum Enhanced Sub-GHz Chat](momentum-subghz-chat.md) | Optional Flipper Zero interoperability: plaintext, AES-256-GCM, hardware test steps, and limitations |
 
-See [momentum-subghz-chat.md](momentum-subghz-chat.md) for the dedicated plaintext and encrypted YARD Stick One ↔ Flipper Zero chat workflow, including **No encryption**, matching frequencies (hardware-tested at **433.920 MHz**), username-prefixed CRLF-terminated UTF-8 payloads, 60-byte packet limit, radio configuration, and test procedure.
+## Development workflows
 
-**Validation:** A user confirmed Flipper reception of RFCat Web TX, and RFCat Web has decoded plaintext Flipper RX packets. Long-term reliability and occasional empty/invalid RX frames remain under investigation. Experimental AES-256-GCM mode supports password-derived SHA-256 keys or 32-byte hex keys, with a 20-byte encrypted plaintext limit and replay protection. A user reports successful password-encrypted communication with a physical Flipper Zero; which direction(s) succeeded are not yet documented. Raw hex-key mode and bidirectional encrypted operation remain to be verified. This is a dedicated chat panel rather than a module in `js/protocols/`.
+**Receive and analyze:** Configure RF → capture or import → select decoder → inspect raw and decoded data → save a session → compare captures → infer fields → validate a protocol preset → export JSON.
 
-## Core documentation
-
-### Receiver and protocol decoders
-
-See:
-
-```text
-receiver-decoders.md
-```
+**Develop a protocol:** Implement metadata and UI fields, `encode()` for packet TX, `configure()` for RF setup, optional `transmit()` for direct modes, and `decode(bytes, context)` for RX. Register the module in `js/protocols/index.js`; add tests and a protocol-specific document. Protocols should call the device API, not construct USB frames.
 
-This document covers:
+**Export configuration:** The IPython exporter records protocol configuration operations and renders equivalent rflib commands. Direct TX protocols can require custom handling.
 
-- Raw RX
-- Auto decode mode
-- Protocol-specific RX
-- The `decode(bytes, context)` interface
-- Unknown packet handling
-- CC1111 RSSI/LQI appended status bytes
-- Packet framing
-- CAME-12 RX
-- POCSAG RX and the dedicated receiver preset
-- LRS Pager hardware-Manchester RX with `AA AA` sync, 13-byte framing, and checksum validation
-- Rolling receive-buffer decoding
-- Known-good OTA validation setups
-- Retekess raw OOK oversampling and rolling-buffer decoding
-- Decoder development
-- Offline JSON import and automatic re-decoding
-- Capture statistics and TX handoff
-- Persistent Capture Library with saved RF configuration, filtering, reopen, delete, rename, and JSON export
-- Capture Compare
-- Multi-Capture Field Inference
-- Protocol Preset Builder
-- Automatic `sum-mod-255` checksum candidates
-- Positive, negative, and unknown preset validation
-- Versioned protocol JSON import/export
+**Run tests:** `npm test` runs Node's test suite. CI runs through GitHub Actions; inspect the workflow status before interpreting a change as verified.
 
-### Receiver analysis workflow
+## Protocol reference
 
-The browser can be used as an offline protocol-analysis workspace after captures have been collected:
+| Family | Documentation |
+| --- | --- |
+| Paging | [POCSAG](protocols/pocsag.md), [LRS](protocols/lrs.md), [Retekess](protocols/retekess.md) |
+| OOK / remote | [CAME-12](protocols/came12.md), [Generic OOK/PWM](protocols/pwm.md), [Tesla charge port](protocols/tesla.md), [TouchTunes](protocols/touchtunes.md) |
+| Weather / sensor | [Acurite 5n1](protocols/acurite-5n1.md), [Oregon THGR122NX](protocols/oregon-thgr122nx.md) |
+| TPMS | [Schrader EG53MA4](protocols/schrader-eg53ma4.md), [MRXBC5A4](protocols/schrader-mrxbc5a4.md), [MRXGG4](protocols/schrader-mrxgg4.md), [SMD3MA4](protocols/schrader-smd3ma4.md) |
 
-```text
-Capture
-  ↓
-Capture Library
-  ↓
-Compare
-  ↓
-Infer Fields
-  ↓
-Build Protocol
-  ↓
-Validate positive + negative captures
-  ↓
-Save / Export Protocol JSON
-```
+Additional implementations (including JTECH, Binary, and Continuous Carrier) may not have a standalone protocol document; see the source modules under `js/protocols/`.
 
-The generated protocol presets are declarative analysis definitions. They are not automatically registered as live decoders and do not transmit.
+## Implementation map
 
-### RFCat USB
+| Location | Responsibility |
+| --- | --- |
+| `app.js`, `index.html` | UI and event wiring |
+| `js/rfcat/`, `js/radio/` | RFCat transport and CC1111 configuration |
+| `js/protocols/` | Protocol-specific encoding, configuration, TX, and optional decoding |
+| `js/rx/`, `js/encoding/` | Capture processing and waveform/timing tools |
+| `js/storage/` | Browser-local capture sessions and persistence |
+| `js/chat/` | Momentum chat packet handling |
+| `tests/`, `tools/` | Automated tests and synthetic signal utilities |
 
-See:
+## Validation terminology
 
-```text
-rfcat-usb.md
-```
+- **Implemented:** Code exists; no test result implied.
+- **Synthetic/unit validated:** Local test vectors or generated signals match expected results.
+- **OTA waveform validated:** An independently captured radio waveform matches the intended encoding/timing.
+- **Device interoperability validated:** A real target device successfully exchanges or receives the relevant traffic.
 
-This document describes the browser/WebUSB side of RFCat communication, including RFCat application IDs, commands, USB framing, packet TX/RX, and radio state control.
-
-### Radio configuration
-
-See:
-
-```text
-radio.md
-```
-
-This document covers CC1111 radio configuration and the register-level behavior used by RFCat Web.
-
-## Protocol documentation
-
-Protocol-specific documentation lives under:
-
-```text
-protocols/
-```
-
-Current protocol documentation includes:
-
-```text
-protocols/acurite-5n1.md
-protocols/came12.md
-protocols/lrs.md
-protocols/oregon-thgr122nx.md
-protocols/pocsag.md
-protocols/pwm.md
-protocols/retekess.md
-protocols/schrader-eg53ma4.md
-protocols/schrader-mrxbc5a4.md
-protocols/schrader-mrxgg4.md
-protocols/schrader-smd3ma4.md
-protocols/tesla.md
-protocols/touchtunes.md
-```
-
-Other protocol implementations may exist in `js/protocols/` before a dedicated protocol document is added.
-
-## Protocol architecture
-
-Protocol modules live under:
-
-```text
-js/protocols/
-```
-
-The registry lives in:
-
-```text
-js/protocols/index.js
-```
-
-A protocol may provide:
-
-```js
-{
-    id,
-    name,
-    description,
-    fields,
-    encode,
-    configure,
-    transmit,
-    decode
-}
-```
-
-Protocols only need to implement the operations they support.
-
-## Packet transmit protocols
-
-Normal transmit protocols encode their UI values into a packet:
-
-```text
-UI values
-    ↓
-encode()
-    ↓
-Uint8Array payload
-    ↓
-configure()
-    ↓
-transmit()
-```
-
-RFCat Web requires normal packet protocols to return a non-empty byte payload.
-
-## Direct transmit protocols
-
-Some RF operations do not naturally produce packet bytes.
-
-These protocols can declare:
-
-```js
-txMode: "direct"
-```
-
-A direct protocol can still use `encode()` for validation and resolving its configuration, but the resulting `bytes` array may be empty.
-
-The application then allows the protocol's `configure()` and `transmit()` methods to perform the operation directly.
-
-Continuous Carrier is the first direct transmit protocol.
-
-## Continuous Carrier
-
-Continuous Carrier is an RF test protocol intended for short bench tests.
-
-It configures:
-
-```text
-frequency
-ASK/OOK modulation
-maximum configured PA power
-YARD Stick One amplifier
-continuous TX mode
-```
-
-and automatically stops after a bounded duration.
-
-The generic CC1111 continuous-TX primitive belongs in the RFCat device layer.
-
-The decision to use that primitive, along with frequency and duration, belongs in the protocol layer.
-
-This keeps the architecture:
-
-```text
-Continuous Carrier protocol
-          ↓
-RFCatUSB continuous-TX primitive
-          ↓
-RFCat firmware
-          ↓
-CC1111
-```
-
-rather than embedding Continuous Carrier behavior directly into `app.js` or the device layer.
-
-The continuous-carrier RF waveform should be independently verified with an SDR, spectrum analyzer, or second receiver before treating the implementation as hardware validated.
-
-## Receive protocols
-
-Protocols can opt into receive decoding with:
-
-```js
-decode(bytes, context)
-```
-
-A decoder returns a result when the payload matches:
-
-```js
-{
-    fields: {
-        // decoded values
-    },
-
-    summary: "Human-readable result"
-}
-```
-
-and returns:
-
-```js
-null
-```
-
-when the payload does not match.
-
-This is important for Auto mode because several protocol decoders may inspect the same received packet.
-
-## IPython export
-
-The IPython exporter reuses protocol configuration rather than maintaining a separate set of RF presets.
-
-A recorder-style device object records operations performed by:
-
-```js
-protocol.configure()
-```
-
-and converts them into RFCat/rflib-compatible Python commands.
-
-This allows protocol defaults and user overrides to remain consistent between browser transmission and exported scripts.
-
-Direct transmit protocols require special consideration because they may perform operations such as timed TX rather than a normal `RFxmit()` packet call.
-
-## Adding a protocol
-
-When adding a new protocol:
-
-1. Add the implementation under `js/protocols/`.
-2. Export the protocol using the same module convention as the existing protocols.
-3. Register it in `js/protocols/index.js`.
-4. Define UI fields in the protocol rather than `app.js`.
-5. Implement `encode()` for TX if applicable.
-6. Implement `configure()` for protocol-specific RF settings if applicable.
-7. Implement `transmit()` for TX if applicable.
-8. Implement `decode()` for RX if applicable.
-9. Add tests.
-10. Add protocol documentation when the protocol is sufficiently understood.
-
-Keep generic CC1111 and RFCat operations in the device/radio layers.
-
-Keep protocol-specific behavior in the protocol module.
-
-## Testing and CI
-
-Run `npm test` for the Node.js test suite. GitHub Actions runs it on pull requests and configured branch pushes. Frequency regression tests verify CC1111 synthesizer register addresses, 433.920 MHz programming, and readback mismatch handling. Check CI results before merging; automated tests do not establish over-the-air interoperability.
-
-## Validation
-
-Documentation should distinguish between:
-
-```text
-implemented
-synthetically validated
-OTA waveform validated
-device interoperability validated
-```
-
-These are not equivalent.
-
-For example, matching an expected waveform on an SDR validates the transmitted waveform but does not prove interoperability with every physical target device.
-
-Similarly, receiving an RFCat-generated CAME packet between two YARD Stick One devices validates the RFCat Web TX/RX path but does not prove that a physical asynchronous CAME remote will produce packet boundaries compatible with the CC1111 packet engine.
+Hardware evidence is **feature- and direction-specific**. For example, a successful encrypted Flipper → RFCat Web message does not by itself verify encrypted RFCat Web → Flipper. Individual protocol guides record their evidence and unresolved cases.
 
 ## Safety
 
-Only transmit on frequencies and systems you are authorized to use.
-
-RF test modes, including Continuous Carrier, should use short durations and an appropriate test environment to minimize interference.
+Operate only on authorized frequencies and equipment. Prefer controlled, short bench transmissions; consult each protocol's scope and validation notes before relying on real-device behavior.
