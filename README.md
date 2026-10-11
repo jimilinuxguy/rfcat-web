@@ -5,9 +5,13 @@ Browser-based WebUSB controller for RFCat-compatible CC1111 hardware such as the
 RFCat Web provides direct radio configuration, receive/transmit controls, waveform inspection, and a modular protocol system that keeps protocol-specific encoding and RF configuration out of the main application.
 
 
-### Momentum Enhanced Sub-GHz Chat
+## Momentum Enhanced Sub-GHz Chat (plaintext)
 
-The [plaintext Momentum chat integration](docs/momentum-subghz-chat.md) supports configurable TX usernames, CRLF-terminated messages, and a YARD Stick One at 433.920 MHz. A user verified that a Flipper Zero received RFCat Web TX on hardware; Flipper-to-YARD plaintext RX has also been observed. Longer-term bidirectional reliability is still under evaluation. The radio synthesizer configuration is verified by register readback before chat starts.
+The [Momentum chat guide](docs/momentum-subghz-chat.md) covers YARD Stick One and Flipper Zero interoperability without a Flipper USB connection. Select **No encryption** in Enhanced Sub-GHz Chat, match frequencies (hardware-tested at **433.920 MHz**), connect YARD Stick One, and select **Start chat**. The configurable TX username defaults to `RFCat`; entering `Hello!` transmits UTF-8 text `RFCat: Hello!` followed by CRLF. Empty messages are rejected and the complete encoded packet, including prefix and CRLF, is limited to 60 bytes.
+
+**Hardware status:** A user confirmed that a Flipper Zero received RFCat Web transmissions. RFCat Web has also decoded real plaintext Flipper RX frames. Verified frequency readback was **433.919678 MHz** (~0.32 kHz below requested), with ~10002 baud, ~107.14 kHz RX bandwidth, GFSK, sync `0x464C`, variable packet length, and CRC. Some zero-length/invalid UTF-8 RX frames and long-duration reliability remain under investigation. The app verifies CC1111 frequency register writes before chat begins. Routine USB OUT dumps are suppressed by default.
+
+This dedicated chat panel is separate from the protocol registry.
 
 ## Protocols
 
@@ -59,7 +63,7 @@ Then open the local server in a WebUSB-capable browser.
 
 ## Testing
 
-Run the JavaScript test suite with the project's npm test command.
+Run the JavaScript test suite with `npm test` (Node.js). GitHub Actions runs the suite on pull requests and pushes to `main` and the Momentum feature branch. Frequency regression tests verify the CC1111 register addresses, 433.920 MHz programming, and readback mismatch detection. CI results must be checked separately from user-reported hardware testing.
 
 Synthetic RF generators under `tools/` can create sample files for independent waveform/decoder analysis. Generated captures should be written under `tmp/`, which is excluded from version control.
 
