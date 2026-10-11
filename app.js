@@ -1,3 +1,4 @@
+import { encodePlaintextChat, decodePlaintextChat } from "./js/chat/momentum-plaintext.js";
 // RFCat Web UI/event wiring. Hardware/protocol logic lives under js/.
 import { C } from "./js/rfcat/constants.js";
 import { R } from "./js/radio/registers.js";
@@ -20,6 +21,69 @@ import {
 } from "./js/ui/protocols.js";
 
 const d = new RFCatUSB();
+
+let momentumChatActive = false;
+const chatHistory = $("momentum-chat-history");
+function appendChatMessage(direction, message) {
+    const entry = document.createElement("div");
+    entry.textContent = `[${new Date().toLocaleTimeString()}] ${direction}: ${message}`;
+    chatHistory.append(entry);
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+}
+async function configureMomentumChat() {
+    if (!d.device?.opened) throw new Error("Connect YARD Stick One first");
+    const mhz = Number($("momentum-chat-frequency").value);
+    if (!Number.isFinite(mhz) || !((mhz >= 300 && mhz <= 348) || (mhz >= 387 && mhz <= 464) || (mhz >= 779 && mhz <= 928))) {
+        throw new Error("Frequency outside supported CC1111 bands");
+    }
+    await d.mode(C.RF_IDLE);
+    await d.setFrequency(mhz * 1e6);
+    await d.setDataRate(9996);
+    await d.setBandwidth(101562.5);
+    await d.setModulation(0x10); // GFSK
+    await d.setDeviation(19043);
+    await d.setSync(0x464c, 2); // 16/16 sync
+    await d.setManchester(false);
+    await d.setPacketConfig({
+        lengthMode: "variable", packetLength: 60, crc: true,
+        whitening: false, appendStatus: false, addressCheck: 0, deviceAddress: 0,
+    });
+    // Flipper's preset also uses FSCTRL1=0x06 for frequency compensation.
+    await d.poke(R.FSCTRL1, new Uint8Array([0x06]));
+    await d.mode(C.RF_RX);
+    momentumChatActive = true;
+    listening = false;
+    $("listen").textContent = "Start listening";
+    $("momentum-chat-start").textContent = "Stop chat";
+    log(`Momentum plaintext chat listening at ${mhz} MHz`);
+}
+$("momentum-chat-start").onclick = async () => {
+    try {
+        if (momentumChatActive) {
+            momentumChatActive = false;
+            await d.mode(C.RF_IDLE);
+            $("momentum-chat-start").textContent = "Start chat";
+        } else await configureMomentumChat();
+    } catch (error) { log(`Momentum chat error: ${error.message}`); }
+};
+$("momentum-chat-send").onclick = async () => {
+    const button = $("momentum-chat-send");
+    button.disabled = true;
+    try {
+        if (!momentumChatActive) throw new Error("Start chat first");
+        const message = $("momentum-chat-message").value;
+        const bytes = encodePlaintextChat(message);
+        if (bytes.length > 60) throw new Error("Message exceeds Flipper's 60-byte radio packet limit");
+        await d.transmit(bytes);
+        await d.mode(C.RF_RX);
+        appendChatMessage("You", message);
+        $("momentum-chat-message").value = "";
+    } catch (error) {
+        log(`Momentum chat TX error: ${error.message}`);
+        if (momentumChatActive) await d.mode(C.RF_RX).catch(() => {});
+    } finally { button.disabled = false; }
+};
+
 const protocolSelect = $("protocol");
 const protocolFields = $("protocol-fields");
 const waveformPreview = $("waveform-preview");
@@ -420,6 +484,8 @@ $("connect").onclick = async () => {
         if (d.device) {
             setMonitor(false);
 
+            momentumChatActive = false;
+            $("momentum-chat-start").textContent = "Start chat";
             await d.disconnect();
 
             document.body.classList.remove("connected");
@@ -1572,6 +1638,11 @@ $("rx-export").onclick = () => {
 };
 
 d.addEventListener("packet", (e) => {
+    if (momentumChatActive) {
+        try { appendChatMessage("Flipper", decodePlaintextChat(e.detail)); }
+        catch (error) { log(`Momentum chat RX decode error: ${error.message}`); }
+        return;
+    }
     if (!listening) return;
 
     const received = e.detail;
