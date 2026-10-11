@@ -14,6 +14,8 @@ export class RFCatUSB extends EventTarget {
         this.buf = new Uint8Array();
 
         this.waiters = [];
+
+        this.verboseUsbLogging = false;
     }
 
     async connect() {
@@ -221,7 +223,7 @@ export class RFCatUSB extends EventTarget {
                 const chunkNumber = Math.floor(p / 64) + 1;
                 const chunkCount = Math.ceil(frame.length / 64);
 
-                log(
+                if (this.verboseUsbLogging) log(
                     `USB OUT app=0x${app.toString(16).padStart(2, "0")} ` +
                         `cmd=0x${cmd.toString(16).padStart(2, "0")} ` +
                         `payload=${payload.length} · ` +
@@ -300,8 +302,14 @@ export class RFCatUSB extends EventTarget {
 
         await this.mode(C.RF_IDLE);
 
-        await this.poke(R.FREQ2, f);
-
+        // Write each synthesizer register individually; verify all three values.
+        await this.poke(R.FREQ2, f.subarray(0, 1));
+        await this.poke(R.FREQ1, f.subarray(1, 2));
+        await this.poke(R.FREQ0, f.subarray(2, 3));
+        const readback = await this.peek(R.FREQ2, 3);
+        if (readback.some((value, index) => value !== f[index])) {
+            throw new Error(`Frequency register write failed: expected ${Array.from(f).map(v => v.toString(16).padStart(2, "0")).join(" ")}, got ${Array.from(readback).map(v => v.toString(16).padStart(2, "0")).join(" ")}`);
+        }
         await this.poke(R.FSCAL2, new Uint8Array([cal]));
     }
 

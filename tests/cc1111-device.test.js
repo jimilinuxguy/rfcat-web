@@ -2,13 +2,18 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { RFCatUSB } from "../js/rfcat/device.js";
+import { R } from "../js/radio/registers.js";
 
 function harness(reads = {}) {
     const d = new RFCatUSB();
     const writes = [];
     const modes = [];
+    const frequencyRegisters = new Map();
 
     d.peek = async (addr, count = 1) => {
+        if (addr === R.FREQ2 && count === 3 && [R.FREQ2, R.FREQ1, R.FREQ0].every(reg => frequencyRegisters.has(reg))) {
+            return Uint8Array.from([R.FREQ2, R.FREQ1, R.FREQ0].map(reg => frequencyRegisters.get(reg)));
+        }
         const value = reads[addr];
         if (value instanceof Uint8Array) return value;
         if (Array.isArray(value)) return new Uint8Array(value);
@@ -16,6 +21,7 @@ function harness(reads = {}) {
     };
     d.poke = async (addr, data) => {
         writes.push([addr, [...data]]);
+        for (let i = 0; i < data.length; i++) if (addr + i >= R.FREQ2 && addr + i <= R.FREQ0) frequencyRegisters.set(addr + i, data[i]);
     };
     d.mode = async (mode) => {
         modes.push(mode);
@@ -48,7 +54,9 @@ test("setFrequency(457.6 MHz) idles then writes expected synthesizer bytes", asy
 
     assert.equal(modes.length, 1);
     assert.deepEqual(writes, [
-        [0xdf09, [0x13, 0x11, 0x11]],
+        [0xdf09, [0x13]],
+        [0xdf0a, [0x11]],
+        [0xdf0b, [0x11]],
         [0xdf1d, [0x2a]],
     ]);
 });

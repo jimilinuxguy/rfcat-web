@@ -2,18 +2,26 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { RFCatUSB } from "../js/rfcat/device.js";
+import { R } from "../js/radio/registers.js";
 
 function harness(reads = {}) {
     const d = new RFCatUSB();
     const writes = [];
     const modes = [];
+    const frequencyRegisters = new Map();
     d.peek = async (addr, count = 1) => {
+        if (addr === R.FREQ2 && count === 3 && [R.FREQ2, R.FREQ1, R.FREQ0].every(reg => frequencyRegisters.has(reg))) {
+            return Uint8Array.from([R.FREQ2, R.FREQ1, R.FREQ0].map(reg => frequencyRegisters.get(reg)));
+        }
         const value = reads[addr];
         if (value instanceof Uint8Array) return value;
         if (Array.isArray(value)) return new Uint8Array(value);
         return new Uint8Array(count).fill(value ?? 0);
     };
-    d.poke = async (addr, data) => writes.push([addr, [...data]]);
+    d.poke = async (addr, data) => {
+        writes.push([addr, [...data]]);
+        for (let i = 0; i < data.length; i++) if (addr + i >= R.FREQ2 && addr + i <= R.FREQ0) frequencyRegisters.set(addr + i, data[i]);
+    };
     d.mode = async (mode) => modes.push(mode);
     return { d, writes, modes };
 }
@@ -34,7 +42,9 @@ test("frequency synthesis uses known CC1111 register vectors across supported ba
         await d.setFrequency(hz);
         assert.deepEqual(modes, [0x04], `${hz} must enter RF_IDLE`);
         assert.deepEqual(writes, [
-            [0xdf09, freqBytes],
+            [0xdf09, [freqBytes[0]]],
+            [0xdf0a, [freqBytes[1]]],
+            [0xdf0b, [freqBytes[2]]],
             [0xdf1d, [fscal2]],
         ], `unexpected frequency programming for ${hz}`);
     }
@@ -57,8 +67,8 @@ test("FSCAL2 calibration boundaries preserve RFCat behavior", async () => {
     for (const [hz, expected] of cases) {
         const { d, writes } = harness();
         await d.setFrequency(hz);
-        assert.equal(writes[1][0], 0xdf1d);
-        assert.equal(writes[1][1][0], expected, `wrong FSCAL2 at ${hz}`);
+        assert.equal(writes[3][0], 0xdf1d);
+        assert.equal(writes[3][1][0], expected, `wrong FSCAL2 at ${hz}`);
     }
 });
 
