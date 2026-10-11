@@ -1,23 +1,35 @@
-# Momentum Enhanced Sub-GHz Chat interoperability
+# Momentum Enhanced Sub-GHz Chat via YARD Stick One
 
-## Scope
+## Status
 
-RFCat Web's YARD Stick One is the intended transceiver. No Flipper USB or Web Serial integration is involved.
+**Prototype committed, hardware interoperability not yet verified.** No Flipper USB connection is used.
 
-**Status: plaintext application payload codec only. Not yet over-the-air interoperable.**
+The upstream Enhanced Sub-GHz Chat app writes UTF-8 bytes followed by CR LF when encryption is disabled. Flipper's `subghz_tx_rx_worker` uses the `FuriHalSubGhzPresetGFSK9_99KbAsync` CC1101 preset, variable-length FIFO packets, hardware CRC, and up to 60 application bytes per packet.
 
-The upstream Enhanced Sub-GHz Chat app (twisted-pear/esubghz_chat, `esubghz_chat.c`, `tx_msg_input`) writes UTF-8 message bytes followed by CR LF (0D 0A) when encryption is disabled. Its receive path removes a trailing LF before displaying text. `js/chat/momentum-plaintext.js` implements that verified application-level behavior.
+RFCat Web now exposes a Momentum Sub-GHz Chat panel with matching GFSK, ~9,996 baud, ~19.04 kHz deviation, sync `0x464C`, 16/16 sync detection, variable packet length, and CRC enabled. The RX handler displays decoded UTF-8 packets; TX sends the CRLF-terminated bytes through the connected YARD Stick One and returns to RX. A message must fit within 60 transmitted bytes, including CRLF.
 
-The upstream application uses Flipper's `subghz_tx_rx_worker` for physical-layer transmission. Its framing, bit encoding, preamble, sync, modulation, bitrate, deviation, and RX buffering are **not** established by the application-level CRLF convention. We must inspect the worker implementation and verify it against a Flipper-to-YARD Stick capture before connecting this codec to RFCat TX/RX. Sending raw CRLF bytes through RFCat's packet FIFO without matching the worker would be misleading and may not work.
+## Test
 
-## Hardware acceptance criteria
+1. Connect YARD Stick One through RFCat Web.
+2. On Flipper running Momentum, launch Enhanced Sub-GHz Chat and select **No encryption**.
+3. Choose the same locally permitted frequency on both devices.
+4. Expand **Momentum Sub-GHz Chat (plaintext)** in RFCat Web and select **Start chat**.
+5. Send a short message from the Flipper. Check the chat history and Activity log.
+6. Send **Hello Flipper** from RFCat Web and check the Flipper's display.
+7. Repeat several times to assess RX continuity and packet handling.
 
-1. Configure Momentum Enhanced Sub-GHz Chat to **No encryption** and a locally permitted frequency.
-2. Match the Flipper worker radio settings on YARD Stick One.
-3. Receive a Flipper message in RFCat Web and decode its exact UTF-8 contents.
-4. Transmit a message from RFCat Web and see it appear on the Flipper.
-5. Repeat bidirectionally, including Unicode and consecutive messages.
+Do not use the generic packet receiver concurrently with the dedicated chat panel. RF settings are currently configured by the chat panel and not restored automatically.
 
-Encryption will be implemented only after these tests pass.
+## Limitations
 
-Source: https://github.com/twisted-pear/esubghz_chat/blob/main/esubghz_chat.c
+- No hardware validation or automated browser test has been performed.
+- The radio setup is derived from upstream Flipper firmware, not confirmed against Momentum-specific changes.
+- The Flipper worker splits messages longer than 60 bytes into multiple packets. RFCat Web currently rejects those long messages and does not reassemble multi-packet RX messages.
+- The receive path assumes RFCat returns the packet payload without a leading length byte and without appended status bytes. Confirm against actual captures.
+- Frequency restrictions and radio transmission regulations still apply.
+- Encryption is deliberately excluded.
+
+Sources:
+- https://github.com/twisted-pear/esubghz_chat/blob/main/esubghz_chat.c
+- https://github.com/flipperdevices/flipperzero-firmware/blob/dev/lib/subghz/subghz_tx_rx_worker.c
+- https://github.com/flipperdevices/flipperzero-firmware/blob/dev/lib/subghz/devices/cc1101_configs.c
