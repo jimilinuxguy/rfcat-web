@@ -4,6 +4,11 @@ Browser-based WebUSB controller for RFCat-compatible CC1111 hardware such as the
 
 RFCat Web provides direct radio configuration, receive/transmit controls, waveform inspection, and a modular protocol system that keeps protocol-specific encoding and RF configuration out of the main application.
 
+
+### Momentum Enhanced Sub-GHz Chat
+
+The [plaintext Momentum chat integration](docs/momentum-subghz-chat.md) supports configurable TX usernames, CRLF-terminated messages, and a YARD Stick One at 433.920 MHz. A user verified that a Flipper Zero received RFCat Web TX on hardware; Flipper-to-YARD plaintext RX has also been observed. Longer-term bidirectional reliability is still under evaluation. The radio synthesizer configuration is verified by register readback before chat starts.
+
 ## Protocols
 
 Implemented protocol modules include CAME-12, Binary, LRS, JTECH, Retekess T112/T119/TD157/TD161/TD164/TD165/TD174 restaurant pagers, Tesla charge-port test signaling, generic OOK/PWM, Oregon THGR122NX, Acurite 5n1, several Schrader TPMS formats, TouchTunes / The Fonz, Continuous Carrier, and generic POCSAG. POCSAG supports explicit-capcode alerts and 7-bit alphanumeric messages, 512/1200/2400 baud, configurable TX polarity, and receive decoding.
