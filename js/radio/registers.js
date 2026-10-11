@@ -6,6 +6,7 @@ export const R = Object.freeze({
   PKTCTRL0: 0xdf04,
   ADDR: 0xdf05,
   FREQ2: 0xdf09,
+  FSCTRL1: 0xdf0b,
   MDMCFG4: 0xdf0c,
   MDMCFG3: 0xdf0d,
   MDMCFG2: 0xdf0e,
