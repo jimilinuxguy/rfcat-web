@@ -90,7 +90,10 @@ $("momentum-chat-send").onclick = async () => {
     try {
         if (!momentumChatActive) throw new Error("Start chat first");
         const message = $("momentum-chat-message").value;
-        const bytes = encodePlaintextChat(message);
+        const username = $("momentum-chat-username").value.trim();
+        if (!username || /[:\r\n]/.test(username)) throw new Error("Enter a username without colons or line breaks");
+        const formatted = `${username}: ${message}`;
+        const bytes = encodePlaintextChat(formatted);
         if (bytes.length > 60) throw new Error("Message exceeds Flipper's 60-byte radio packet limit");
         await d.mode(C.RF_IDLE);
         await d.setMaxPower();
@@ -104,7 +107,7 @@ $("momentum-chat-send").onclick = async () => {
         const txState = (await d.peek(R.MARCSTATE))[0] & 0x1f;
         log(`Momentum chat TX routine completed for ${bytes.length} bytes; MARCSTATE=0x${txState.toString(16)} (over-the-air reception not confirmed)`);
         await d.mode(C.RF_RX);
-        appendChatMessage("You (sent, unconfirmed)", message);
+        appendChatMessage("You (sent, unconfirmed)", formatted);
         $("momentum-chat-message").value = "";
     } catch (error) {
         log(`Momentum chat TX error: ${error.message}`);
