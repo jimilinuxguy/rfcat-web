@@ -11,7 +11,9 @@ The [Momentum chat guide](docs/momentum-subghz-chat.md) covers YARD Stick One an
 
 **Hardware status:** A user confirmed that a Flipper Zero received RFCat Web transmissions. RFCat Web has also decoded real plaintext Flipper RX frames. Verified frequency readback was **433.919678 MHz** (~0.32 kHz below requested), with ~10002 baud, ~107.14 kHz RX bandwidth, GFSK, sync `0x464C`, variable packet length, and CRC. Some zero-length/invalid UTF-8 RX frames and long-duration reliability remain under investigation. The app verifies CC1111 frequency register writes before chat begins. Routine USB OUT dumps are suppressed by default.
 
-Experimental encryption adds password-derived (SHA-256) or raw 32-byte key AES-256-GCM, with a 40-byte authenticated packet header, per-run replay detection, and a 20-byte plaintext maximum per encrypted packet. Encrypted interoperability still requires hardware verification. Secrets are not persisted.\n\nThis dedicated chat panel is separate from the protocol registry.
+Experimental encryption adds password-derived (SHA-256) or raw 32-byte key AES-256-GCM, with a 40-byte authenticated packet header, per-run replay detection, and a 20-byte plaintext maximum per encrypted packet. **Password encryption has been reported working with a physical Flipper Zero**; the direction(s) of successful encrypted communication have not yet been specified. Raw hexadecimal-key interoperability, wrong-key rejection, replay behavior on hardware, and extended reliability remain unverified. Secrets are not persisted.
+
+This dedicated chat panel is separate from the protocol registry.
 
 ## Protocols
 
@@ -63,7 +65,7 @@ Then open the local server in a WebUSB-capable browser.
 
 ## Testing
 
-Run the JavaScript test suite with `npm test` (Node.js). GitHub Actions runs the suite on pull requests and pushes to `main` and the Momentum feature branch. Frequency regression tests verify the CC1111 register addresses, 433.920 MHz programming, and readback mismatch detection. CI results must be checked separately from user-reported hardware testing.
+Run the JavaScript test suite with `npm test` (Node.js). GitHub Actions runs the suite on pull requests and configured branch pushes. The latest PR workflow result must be checked before merging. Frequency regression tests verify the CC1111 register addresses, 433.920 MHz programming, and readback mismatch detection. CI results must be checked separately from user-reported hardware testing.
 
 Synthetic RF generators under `tools/` can create sample files for independent waveform/decoder analysis. Generated captures should be written under `tmp/`, which is excluded from version control.
 
