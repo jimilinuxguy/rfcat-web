@@ -14,7 +14,10 @@ PKTLEN    0xDF02
 PKTCTRL1  0xDF03
 PKTCTRL0  0xDF04
 ADDR      0xDF05
+FSCTRL1   0xDF07
 FREQ2     0xDF09
+FREQ1     0xDF0A
+FREQ0     0xDF0B
 MDMCFG4   0xDF0C
 MDMCFG3   0xDF0D
 MDMCFG2   0xDF0E
@@ -104,6 +107,10 @@ in Hz:
 ``` javascript
 await device.setFrequency(433_920_000);
 ```
+
+## Frequency register verification
+
+The CC1111 frequency synthesizer uses three consecutive registers, `FREQ2`, `FREQ1`, and `FREQ0`. RFCat Web writes and verifies them individually when setting frequency. A 433.920 MHz request on the YARD Stick One's **24 MHz crystal** has been read back as approximately **433.919678 MHz**. Do not copy frequency register bytes directly from a Flipper CC1101 configuration that assumes a different crystal.
 
 ## Data Rate Quantization
 
