@@ -93,6 +93,7 @@ $("momentum-chat-send").onclick = async () => {
     try {
         if (!momentumChatActive) throw new Error("Start chat first");
         const message = $("momentum-chat-message").value;
+        if (!message.trim()) throw new Error("Enter a non-empty chat message");
         const username = $("momentum-chat-username").value.trim();
         if (!username || /[:\r\n]/.test(username)) throw new Error("Enter a username without colons or line breaks");
         const formatted = `${username}: ${message}`;
