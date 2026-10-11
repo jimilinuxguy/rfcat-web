@@ -1,90 +1,86 @@
 # RFCat Web
 
-Browser-based WebUSB controller for RFCat-compatible CC1111 hardware such as the YARD Stick One.
+**A browser-based RF development, capture, and protocol-analysis workspace for RFCat-compatible CC1111 hardware, including the YARD Stick One.**
 
-RFCat Web provides direct radio configuration, receive/transmit controls, waveform inspection, and a modular protocol system that keeps protocol-specific encoding and RF configuration out of the main application.
+RFCat Web uses WebUSB to configure radios, transmit test frames, capture and decode traffic, inspect waveforms, and build or validate protocol definitions. The project is a general-purpose RF engineering tool—not a single-protocol or Flipper-specific application.
 
+## What you can do
 
-## Momentum Enhanced Sub-GHz Chat (plaintext and experimental encryption)
+- **Configure and transmit:** Set frequency, modulation, data rate, bandwidth, power, and packet settings; transmit using protocol-specific encoders or direct RF test modes.
+- **Receive and decode:** Inspect raw captures, select decoders, and review decoded fields. Auto mode attempts applicable decoders without discarding unknown traffic.
+- **Analyze captures offline:** Import/export JSON, save capture sessions in IndexedDB, compare captures, infer changing fields, and validate declarative protocol presets against positive and negative examples.
+- **Inspect signal timing:** Preview symbol timing and waveform quantization; analyze received OOK pulse distributions.
+- **Customize your workspace:** Drag, resize, and collapse panels. Layout preferences persist locally in IndexedDB.
+- **Interoperate with other devices:** Use specialized workflows such as Momentum Enhanced Sub-GHz Chat with a Flipper Zero.
 
-The [Momentum chat guide](docs/momentum-subghz-chat.md) covers YARD Stick One and Flipper Zero interoperability without a Flipper USB connection. Select **No encryption** in Enhanced Sub-GHz Chat, match frequencies (hardware-tested at **433.920 MHz**), connect YARD Stick One, and select **Start chat**. The configurable TX username defaults to `RFCat`; entering `Hello!` transmits UTF-8 text `RFCat: Hello!` followed by CRLF. Empty messages are rejected and the complete encoded packet, including prefix and CRLF, is limited to 60 bytes.
+## Quick start
 
-**Hardware status:** A user confirmed that a Flipper Zero received RFCat Web transmissions. RFCat Web has also decoded real plaintext Flipper RX frames. Verified frequency readback was **433.919678 MHz** (~0.32 kHz below requested), with ~10002 baud, ~107.14 kHz RX bandwidth, GFSK, sync `0x464C`, variable packet length, and CRC. Some zero-length/invalid UTF-8 RX frames and long-duration reliability remain under investigation. The app verifies CC1111 frequency register writes before chat begins. Routine USB OUT dumps are suppressed by default.
-
-Experimental encryption adds password-derived (SHA-256) or raw 32-byte key AES-256-GCM, with a 40-byte authenticated packet header, per-run replay detection, and a 20-byte plaintext maximum per encrypted packet. **Password encryption has been reported working with a physical Flipper Zero**; the direction(s) of successful encrypted communication have not yet been specified. Raw hexadecimal-key interoperability, wrong-key rejection, replay behavior on hardware, and extended reliability remain unverified. Secrets are not persisted.
-
-This dedicated chat panel is separate from the protocol registry.
-
-## Protocols
-
-Implemented protocol modules include CAME-12, Binary, LRS, JTECH, Retekess T112/T119/TD157/TD161/TD164/TD165/TD174 restaurant pagers, Tesla charge-port test signaling, generic OOK/PWM, Oregon THGR122NX, Acurite 5n1, several Schrader TPMS formats, TouchTunes / The Fonz, Continuous Carrier, and generic POCSAG. POCSAG supports explicit-capcode alerts and 7-bit alphanumeric messages, 512/1200/2400 baud, configurable TX polarity, and receive decoding.
-
-### Validation status
-
-Protocol implementations have different validation levels. A synthetic validation means generated samples were checked against the expected decoder or source algorithm. OTA waveform validation additionally means a YARD Stick One transmission was independently captured and its timing/framing compared with the expected waveform.
-
-POCSAG512 TX and RX are **OTA validated with YARD Stick One hardware**. LRS Pager TX and RX are also **OTA validated with YARD Stick One hardware** at 467.750 MHz / 625 baud. LRS RX uses CC1111 hardware Manchester decoding with `AA AA` hardware sync and validates the remaining 13-byte frame structure and checksum before surfacing a capture. TX was independently received/decoded after correcting the CC1111 deviation register mapping. RX was validated at 467.750 MHz / 512 baud with a live POCSAG transmission, including capcode, function, alphanumeric message, automatic polarity detection, and zero corrected bits in the known-good capture. The JTECH reference patterns were also independently captured and matched their expected fixed waveforms.
-
-TouchTunes / The Fonz is **OTA waveform validated**. A YARD Stick One transmission captured with an RTL-SDR matched the expected preamble, 32-bit frame structure, variable-length OOK encoding, and approximately 566 µs base timing. Receiver interoperability with an actual TouchTunes jukebox has not been validated.
-
-## Receiver and decoders
-
-The receiver supports **Raw**, **Auto**, and protocol-specific decode modes. Protocol modules can opt into RX by implementing a `decode(bytes, context)` hook. Unknown traffic remains available as raw captures, and CC1111 appended RSSI/LQI status bytes are separated from the protocol payload before decoding.
-
-CAME-12, POCSAG, and LRS Pager provide protocol-specific RX decoders. CAME-12 has been validated over the air between two YARD Stick One devices using compatible CC1111 packet framing. POCSAG512 RX is OTA validated at 467.750 MHz / 512 baud with automatic normal/inverted polarity detection, BCH/parity validation, single-bit correction, alphanumeric decoding, and a rolling receive buffer that spans 255-byte RFCat receive boundaries. The current generic receiver remains packet-engine based, so physical asynchronous OOK remotes may require pulse-oriented capture rather than the same packet boundaries used by RFCat-generated transmissions.
-
-See [Receiver and Protocol Decoders](docs/receiver-decoders.md) for RX behavior, decoder development, framing notes, and known-good OTA setups. The receiver also supports offline JSON import/re-decoding: exported captures can be loaded without a connected radio and run through the currently selected decoder. Session statistics track RF events, bytes, decoded packets, rejected packets, and suppressed POCSAG duplicates. Imported captures automatically re-decode when the selected decoder or model changes. Decoded capture cards provide **Copy hex** and **Use for TX** actions; TX handoff populates the transmitter form but never transmits automatically.
-
-Receiver analysis also includes persistent **Capture Sessions**, side-by-side **Capture Compare**, **Multi-Capture Field Inference**, and a declarative **Protocol Preset Builder**. Selected captures can be analyzed for constant/changing bytes and exact decoded-field correlations, then converted into a draft protocol definition with field ranges, constants, integer/bit fields, byte ranges, and `sum-mod-255` checksum candidates. Drafts can be validated against captures marked **Should match**, **Should reject**, or **Unknown**, saved locally, and imported/exported as versioned protocol JSON. Presets remain analysis artifacts and do not automatically transmit or become live protocol modules.
-
-The Retekess modules support explicit single-pager operation and sequential paging within a configured system/station. Protocol-defined all-pager commands are exposed where documented by the source material. **Retekess T112, T119, TD157, TD161, TD164, TD165 and TD174 TX/RX are OTA validated with YARD Stick One hardware.** T112 was additionally checked against independent RTL-SDR/rtl_433 captures for system 0, pagers 69 and 70. The asynchronous Princeton-style receivers use protocol-specific raw OOK sampling rates; T119, TD157, TD165 and TD174 use 4× sampling so the CC1111 preserves short 1-TE pulses reliably. TD174 uses the verified station → action → pager field order. TD164 uses 2-FSK and only reports frames that match its preamble and checksum rules.
-
-A typical reverse-engineering workflow is:
-
-```text
-Capture → Offline Analysis / Sessions → Compare → Infer Fields → Build Protocol → Validate → Save / Export Protocol JSON
-```
-
-See [docs/README.md](docs/README.md) for the documentation index and [Receiver and Protocol Decoders](docs/receiver-decoders.md) for the complete analysis workflow.
-
-## Architecture
-
-Protocol implementations live under `js/protocols/`. Each protocol declares its own metadata, UI fields, encoder, radio configuration, and transmit behavior. `app.js` remains protocol-agnostic and the WebUSB/RFCat device layer remains hardware-focused.
-
-Browser ES modules use explicit relative imports with `.js` extensions. The protocol registry is maintained explicitly in `js/protocols/index.js`, which keeps the project compatible with GitHub Pages without requiring a bundler.
-
-## Running locally
-
-Serve the repository from a local HTTP server:
+**Requirements:** RFCat-compatible CC1111 hardware (YARD Stick One is the primary tested device), a WebUSB-capable browser, and a local HTTP server or secure origin. USB permission is granted through the browser.
 
 ```bash
+git clone https://github.com/jimilinuxguy/rfcat-web.git
+cd rfcat-web
 python3 -m http.server 8080
 ```
 
-Then open the local server in a WebUSB-capable browser.
+Open `http://localhost:8080`, connect the YARD Stick One, configure the radio, and choose a transmit or receive workflow. Use only frequencies and devices you are authorized to operate.
 
-## Testing
+Run the automated JavaScript tests with:
 
-Run the JavaScript test suite with `npm test` (Node.js). GitHub Actions runs the suite on pull requests and configured branch pushes. The latest PR workflow result must be checked before merging. Frequency regression tests verify the CC1111 register addresses, 433.920 MHz programming, and readback mismatch detection. CI results must be checked separately from user-reported hardware testing.
+```bash
+npm test
+```
 
-Synthetic RF generators under `tools/` can create sample files for independent waveform/decoder analysis. Generated captures should be written under `tmp/`, which is excluded from version control.
+GitHub Actions also runs the Node test workflow. **Check the actual workflow result:** the presence of tests or a merged PR does not imply CI is passing.
 
-## Safety and authorization
+## Protocols and interoperability
 
-Transmit only on frequencies and equipment you are legally permitted to use. Protocol support is intended for development, interoperability testing, research, and equipment you own or are explicitly authorized to test.
+The protocol registry includes:
 
-## OOK Pulse Analyzer
+| Area | Implementations |
+| --- | --- |
+| Paging and alerting | POCSAG, LRS, JTECH, Retekess T112/T119/TD157/TD161/TD164/TD165/TD174 |
+| OOK and remote signaling | CAME-12, generic OOK/PWM, Tesla charge-port test signaling, TouchTunes / The Fonz |
+| Sensors and telemetry | Acurite 5n1, Oregon THGR122NX, Schrader TPMS variants |
+| RF utilities | Binary payloads, Continuous Carrier |
 
-The receiver includes an OOK Pulse Analyzer for inspecting HIGH/LOW timing runs from raw RFCat receive buffers. It uses the configured data rate as the sampling clock, draws a timing waveform, clusters similar pulse widths, estimates a base pulse, and can export the captured runs and timing distribution as JSON.
+Not all implementations have the same hardware-validation status. Protocol details, framing, known-good captures, and test boundaries live in [protocol documentation](docs/README.md#protocol-reference).
 
-For asynchronous OOK exploration, disable sync and enable **Lowball / raw OOK receive** before listening. The analyzer currently derives pulse timing from received CC1111 sample bytes; it is not a firmware-level edge timestamp capture, so timing resolution is limited by the configured data rate.
+**Momentum Enhanced Sub-GHz Chat** is a separate interoperability panel (not a registry protocol). It supports plaintext and AES-256-GCM encrypted chat with compatible Flipper Zero firmware. See the [Momentum Chat guide](docs/momentum-subghz-chat.md) for setup, payload limits, and validation notes.
 
+## Capture and protocol-development workflow
 
-## Configurable workspace
+```text
+Configure radio → Capture / Import → Decode → Save session
+                                         ↓
+                              Compare / Infer fields
+                                         ↓
+                             Build protocol preset
+                                         ↓
+                           Validate / Export JSON
+```
 
-The main RFCat Web panels can be dragged into a preferred order and resized from the lower-right corner on desktop-sized displays. Panel order, dimensions, and collapsed/open state are saved automatically in browser IndexedDB and restored on the next visit. **Reset layout** clears the saved workspace and restores the built-in arrangement. Mobile layouts intentionally use a single column and ignore saved desktop dimensions.
+Capture sessions and workspace layout are stored locally in the browser's IndexedDB. A protocol preset is an **analysis artifact**, not an automatically installed decoder or an automatic transmission. Exported captures and presets can be shared as JSON.
 
+The receiver remains packet-engine based. Physical asynchronous OOK remotes may require pulse-oriented sampling, and raw receive boundaries are not always protocol-frame boundaries. See [Receiver and Protocol Decoders](docs/receiver-decoders.md).
 
-## Capture Library
+## Architecture
 
-Saved RX capture sessions are stored locally in the browser using the shared RFCat Web IndexedDB database. The Capture Library is a configurable workspace panel and supports filtering by session name, notes, decoder, or frequency. A saved session retains its captures, decoder/model selection, filter, frequency, data rate, and notes. Sessions can be reopened for comparison and field inference, renamed, deleted, or exported as JSON. Existing capture-session databases are supported when upgrading to the shared storage schema.
+- `app.js` and `index.html`: UI and event wiring.
+- `js/rfcat/` and `js/radio/`: WebUSB transport, RFCat device operations, and CC1111 radio registers.
+- `js/protocols/`: protocol metadata, encoding, RF configuration, TX, and optional RX decoding.
+- `js/rx/`, `js/encoding/`, and `js/storage/`: receive analysis, waveform/timing support, and local persistence.
+- `js/chat/`: dedicated Momentum chat plaintext and encrypted packet handling.
+- `tests/`: Node.js automated tests; `tools/`: synthetic capture and waveform utilities.
+
+Browser modules use explicit relative `.js` imports, and the protocol registry is explicit, so the app does not require a bundler.
+
+## Validation and limitations
+
+Different evidence levels mean different things: **unit/synthetic tests**, **over-the-air waveform checks**, and **real-device interoperability**. They are not interchangeable. Reported hardware results include POCSAG and LRS TX/RX, multiple Retekess variants, and Momentum chat exchanges; individual documentation pages describe exactly what was tested and what remains unverified. Do not assume every protocol or radio setup has been tested with every physical target.
+
+For development details, hardware behavior, known-good setups, and limitations, start with the [documentation index](docs/README.md).
+
+## Safety
+
+Transmit only on equipment and frequencies you own or are authorized to use, and comply with local radio regulations. RF test modes should be used for short, controlled bench tests to avoid interference.
