@@ -38,15 +38,11 @@ async function configureMomentumChat() {
     }
     await d.mode(C.RF_IDLE);
     await d.setFrequency(mhz * 1e6);
-    // Flipper uses a 26 MHz crystal; YARD Stick One uses 24 MHz.
-    // Calculate equivalent RF parameters rather than copying CC1101 modem bytes.
-    const flipperBaud = (256 + 0x93) * 2 ** 8 * 26e6 / 2 ** 28;
-    const flipperBandwidth = 26e6 / (8 * (4 + 0) * 2 ** 3);
-    const flipperDeviation = (8 + 4) * 2 ** 3 * 26e6 / 2 ** 17;
-    await d.setDataRate(flipperBaud);
-    await d.setBandwidth(flipperBandwidth);
+    // Restore the known-good RX modem settings from the Flipper chat capture.
+    await d.setDataRate(9996);
+    await d.setBandwidth(101562.5);
     await d.setModulation(0x10); // GFSK
-    await d.setDeviation(flipperDeviation);
+    await d.setDeviation(19043);
     await d.setSync(0x464c, 2); // 16/16 sync
     await d.setManchester(false);
     await d.setPacketConfig({
