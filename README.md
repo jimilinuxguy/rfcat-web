@@ -5,13 +5,13 @@ Browser-based WebUSB controller for RFCat-compatible CC1111 hardware such as the
 RFCat Web provides direct radio configuration, receive/transmit controls, waveform inspection, and a modular protocol system that keeps protocol-specific encoding and RF configuration out of the main application.
 
 
-## Momentum Enhanced Sub-GHz Chat (plaintext)
+## Momentum Enhanced Sub-GHz Chat (plaintext and experimental encryption)
 
 The [Momentum chat guide](docs/momentum-subghz-chat.md) covers YARD Stick One and Flipper Zero interoperability without a Flipper USB connection. Select **No encryption** in Enhanced Sub-GHz Chat, match frequencies (hardware-tested at **433.920 MHz**), connect YARD Stick One, and select **Start chat**. The configurable TX username defaults to `RFCat`; entering `Hello!` transmits UTF-8 text `RFCat: Hello!` followed by CRLF. Empty messages are rejected and the complete encoded packet, including prefix and CRLF, is limited to 60 bytes.
 
 **Hardware status:** A user confirmed that a Flipper Zero received RFCat Web transmissions. RFCat Web has also decoded real plaintext Flipper RX frames. Verified frequency readback was **433.919678 MHz** (~0.32 kHz below requested), with ~10002 baud, ~107.14 kHz RX bandwidth, GFSK, sync `0x464C`, variable packet length, and CRC. Some zero-length/invalid UTF-8 RX frames and long-duration reliability remain under investigation. The app verifies CC1111 frequency register writes before chat begins. Routine USB OUT dumps are suppressed by default.
 
-This dedicated chat panel is separate from the protocol registry.
+Experimental encryption adds password-derived (SHA-256) or raw 32-byte key AES-256-GCM, with a 40-byte authenticated packet header, per-run replay detection, and a 20-byte plaintext maximum per encrypted packet. Encrypted interoperability still requires hardware verification. Secrets are not persisted.\n\nThis dedicated chat panel is separate from the protocol registry.
 
 ## Protocols
 
