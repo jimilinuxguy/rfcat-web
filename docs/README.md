@@ -4,11 +4,11 @@ This directory contains implementation notes and protocol documentation for RFCa
 
 RFCat Web is a browser-based WebUSB controller for RFCat-compatible CC1111 hardware such as the YARD Stick One.
 
-## Momentum Enhanced Sub-GHz Chat
+## Momentum Enhanced Sub-GHz Chat (plaintext and encrypted)
 
-See [momentum-subghz-chat.md](momentum-subghz-chat.md) for the dedicated plaintext YARD Stick One ↔ Flipper Zero chat workflow, including **No encryption**, matching frequencies (hardware-tested at **433.920 MHz**), username-prefixed CRLF-terminated UTF-8 payloads, 60-byte packet limit, radio configuration, and test procedure.
+See [momentum-subghz-chat.md](momentum-subghz-chat.md) for the dedicated plaintext and encrypted YARD Stick One ↔ Flipper Zero chat workflow, including **No encryption**, matching frequencies (hardware-tested at **433.920 MHz**), username-prefixed CRLF-terminated UTF-8 payloads, 60-byte packet limit, radio configuration, and test procedure.
 
-**Validation:** A user confirmed Flipper reception of RFCat Web TX, and RFCat Web has decoded plaintext Flipper RX packets. Long-term reliability and occasional empty/invalid RX frames remain under investigation. This is a dedicated chat panel rather than a module in `js/protocols/`.
+**Validation:** A user confirmed Flipper reception of RFCat Web TX, and RFCat Web has decoded plaintext Flipper RX packets. Long-term reliability and occasional empty/invalid RX frames remain under investigation. Experimental AES-256-GCM mode supports password-derived SHA-256 keys or 32-byte hex keys, with a 20-byte encrypted plaintext limit and replay protection. A user reports successful password-encrypted communication with a physical Flipper Zero; which direction(s) succeeded are not yet documented. Raw hex-key mode and bidirectional encrypted operation remain to be verified. This is a dedicated chat panel rather than a module in `js/protocols/`.
 
 ## Core documentation
 
@@ -284,7 +284,7 @@ Keep protocol-specific behavior in the protocol module.
 
 ## Testing and CI
 
-Run `npm test` for the Node.js test suite. GitHub Actions runs it on pull requests and pushes to `main` and `feature/momentum-subghz-chat`. Frequency regression tests verify CC1111 synthesizer register addresses, 433.920 MHz programming, and readback mismatch handling. Check CI results before merging; automated tests do not establish over-the-air interoperability.
+Run `npm test` for the Node.js test suite. GitHub Actions runs it on pull requests and configured branch pushes. Frequency regression tests verify CC1111 synthesizer register addresses, 433.920 MHz programming, and readback mismatch handling. Check CI results before merging; automated tests do not establish over-the-air interoperability.
 
 ## Validation
 

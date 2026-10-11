@@ -1,4 +1,4 @@
-# Momentum Enhanced Sub-GHz Chat via YARD Stick One
+# Momentum Enhanced Sub-GHz Chat via YARD Stick One (plaintext and AES-256-GCM)
 
 ## Status
 
@@ -8,26 +8,48 @@ The upstream Enhanced Sub-GHz Chat app writes UTF-8 bytes followed by CR LF when
 
 RFCat Web now exposes a Momentum Sub-GHz Chat panel with matching GFSK, ~9,996 baud, ~19.04 kHz deviation, sync `0x464C`, 16/16 sync detection, variable packet length, and CRC enabled. The RX handler displays decoded UTF-8 packets; TX sends the CRLF-terminated bytes through the connected YARD Stick One and returns to RX. A message must fit within 60 transmitted bytes, including the configurable username prefix (default `RFCat: `) and CRLF. Blank messages are rejected.
 
-## Test
+## Encryption (password mode user-tested; other cases pending)
+
+Choose **Password** or **Raw AES-256 key** before selecting **Start chat**. Password mode derives 32 key bytes from a single SHA-256 pass over UTF-8 password bytes, matching upstream Flipper Enhanced Sub-GHz Chat. Raw-key mode accepts 64 hex digits (32 bytes). Use the identical password or key on both devices. Key material is not saved in IndexedDB or browser storage; the secret field is cleared after initialization and the in-memory CryptoKey reference is dropped when chat stops/disconnects.
+
+Encrypted packets use the upstream layout: 8-byte run ID, 4-byte big-endian counter, 12-byte random IV, 16-byte AES-GCM authentication tag, then ciphertext. The first 12 bytes are authenticated additional data. Browser Web Crypto outputs ciphertext then tag; RFCat Web reorders them to the Flipper wire format. A fresh random run ID is generated per encrypted session, counters begin at 1, and RX tracks highest authenticated counter per run ID to reject replay. Flipper run IDs are generated differently (device name plus ticks, hashed); the receiver treats them as opaque, so a random run ID is interoperable in the protocol. An encrypted radio packet can carry **at most 20 UTF-8 plaintext bytes** with the current 60-byte packet limit; this includes the username prefix. No encrypted fragmentation is implemented.
+
+Encryption protects message content and authenticates packets, but does not conceal RF metadata, prevent jamming, or provide forward secrecy. Password mode uses upstream's single SHA-256 pass, not a slow password KDF; prefer strong random keys. A user has reported that password encryption works with a physical Flipper Zero. The successful direction(s) were not specified, so this is not yet a claim of verified bidirectional encrypted communication. Raw-key, wrong-key, and replay interoperability remain unverified.
+
+## Encrypted interoperability test
+
+1. Set **Password** mode on the Flipper and RFCat Web with the same password, and use 433.920 MHz on both radios.
+2. Set a short RFCat Web username (for example `RF`), click **Start chat**, and send `Hi` to the Flipper. Check that the Flipper displays `RF: Hi`.
+3. Reply from the Flipper and verify that RFCat Web displays the decrypted message. Record each direction separately.
+4. Restart one endpoint with an intentionally different password and verify the message is rejected rather than displayed as plaintext.
+5. Optionally test **Raw AES-256 key** using the same 32-byte (64-hex-character) key on both endpoints. Entering 64 hex digits on the Flipper is cumbersome, so this is optional until a convenient supported key-sharing workflow is confirmed. Do not assume a generated or shared key is automatically available to RFCat Web.
+6. Repeat several transmissions to check reliability. Replay rejection is covered by unit tests; a hardware replay test remains pending.
+
+The **20-byte encrypted plaintext limit includes the username prefix**. Password-derived encryption has been reported working with a physical Flipper; successful TX/RX direction(s) have not yet been specified.
+
+## Plaintext interoperability test
+
 
 1. Connect YARD Stick One through RFCat Web.
 2. On Flipper running Momentum, launch Enhanced Sub-GHz Chat and select **No encryption**.
 3. Choose the same locally permitted frequency on both devices.
-4. Expand **Momentum Sub-GHz Chat (plaintext)** in RFCat Web and select **Start chat**.
+4. Expand **Momentum Sub-GHz Chat** in RFCat Web and select **Start chat**.
 5. Send a short message from the Flipper. Check the chat history and Activity log.
 6. Send **Hello Flipper** from RFCat Web and check the Flipper's display.
-7. Repeat several times to assess RX continuity and packet handling.\n8. Normal USB OUT command dumps are suppressed by default; `RFCatUSB.verboseUsbLogging` can be enabled in a debugging session.
+7. Repeat several times to assess RX continuity and packet handling.
+8. Normal USB OUT command dumps are suppressed by default; `RFCatUSB.verboseUsbLogging` can be enabled in a debugging session.
 
 Do not use the generic packet receiver concurrently with the dedicated chat panel. RF settings are currently configured by the chat panel and not restored automatically.
 
 ## Limitations
 
-- Hardware TX was confirmed by a user with a Flipper Zero; automated browser and long-duration hardware tests have not been performed.\n- Verified TX configuration: 433.919678 MHz readback (requested 433.920 MHz), ~10002 baud, ~107.14 kHz RX bandwidth, sync 0x464C, GFSK, variable packet mode, CRC on. The CC1111 register addresses are FREQ2=0xDF09, FREQ1=0xDF0A, FREQ0=0xDF0B, FSCTRL1=0xDF07.
+- Hardware TX was confirmed by a user with a Flipper Zero; automated browser and long-duration hardware tests have not been performed.
+- Verified TX configuration: 433.919678 MHz readback (requested 433.920 MHz), ~10002 baud, ~107.14 kHz RX bandwidth, sync 0x464C, GFSK, variable packet mode, CRC on. The CC1111 register addresses are FREQ2=0xDF09, FREQ1=0xDF0A, FREQ0=0xDF0B, FSCTRL1=0xDF07.
 - The radio setup is derived from upstream Flipper firmware, not confirmed against Momentum-specific changes.
 - The Flipper worker splits messages longer than 60 bytes into multiple packets. RFCat Web currently rejects those long messages and does not reassemble multi-packet RX messages.
 - The receive path has decoded actual Flipper plaintext payloads without a leading length byte or appended status bytes; occasional zero-length and invalid UTF-8 RX frames have also been observed.
 - Frequency restrictions and radio transmission regulations still apply.
-- Encryption is deliberately excluded.
+- Password encryption has been reported working, but encrypted bidirectional reliability, raw-key interoperability, wrong-key rejection, and hardware replay testing are not yet fully validated.
 
 Sources:
 - https://github.com/twisted-pear/esubghz_chat/blob/main/esubghz_chat.c
