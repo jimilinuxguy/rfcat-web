@@ -544,6 +544,18 @@
             </div>
 
 
+            <details class="card">
+                <summary>Momentum Sub-GHz Chat (plaintext)</summary>
+                <div class="field"><label for="momentum-chat-frequency">Frequency (MHz, match Flipper)</label>
+                    <input id="momentum-chat-frequency" type="number" value="433.920" step="0.001"></div>
+                <p>Enhanced Sub-GHz Chat: No encryption. Uses the connected YARD Stick One.</p>
+                <button id="momentum-chat-start">Start chat</button>
+                <div id="momentum-chat-history" role="log" aria-live="polite" style="max-height:240px;overflow:auto;white-space:pre-wrap"></div>
+                <div class="field"><label for="momentum-chat-message">Message</label>
+                    <input id="momentum-chat-message" type="text" maxlength="58" placeholder="Hello Flipper"></div>
+                <button id="momentum-chat-send">Send via YARD Stick One</button>
+            </details>
+
             <dialog id="ipython-export-dialog" class="export-dialog">
                 <div class="title-row">
                     <h2>IPython Export</h2>
