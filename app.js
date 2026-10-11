@@ -2,6 +2,7 @@
 import { C } from "./js/rfcat/constants.js";
 import { R } from "./js/radio/registers.js";
 import { RFCatUSB } from "./js/rfcat/device.js";
+import { FlipperSerial } from "./js/flipper/device.js";
 import { hex } from "./js/core/bytes.js";
 import { $, log } from "./js/ui/log.js";
 import { renderWaveformPreview, clearWaveformPreview } from "./js/ui/waveform.js";
@@ -20,6 +21,60 @@ import {
 } from "./js/ui/protocols.js";
 
 const d = new RFCatUSB();
+
+// Flipper uses a separate Web Serial transport; RFCat controls remain unchanged.
+const flipper = new FlipperSerial();
+flipper.addEventListener("output", (event) => {
+    const message = event.detail.replace(/\x1b\[[0-9;]*m/g, "").trim();
+    if (message) log("Flipper: " + message);
+});
+flipper.addEventListener("error", (event) => log("Flipper serial error: " + event.detail.message));
+flipper.addEventListener("disconnected", () => {
+    $("flipper-status").textContent = "Disconnected";
+    $("flipper-connect").textContent = "Connect Flipper";
+    $("flipper-transmit").disabled = true;
+});
+$("flipper-connect").onclick = async () => {
+    const button = $("flipper-connect");
+    button.disabled = true;
+    try {
+        if (flipper.connected) {
+            await flipper.disconnect();
+        } else {
+            await flipper.connect();
+        }
+        $("flipper-status").textContent = flipper.connected ? "Connected" : "Disconnected";
+        button.textContent = flipper.connected ? "Disconnect Flipper" : "Connect Flipper";
+        $("flipper-transmit").disabled = !flipper.connected;
+    } catch (error) {
+        log("Flipper connection error: " + error.message);
+    } finally {
+        button.disabled = false;
+    }
+};
+$("flipper-transmit").onclick = async () => {
+    const button = $("flipper-transmit");
+    button.disabled = true;
+    try {
+        const mhz = Number($("flipper-frequency").value);
+        const hz = Math.round(mhz * 1e6);
+        if (!Number.isFinite(mhz) || !Number.isSafeInteger(hz)) throw new Error("Invalid frequency");
+        const command = await flipper.transmit({
+            key: $("flipper-key").value,
+            frequency: hz,
+            te: Number($("flipper-te").value),
+            repeat: Number($("flipper-repeat").value),
+            device: Number($("flipper-radio").value),
+        });
+        log("Flipper CLI sent: " + command);
+    } catch (error) {
+        log("Flipper TX error: " + error.message);
+    } finally {
+        button.disabled = !flipper.connected;
+    }
+};
+
+
 const protocolSelect = $("protocol");
 const protocolFields = $("protocol-fields");
 const waveformPreview = $("waveform-preview");
