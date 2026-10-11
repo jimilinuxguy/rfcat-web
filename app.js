@@ -1,3 +1,4 @@
+import { MomentumCrypto, momentumKeyFromPassword, momentumKeyFromHex } from "./js/chat/momentum-crypto.js";
 import { encodePlaintextChat, decodePlaintextChat } from "./js/chat/momentum-plaintext.js";
 // RFCat Web UI/event wiring. Hardware/protocol logic lives under js/.
 import { C } from "./js/rfcat/constants.js";
@@ -23,6 +24,8 @@ import {
 const d = new RFCatUSB();
 
 let momentumChatActive = false;
+const momentumCrypto = new MomentumCrypto();
+let momentumEncrypted = false;
 const chatHistory = $("momentum-chat-history");
 function appendChatMessage(direction, message) {
     const entry = document.createElement("div");
@@ -51,6 +54,16 @@ async function configureMomentumChat() {
     if (!Number.isFinite(mhz) || !((mhz >= 300 && mhz <= 348) || (mhz >= 387 && mhz <= 464) || (mhz >= 779 && mhz <= 928))) {
         throw new Error("Frequency outside supported CC1111 bands");
     }
+    const security = $("momentum-chat-security").value;
+    momentumCrypto.clear();
+    momentumEncrypted = false;
+    if (security !== "none") {
+        const secret = $("momentum-chat-secret").value;
+        const rawKey = security === "password" ? await momentumKeyFromPassword(secret) : momentumKeyFromHex(secret);
+        try { await momentumCrypto.setKey(rawKey); } finally { rawKey.fill(0); }
+        $("momentum-chat-secret").value = "";
+        momentumEncrypted = true;
+    }
     await d.mode(C.RF_IDLE);
     await d.setFrequency(mhz * 1e6);
     // Restore the known-good RX modem settings from the Flipper chat capture.
@@ -75,12 +88,18 @@ async function configureMomentumChat() {
     listening = false;
     $("listen").textContent = "Start listening";
     $("momentum-chat-start").textContent = "Stop chat";
-    log(`Momentum plaintext chat listening at ${mhz} MHz`);
+    $("momentum-chat-security").disabled = true;
+    $("momentum-chat-secret").disabled = true;
+    log(`Momentum ${momentumEncrypted ? "encrypted" : "plaintext"} chat listening at ${mhz} MHz`);
 }
 $("momentum-chat-start").onclick = async () => {
     try {
         if (momentumChatActive) {
             momentumChatActive = false;
+            momentumCrypto.clear();
+            momentumEncrypted = false;
+            $("momentum-chat-security").disabled = false;
+            $("momentum-chat-secret").disabled = false;
             await d.mode(C.RF_IDLE);
             await d.setAmpMode(false);
             $("momentum-chat-start").textContent = "Start chat";
@@ -97,7 +116,7 @@ $("momentum-chat-send").onclick = async () => {
         const username = $("momentum-chat-username").value.trim();
         if (!username || /[:\r\n]/.test(username)) throw new Error("Enter a username without colons or line breaks");
         const formatted = `${username}: ${message}`;
-        const bytes = encodePlaintextChat(formatted);
+        const bytes = momentumEncrypted ? await momentumCrypto.encrypt(formatted) : encodePlaintextChat(formatted);
         if (bytes.length > 60) throw new Error("Message exceeds Flipper's 60-byte radio packet limit");
         await d.mode(C.RF_IDLE);
         await d.setMaxPower();
@@ -520,6 +539,10 @@ $("connect").onclick = async () => {
             setMonitor(false);
 
             momentumChatActive = false;
+            momentumCrypto.clear();
+            momentumEncrypted = false;
+            $("momentum-chat-security").disabled = false;
+            $("momentum-chat-secret").disabled = false;
             $("momentum-chat-start").textContent = "Start chat";
             await d.disconnect();
 
@@ -1672,10 +1695,10 @@ $("rx-export").onclick = () => {
     URL.revokeObjectURL(url);
 };
 
-d.addEventListener("packet", (e) => {
+d.addEventListener("packet", async (e) => {
     if (momentumChatActive) {
         if (!e.detail?.length) return;
-        try { const message = decodePlaintextChat(e.detail); if (message) appendChatMessage("Flipper", message); }
+        try { const message = momentumEncrypted ? await momentumCrypto.decrypt(e.detail) : decodePlaintextChat(e.detail); if (message) appendChatMessage("Flipper", message); }
         catch (error) { log(`Momentum chat RX decode error: ${error.message}`); }
         return;
     }
