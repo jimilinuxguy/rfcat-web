@@ -77,3 +77,7 @@ The main RFCat Web panels can be dragged into a preferred order and resized from
 ## Capture Library
 
 Saved RX capture sessions are stored locally in the browser using the shared RFCat Web IndexedDB database. The Capture Library is a configurable workspace panel and supports filtering by session name, notes, decoder, or frequency. A saved session retains its captures, decoder/model selection, filter, frequency, data rate, and notes. Sessions can be reopened for comparison and field inference, renamed, deleted, or exported as JSON. Existing capture-session databases are supported when upgrading to the shared storage schema.
+
+## Flipper Zero
+
+Initial USB/Web Serial TX support for stock-firmware Princeton 24-bit keys is available in the **Flipper Zero TX** panel. See [Flipper Zero TX guide](docs/flipper-zero.md) for setup, constraints, and safety notes. Arbitrary RFCat payloads and Flipper RX are not yet supported.
