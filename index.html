@@ -549,10 +549,11 @@
                 <div class="field"><label for="momentum-chat-frequency">Frequency (MHz, match Flipper)</label>
                     <input id="momentum-chat-frequency" type="number" value="433.920" step="0.001"></div>
                 <p>Enhanced Sub-GHz Chat: No encryption. Uses the connected YARD Stick One.</p>
+                <div class="field"><label for="momentum-chat-username">TX username</label><input id="momentum-chat-username" type="text" value="RFCat" maxlength="20" autocomplete="nickname"></div>
                 <button id="momentum-chat-start">Start chat</button>
                 <div id="momentum-chat-history" role="log" aria-live="polite" style="max-height:240px;overflow:auto;white-space:pre-wrap"></div>
                 <div class="field"><label for="momentum-chat-message">Message</label>
-                    <input id="momentum-chat-message" type="text" maxlength="58" placeholder="Hello Flipper"></div>
+                    <input id="momentum-chat-message" type="text" maxlength="48" placeholder="Hello Flipper"></div>
                 <button id="momentum-chat-send">Send via YARD Stick One</button>
             </details>
 
