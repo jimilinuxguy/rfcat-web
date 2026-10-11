@@ -545,10 +545,10 @@
 
 
             <details class="card">
-                <summary>Momentum Sub-GHz Chat (plaintext)</summary>
+                <summary>Momentum Sub-GHz Chat</summary>
                 <div class="field"><label for="momentum-chat-frequency">Frequency (MHz, match Flipper)</label>
                     <input id="momentum-chat-frequency" type="number" value="433.920" step="0.001"></div>
-                <p>Enhanced Sub-GHz Chat: No encryption. Uses the connected YARD Stick One.</p>
+                <p>Enhanced Sub-GHz Chat via YARD Stick One. Select the same encryption mode and key on the Flipper.</p>\n                <div class="field"><label for="momentum-chat-security">Encryption</label><select id="momentum-chat-security"><option value="none">No encryption</option><option value="password">Password (SHA-256 → AES-256-GCM)</option><option value="hex">Raw AES-256 key (hex)</option></select></div>\n                <div class="field"><label for="momentum-chat-secret">Password / 64-character hex key (not stored)</label><input id="momentum-chat-secret" type="password" autocomplete="off" spellcheck="false"></div>\n                <p class="hint">Encrypted packets have 40 bytes of overhead, leaving at most 20 UTF-8 plaintext bytes per packet. Set mode and key before Start chat.</p>
                 <div class="field"><label for="momentum-chat-username">TX username</label><input id="momentum-chat-username" type="text" value="RFCat" maxlength="20" autocomplete="nickname"></div>
                 <button id="momentum-chat-start">Start chat</button>
                 <div id="momentum-chat-history" role="log" aria-live="polite" style="max-height:240px;overflow:auto;white-space:pre-wrap"></div>
