@@ -628,6 +628,35 @@
                 </div>
             </details>
 
+            <details class="card collapsible cw-card">
+                <summary class="section-summary"><span>Morse Code / CW Workbench</span><span class="summary-note">OOK Morse TX, RX and offline preview</span></summary>
+                <div class="section-body">
+                    <p class="hint">International Morse over Sub-GHz OOK. This is a raw sampled OOK experiment, not conventional HF CW. TX configures the CC1111 radio and requires authorization. RX expects raw bit samples at the matching symbol rate.</p>
+                    <label>Message <textarea id="cw-message" rows="2" maxlength="120" spellcheck="false">SOS</textarea></label>
+                    <div class="cw-fields">
+                        <label>Key rate (WPM) <input id="cw-wpm" type="number" min="5" max="40" step="1" value="20"></label>
+                        <label>Raw sample rate (symbols/s) <input id="cw-rate" type="number" min="500" max="5000" step="100" value="1000"></label>
+                        <label>TX frequency (MHz) <input id="cw-frequency" type="number" min="300" max="928" step=".001" value="433.920"></label>
+                    </div>
+                    <div class="actions"><button id="cw-preview" type="button">Preview Morse</button><button id="cw-audio" type="button">Play sidetone</button><button id="cw-export" type="button">Export Morse JSON</button></div>
+                    <pre id="cw-preview-output" class="bench-output" aria-live="polite">Preview Morse timing offline.</pre>
+                    <canvas id="cw-waveform" height="120" aria-label="Morse waveform preview"></canvas>
+                    <label class="bench-confirm"><input id="cw-authorized" type="checkbox"> I am authorized to transmit on this frequency and equipment.</label>
+                    <div class="actions"><button id="cw-send" class="danger" type="button">Send Morse via YARD Stick One</button></div>
+                    <pre id="cw-tx-status" class="bench-output" aria-live="polite">No transmission attempted.</pre>
+                    <div class="cw-receiver">
+                        <h3>Morse receiver</h3>
+                        <p class="hint">For live decoding, configure the main Receiver for asynchronous raw OOK with sync disabled, no CRC, no whitening, and the same sample rate. Raw packet boundaries may truncate pulses; use offline decoding for complete captures.</p>
+                        <label>Decode WPM <select id="cw-rx-speed"><option value="auto">Auto-estimate</option><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="40">40</option></select></label>
+                        <label>Raw sample rate (symbols/s) <input id="cw-rx-rate" type="number" min="500" max="5000" step="100" value="1000"></label>
+                        <div class="actions"><button id="cw-rx-start" type="button">Enable live Morse decode</button><button id="cw-rx-clear" type="button">Clear Morse RX</button></div>
+                        <label>Offline raw OOK bytes (hex) <textarea id="cw-rx-hex" rows="2" placeholder="Paste raw OOK sample bytes, not ASCII text"></textarea></label>
+                        <div class="actions"><button id="cw-rx-decode" type="button">Decode pasted raw bytes</button></div>
+                        <pre id="cw-rx-output" class="bench-output" aria-live="polite">No Morse decoded yet.</pre>
+                    </div>
+                </div>
+            </details>
+
             <details class="card">
                 <summary>Momentum Sub-GHz Chat</summary>
                 <div class="field"><label for="momentum-chat-frequency">Frequency (MHz, match Flipper)</label>
