@@ -32,13 +32,13 @@ The Help panel includes a **Troubleshoot receiver** action with read-only checks
 
 For existing users with a recognized saved workspace or capture session, the first launch offers a smaller introduction to the new Help system instead of requiring the full welcome wizard. Both flows are dismissible. Test the existing-user detection against a populated local browser profile before release.
 
-## Milestone 1: contextual help coverage
+## contextual help coverage
 
 The inline (?) help covers major radio controls (data rate, bandwidth, sync, packet length, address filtering, CRC, whitening, status bytes, lowball RX and radio actions), receiver capture/decoder workflows, transmission/protocol selection, Flipper RAW waveform and guided scanning, and Momentum chat security. Each topic links to an existing technical guide. Search in Help to find these topics without opening their associated panel.
 
 The selector-coverage test checks that every tour target and contextual help selector exists in `index.html`. This guards against UI refactors silently orphaning help controls; it does not replace browser accessibility and placement checks.
 
-## Milestone 2: advanced interactive tutorials
+## advanced interactive tutorials
 
 Open **? Help** to find the **Advanced analysis** and **Secure interoperability** groups. The new tutorials cover **Compare RF captures**, **Infer unknown protocol fields**, **Build and validate a preset**, **Waveform timing lab**, and **Encrypted Momentum Chat lab**. Each walks through real UI controls and includes an optional, deterministic practice question using clearly labeled synthetic examples. The answer explains why the result is plausible and where additional validation is required.
 
@@ -53,7 +53,7 @@ The Help interface now includes grouped tutorial tiles, a step-progress indicato
 5. Test the tutorial UI at narrow widths, zoomed browser text, keyboard-only input, and reduced-motion settings.
 6. Run `npm test` to check definitions, exercises and DOM selectors.
 
-## Milestone 3: context-aware RF diagnostics
+## context-aware RF diagnostics
 
 Open **? Help → Troubleshoot receiver**. The diagnostic studio reads the current UI connection indicator, receiver state, configured frequency, RX event count, decoded/rejected/duplicate counters and capture filter. It prioritizes connection and unsupported-frequency problems, then idle RX, no packets, decode failures, rejected or repeated frames, and filters that hide undecoded traffic.
 
@@ -76,18 +76,18 @@ The searchable Help index groups contextual topics into **Radio configuration**,
 
 Radio field explanations are accessed using compact help buttons aligned to the right of the corresponding field labels. Checkbox settings (CRC, data whitening, RSSI/LQI status and lowball/raw OOK receive) display the checkbox, its label and contextual-help button together in a bordered row. This layout is CSS-only: it does not change the configuration values or hardware behavior. Verify the alignment at wide and narrow workspace sizes and after resizing the Radio panel. The Help Center's illustrated topic cards are separate from these inline field help buttons.
 
-## Milestone 4: wizard and guided analyzer workbench
+## wizard and guided analyzer workbench
 
 The welcome wizard now offers **Advanced Signal Analysis workbench** as a dedicated offline goal alongside the original **Analyze a Flipper RAW capture** workflow. The existing analyzer tour has been expanded to cover timing histogram selection, decode hypotheses, repeated-frame comparison, JSON export and saving. A separate seven-step advanced tour covers high/low pulse selection, clickable histogram bins, display-only bit inversion, frame stability and export. All steps target actual controls, require explicit user interaction, and do not operate radio hardware.
 
 To test, open **? Help → Restart welcome wizard**, select **Advanced Signal Analysis workbench**, and follow the highlighted controls after importing a RAW `.sub` file. Verify Back/Next/Exit, collapsed-panel expansion, and that the tour remains available from the searchable Help library. Browser interaction must be verified separately from the selector tests.
 
 
-## Milestone 5: Protocol Reverse-Engineering wizard
+## Protocol Reverse-Engineering wizard
 
 The welcome wizard offers **Protocol Reverse-Engineering Workbench**. The searchable Help Center includes a seven-step advanced tutorial covering RAW import, candidate decoding, selecting bit positions, naming fields, inference and JSON export. The tour is educational, read-only and never transmits. See [Protocol Workbench](../protocol-workbench.md).
 
-## Milestone 6: Intelligent Receiver & Burst Grouping wizard
+## Intelligent Receiver & Burst Grouping wizard
 
 The welcome wizard now includes **Intelligent Receiver & Burst Grouping**, and the searchable Help Center includes an eight-step guided workflow under **Capture & decoding**. The tour covers connecting the YARD Stick One, matching authorized RF settings, enabling tracking, choosing the duplicate window, starting reception, interpreting burst counts and RSSI, and exporting JSON. It does not operate radio hardware or send test packets on your behalf.
 
@@ -102,22 +102,22 @@ Contextual Help topics cover burst tracking, the duplicate window, and JSON expo
 5. Confirm no tutorial action starts reception, changes the radio configuration, transmits, or exports without an explicit user action.
 6. Check narrow viewport, keyboard navigation, and `npm test`.
 
-## Milestone 7: RF Test Bench tutorial
+## RF Test Bench tutorial
 
 The wizard and searchable Help Center now include a seven-step **RF Test Bench** tour. It highlights packet input, repeat limits, offline preview, authorization, explicit TX confirmation, result interpretation and JSON export. Tour steps do not operate radio hardware or initiate transmission. See [RF Test Bench](../rf-test-bench.md) for safety limits and manual acceptance.
 
-## Milestone 8 — Morse Code / CW Workbench
+## — Morse Code / CW Workbench
 
 The welcome wizard and Help Center include a nine-step **Morse Code / CW Workbench** tour covering message input, WPM, offline waveform preview, local sidetone, RF authorization, TX, live raw OOK RX, offline decoding and JSON export. The wizard does not initiate transmissions. [CW guide](../cw-workbench.md).
 
-## Workspace-aware guided tours (M9 follow-up)
+## Workspace-aware guided tours
 
 The **Help** wizard and guided tours automatically select the workspace containing the highlighted control. Radio configuration is under **Tools**; RX capture and burst grouping under **Receive**; protocol transmission and RF Test Bench under **Transmit**; Flipper RAW and signal analysis under **Analyze**; and Morse/CW and Momentum Chat under **Protocols**. A tour can move between tabs without clearing controls, starting reception, or transmitting. Diagnostic suggestions use the same navigation behavior.
 
 If a tutorial step is missing, ensure the feature is present in the current build. Help will report unavailable targets instead of transmitting or changing radio settings. The current tab is saved locally as usual.
 
-## Milestone 11 — Offline capture replay tutorial
+## Offline capture replay tutorial
 
-The welcome wizard offers **Offline capture replay & session comparison**. The Help Center provides an eight-step guided tour for opening a saved session, preparing replay, reviewing summary statistics, using timeline markers, choosing speed, playing/pausing, selecting another session and comparing payload counts. Contextual topics link to the [M11 replay guide](../m11-capture-replay.md). Tours only highlight controls; they do not operate the replay or transmit RF. Prepare replay after opening a session to populate its controls. The first 300 timeline markers are shown, while Previous/Next can inspect all prepared captures.
+The welcome wizard offers **Offline capture replay & session comparison**. The Help Center provides an eight-step guided tour for opening a saved session, preparing replay, reviewing summary statistics, using timeline markers, choosing speed, playing/pausing, selecting another session and comparing payload counts. Contextual topics link to the [capture replay guide](../capture-replay.md). Tours only highlight controls; they do not operate the replay or transmit RF. Prepare replay after opening a session to populate its controls. The first 300 timeline markers are shown, while Previous/Next can inspect all prepared captures.
 
 To validate, restart the welcome wizard, select the replay workflow, check that each step highlights its control in Receive, then use Help search for `replay` and `compare`. Verify that no hardware is required. Run `npm test` and `npm run test:browser`.

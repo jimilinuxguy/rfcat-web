@@ -8,7 +8,7 @@ RFCat Web uses WebUSB to configure radios, transmit test frames, capture and dec
 
 - **Configure and transmit:** Set frequency, modulation, data rate, bandwidth, power, and packet settings; transmit using protocol-specific encoders or direct RF test modes. The RF Test Bench previews bounded hexadecimal packet sequences and compares subsequent RX packets byte-for-byte.
 - **Receive and decode:** Inspect raw captures, select decoders, and review decoded fields. Auto mode attempts applicable decoders without discarding unknown traffic. Live burst diagnostics group repeated packet events with timestamps, RSSI ranges, adjustable duplicate windows, and JSON export.
-- **Analyze captures offline:** Import/export JSON, save capture sessions in IndexedDB, step through captures with timed offline playback and timeline navigation, compare saved sessions by payload frequency, compare captures, infer changing fields, and validate declarative protocol presets against positive and negative examples.
+- **Analyze captures offline:** Import/export JSON, save capture sessions in IndexedDB, step through captures with timed offline playback and timeline navigation, compare saved sessions by payload frequency, export replay reports as JSON/CSV, compare captures, infer changing fields, and validate declarative protocol presets against positive and negative examples.
 - **Investigate unknown RF timing:** Import Flipper Zero RAW `.sub` captures in the RF Signal Analyzer panel, inspect waveforms, and review conservative encoding hypotheses. See [RF Signal Analyzer](docs/signal-analyzer.md) for current scope and limitations.
 - **Inspect signal timing:** Preview symbol timing and waveform quantization; analyze received OOK pulse distributions.
 - **Get guided help:** An optional first-run wizard, searchable Help panel, contextual (?) explanations, and restartable, context-aware task-based and protocol-specific tours, including Intelligent Receiver & Burst Grouping and Offline Capture Replay. See [Guided onboarding and help](docs/help/README.md).
@@ -34,9 +34,11 @@ npm install
 npm test
 npx playwright install chromium
 npm run test:browser
+# Or run both locally with one command:
+npm run verify
 ```
 
-The Playwright suite includes the original 15 M10 hardware-free regression tests covering workspace navigation, persistence, Help, mock WebUSB handshake/readback, permission cancellation, disconnects, retries, write failures, and timeouts. See [M10 polish and reliability](docs/m10-polish-reliability.md). M11 adds four hardware-free Playwright acceptance tests for replay navigation, playback, saved-session comparison, and Help. Mocked USB tests do not validate RF hardware or over-the-air behavior.
+The Playwright suite includes the original 15 hardware-free regression tests covering workspace navigation, persistence, Help, mock WebUSB handshake/readback, permission cancellation, disconnects, retries, write failures, and timeouts. See [UI polish and reliability](docs/polish-reliability.md). Replay adds four hardware-free Playwright acceptance tests for replay navigation, playback, saved-session comparison, and Help. Mocked USB tests do not validate RF hardware or over-the-air behavior.
 
 GitHub Actions also runs the Node test workflow. **Check the actual workflow result:** the presence of tests or a merged PR does not imply CI is passing.
 
@@ -55,7 +57,7 @@ Not all implementations have the same hardware-validation status. Protocol detai
 
 **Momentum Enhanced Sub-GHz Chat** is a separate interoperability panel (not a registry protocol). It supports plaintext and AES-256-GCM encrypted chat with compatible Flipper Zero firmware. See the [Momentum Chat guide](docs/momentum-subghz-chat.md) for setup, payload limits, and validation notes.
 
-See [M11 offline capture replay](docs/m11-capture-replay.md) for playback controls, timeline, saved-session comparison, limitations and the Help/welcome-wizard walkthrough.
+See [Offline capture replay](docs/capture-replay.md) for playback controls, timeline, saved-session comparison, limitations and the Help/welcome-wizard walkthrough.
 
 ## Capture and protocol-development workflow
 
@@ -110,14 +112,14 @@ Choose **Troubleshoot receiver** for prioritized, read-only checks of connection
 
 For complete walkthroughs, limitations and manual acceptance checks, see [Guided Help](docs/help/README.md). Run `npm test` locally; browser/hardware validation remains separate from unit tests.
 
-**Milestone 4 — Advanced Signal Analysis:** The RF Signal Analyzer adds interactive high/low timing histograms with waveform highlighting, selectable decode hypotheses with polarity inversion, repeated-frame pulse comparison and JSON report export. See [Signal Analyzer](docs/signal-analyzer.md). These are offline heuristics, not verified modulation or protocol decoding.
+**Advanced Signal Analysis:** The RF Signal Analyzer adds interactive high/low timing histograms with waveform highlighting, selectable decode hypotheses with polarity inversion, repeated-frame pulse comparison and JSON report export. See [Signal Analyzer](docs/signal-analyzer.md). These are offline heuristics, not verified modulation or protocol decoding.
 
 
-**Milestone 5 — Protocol Reverse-Engineering Workbench:** Inspect candidate bits, name non-overlapping fields, view bit-order-aware hex/decimal values, identify variable regions across equal-length repeated frames, check simple sum8/xor8 hypotheses, and export a versioned protocol JSON definition. All findings are unverified and offline; definitions are not executable decoders. See [Protocol Workbench](docs/protocol-workbench.md).
+**Protocol Reverse-Engineering Workbench:** Inspect candidate bits, name non-overlapping fields, view bit-order-aware hex/decimal values, identify variable regions across equal-length repeated frames, check simple sum8/xor8 hypotheses, and export a versioned protocol JSON definition. All findings are unverified and offline; definitions are not executable decoders. See [Protocol Workbench](docs/protocol-workbench.md).
 
 
-### Workspace navigation (M9)
+### Workspace navigation
 
-The interface now groups existing tools into **Receive**, **Transmit**, **Analyze**, **Protocols**, and **Tools** tabs. Receive shows packet capture and the capture library; Transmit shows the raw transmitter, sequence bench, and waveform preview; Analyze shows the signal analyzer and OOK pulse tools; Protocols contains Morse/CW and Momentum Chat; Tools contains the shared CC1111 radio configuration. The Activity log remains available across workspaces. The active tab is remembered locally under `rfcat.workspace.active.v1`. M10 adds a read-only status summary of the radio form (frequency, modulation, baud rate, and connection state) on every tab; click it to open Tools. These are form values, not independently verified radio register readings.
+The interface now groups existing tools into **Receive**, **Transmit**, **Analyze**, **Protocols**, and **Tools** tabs. Receive shows packet capture and the capture library; Transmit shows the raw transmitter, sequence bench, and waveform preview; Analyze shows the signal analyzer and OOK pulse tools; Protocols contains Morse/CW and Momentum Chat; Tools contains the shared CC1111 radio configuration. The Activity log remains available across workspaces. The active tab is remembered locally under `rfcat.workspace.active.v1`. The interface includes a read-only status summary of the radio form (frequency, modulation, baud rate, and connection state) on every tab; click it to open Tools. These are form values, not independently verified radio register readings.
 
 Workspace navigation preserves existing DOM controls and radio sessions when switching tabs; it does not yet extract protocol controllers into independent modules or add workspace-specific drag layouts. To configure the receiver, open **Tools** and return to **Receive**. No radio command is sent merely by changing tabs.

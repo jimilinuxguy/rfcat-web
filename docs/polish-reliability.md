@@ -1,4 +1,4 @@
-# M10 — Polish and reliability
+# Polish and reliability
 
 M10 focuses on clarity and regression prevention rather than adding RF transmission capabilities.
 

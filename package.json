@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "verify": "npm test && npm run test:browser"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.0"
