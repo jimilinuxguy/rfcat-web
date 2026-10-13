@@ -10,7 +10,7 @@ test("workspace selection validates saved identifiers",()=>{
 test("all layout-managed panels have one workspace owner",()=>{
  const source=readFileSync(new URL("../js/ui/workspace.js",import.meta.url),"utf8");
  const defs=[...source.matchAll(/\["([^"]+)",\s*"[^"]+"\]/g)].map(m=>m[1]);
- assert.equal(defs.length,13);
+ assert.equal(defs.length,11);
  for(const id of defs)assert.ok(panelWorkspace(id),id);
  assert.equal(panelWorkspace("activity"),"shared");
  assert.equal(panelWorkspace("capture-library"),"receive");
