@@ -6,6 +6,7 @@ Technical reference, protocol notes, and validation guidance for the [RFCat Web 
 
 | Guide | Covers |
 | --- | --- |
+| [RF Signal Analyzer](signal-analyzer.md) | Flipper RAW import, timing fingerprints, heuristic encoding rankings, and limitations |
 | [Receiver and Protocol Decoders](receiver-decoders.md) | Capture, raw/auto decode, POCSAG/CAME/Retekess RX, offline import, sessions, compare, inference, and preset builder |
 | [Radio Configuration](radio.md) | CC1111 registers, RF settings, amplifier behavior, lowball receive, and timing quantization |
 | [RFCat USB Protocol](rfcat-usb.md) | WebUSB endpoints, framing, commands, connect/reconnect, and TX/RX transport |
