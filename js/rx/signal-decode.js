@@ -30,5 +30,38 @@ export function decodeHypotheses(pulses, unitUs, maxBits = 16384) {
       add("Manchester phase " + phase + (inverted ? " inverted" : ""), decoded, errors);
     }
   }
+  const sortedMedian = values => {
+    const sorted = [...values].sort((a, b) => a - b);
+    return sorted.length ? sorted[Math.floor(sorted.length / 2)] : null;
+  };
+  const highs = pulses.filter(v => v > 0);
+  const lows = pulses.filter(v => v < 0).map(Math.abs);
+  const highMedian = sortedMedian(highs), lowMedian = sortedMedian(lows);
+  if (highMedian !== null) add("PWM width hypothesis", highs.map(v => Number(v > highMedian)));
+  if (lowMedian !== null) add("PPM gap hypothesis", lows.map(v => Number(v > lowMedian)));
+  for (const inverted of [false, true]) {
+    const s = inverted ? symbols.map(v => 1 - v) : symbols;
+    for (const phase of [0, 1]) {
+      const bits = []; let errors = 0, previous = null;
+      for (let i = phase; i + 1 < s.length; i += 2) {
+        if (s[i] === s[i + 1]) { errors++; continue; }
+        if (previous !== null) bits.push(Number(s[i] === previous));
+        previous = s[i];
+      }
+      add("Differential Manchester phase " + phase + (inverted ? " inverted" : ""), bits, errors);
+    }
+  }
   return { quality, candidates: candidates.sort((a, b) => b.confidence - a.confidence) };
+}
+
+export function compareBitstreams(bitstreams) {
+  if (!Array.isArray(bitstreams) || bitstreams.length < 2 ||
+      bitstreams.some(v => typeof v !== "string" || !/^[01]*$/.test(v)))
+    throw new Error("Expected at least two binary bitstreams");
+  const comparedBits = Math.min(...bitstreams.map(v => v.length));
+  const changingBitIndices = [];
+  for (let i = 0; i < comparedBits; i++) {
+    if (bitstreams.some(v => v[i] !== bitstreams[0][i])) changingBitIndices.push(i);
+  }
+  return { comparedBits, changingBitIndices, lengths: bitstreams.map(v => v.length) };
 }
