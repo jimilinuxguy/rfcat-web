@@ -85,3 +85,7 @@ For development details, hardware behavior, known-good setups, and limitations, 
 ## Safety
 
 Transmit only on equipment and frequencies you own or are authorized to use, and comply with local radio regulations. RF test modes should be used for short, controlled bench tests to avoid interference.
+
+### RF Signal Analyzer (development)
+
+Import Flipper Sub-GHz RAW captures, inspect timing clusters and encoding hypotheses, compare candidate bits, and measure pulse timings with waveform cursors. Save analyses in IndexedDB. A connected YARD Stick One can sequentially scan ASK/OOK, 2-FSK and GFSK receiver presets and report packet evidence. Preset scanning is receive-only, interrupts other radio workflows, and does not prove modulation identity. See [signal analyzer guide](docs/signal-analyzer.md). Hardware validation and final CI checks are still pending.
