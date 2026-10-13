@@ -23,3 +23,30 @@ test("bounded retention and clear",()=>{
  assert.equal(p.snapshot().totalEvents,2);
  p.clear();assert.equal(p.snapshot().groups.length,0);
 });
+
+test("different payload or frequency creates distinct consecutive groups",()=>{
+ const p=createCapturePipeline({windowMs:500});
+ p.ingest({bytes:[1],timestampMs:100,frequencyHz:433920000});
+ p.ingest({bytes:[2],timestampMs:101,frequencyHz:433920000});
+ p.ingest({bytes:[1],timestampMs:102,frequencyHz:433920000});
+ p.ingest({bytes:[1],timestampMs:103,frequencyHz:315000000});
+ assert.equal(p.snapshot().groups.length,4);
+ assert.equal(p.snapshot().duplicateEvents,0);
+});
+test("grouping never mutates caller payload or snapshot state",()=>{
+ const p=createCapturePipeline();
+ const bytes=new Uint8Array([0xaa,0x55]);
+ p.ingest({bytes,timestampMs:1});
+ bytes[0]=0;
+ const s=p.snapshot();
+ s.events[0].hex="tampered";s.groups[0].count=99;
+ assert.equal(p.snapshot().events[0].hex,"aa55");
+ assert.equal(p.snapshot().groups[0].count,1);
+});
+test("rejects invalid pipeline options and malformed metadata",()=>{
+ assert.throws(()=>createCapturePipeline({windowMs:-1}),/limits/);
+ const p=createCapturePipeline();
+ assert.throws(()=>p.ingest({bytes:[1],timestampMs:-1}),/timestamp/);
+ assert.throws(()=>p.ingest({bytes:[1],timestampMs:1,frequencyHz:0}),/frequency/);
+ assert.throws(()=>p.ingest({bytes:[1],timestampMs:1,rssi:NaN}),/RSSI/);
+});
