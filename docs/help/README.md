@@ -67,3 +67,7 @@ Each finding includes a severity cue and an **Inspect** button that opens and sc
 4. Load or capture undecoded frames, choose **Decoded only**, and verify decode/filter findings.
 5. Verify the Refresh button updates counts and that Inspect opens the relevant workspace panel.
 6. Check keyboard focus, narrow viewports and browser console. Run `npm test`.
+
+## Illustrated help library
+
+The searchable Help index groups contextual topics into **Radio configuration**, **Signal analysis**, **Capture & decoding**, **Transmission & tools**, and **Secure chat**. Instead of repeated question-mark rows, each topic uses a compact, self-contained SVG category illustration, a title, a short preview and a disclosure chevron. Icons are decorative (hidden from screen readers); the entire tile remains a keyboard-accessible button. No external icon library or network asset is required. Search filters the grouped topics and their descriptions.
