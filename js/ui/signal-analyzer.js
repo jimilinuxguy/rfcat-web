@@ -7,6 +7,18 @@ export function initSignalAnalyzer() {
   const zoom=document.getElementById("signal-zoom");
   if (!input || !result || !canvas) return;
   let capture=null;
+  const storageKey="rfcat-web-signal-analysis-v1";
+  const cursorA=document.getElementById("signal-cursor-a");
+  const cursorB=document.getElementById("signal-cursor-b");
+  const delta=document.getElementById("signal-delta");
+  const totalUs=()=>capture?.durationsUs.reduce((sum,v)=>sum+Math.abs(v),0)??0;
+  function updateCursors(){
+    const a=Number(cursorA.value),b=Number(cursorB.value),total=totalUs();
+    delta.textContent=Number.isFinite(a)&&Number.isFinite(b)?`Δt: ${Math.abs(b-a).toLocaleString()} µs (capture: ${total.toLocaleString()} µs)`:"Invalid cursor";
+    draw();
+  }
+  cursorA.addEventListener("input",updateCursors);
+  cursorB.addEventListener("input",updateCursors);
   function draw() {
     if (!capture) return;
     const ctx=canvas.getContext("2d");
@@ -26,25 +38,36 @@ export function initSignalAnalyzer() {
       ctx.moveTo(x1,y);ctx.lineTo(x1,d>0?height*.75:height*.25);
     }
     ctx.stroke();
+    for(const [cursor,color] of [[cursorA,"#e69f00"],[cursorB,"#c55"]]){
+      const pos=Number(cursor.value);
+      if(!Number.isFinite(pos)||pos<offset||pos>offset+visible)continue;
+      const x=(pos-offset)/visible*width;
+      ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=1;ctx.moveTo(x,0);ctx.lineTo(x,height);ctx.stroke();
+    }
     document.getElementById("signal-window").textContent=`Window: ${Math.round(offset)}–${Math.round(offset+visible)} µs`;
+  }
+  function showCapture(next){
+    capture=next;
+    const a=analyzePulses(capture);
+    result.replaceChildren();
+    const pre=document.createElement("pre");
+    let hypotheses=[];
+    try { if(a.estimatedUnitUs) hypotheses=decodeHypotheses(a.frames[0]?.durationsUs??capture.durationsUs,a.estimatedUnitUs).candidates.map(({encoding,bits,confidence,errors,verified})=>({encoding,bitstreamPreview:bits.slice(0,256),bitLength:bits.length,confidence,errors,verified})); }
+    catch(e){hypotheses=[{warning:e.message}];}
+    pre.textContent=JSON.stringify({source:capture.source,frequencyHz:capture.frequencyHz,configuredModulation:a.configuredModulation,verifiedModulation:a.verifiedModulation,estimatedUnitUs:a.estimatedUnitUs,timingConsistency:a.timingConsistency,clusters:a.clusters,gaps:a.gaps,frameCount:a.frames.length,candidates:a.candidates,decodedHypotheses:hypotheses,warnings:a.warnings},null,2);
+    result.append(pre);updateCursors();
   }
   input.addEventListener("change",async()=>{
     try {
-      capture=parseFlipperRaw(await input.files[0].text());
-      const a=analyzePulses(capture);
-      result.replaceChildren();
-      const pre=document.createElement("pre");
-      pre.textContent=JSON.stringify({
-        frequencyHz:capture.frequencyHz,preset:capture.configuredPreset,
-        configuredModulation:a.configuredModulation,verifiedModulation:a.verifiedModulation,
-        modulationFinding:a.modulationFinding,estimatedUnitUs:a.estimatedUnitUs,
-        estimatedSymbolRate:a.estimatedSymbolRate,bitrateStatus:a.bitrateStatus,
-        timingConsistency:a.timingConsistency,clusters:a.clusters,gaps:a.gaps,
-        frameCount:a.frames.length,candidates:a.candidates,decodedHypotheses:a.estimatedUnitUs ? decodeHypotheses(a.frames[0]?.durationsUs ?? capture.durationsUs,a.estimatedUnitUs).candidates.map(({encoding,bits,confidence,errors,verified})=>({encoding,bitstreamPreview:bits.slice(0,256),bitLength:bits.length,confidence,errors,verified})) : [],warnings:a.warnings
-      },null,2);
-      result.append(pre);draw();
+      if(!input.files?.[0])return;
+      if(input.files[0].size>4*1024*1024)throw Error("RAW file exceeds 4 MiB limit");
+      showCapture(parseFlipperRaw(await input.files[0].text()));
+      return;
     } catch(e) {capture=null;result.textContent="Import error: "+e.message;}
   });
+  document.getElementById("signal-save").addEventListener("click",()=>{try{if(!capture)throw Error("Import a capture first");localStorage.setItem(storageKey,JSON.stringify(capture));result.insertAdjacentText("beforeend","\nSaved locally.");}catch(e){result.textContent="Save error: "+e.message;}});
+  document.getElementById("signal-load").addEventListener("click",()=>{try{const raw=localStorage.getItem(storageKey);if(!raw)throw Error("No saved capture");const saved=JSON.parse(raw);if(!Array.isArray(saved.durationsUs)||saved.durationsUs.some(v=>!Number.isSafeInteger(v)||v===0))throw Error("Invalid stored capture");showCapture(saved);}catch(e){result.textContent="Load error: "+e.message;}});
+  document.getElementById("signal-clear").addEventListener("click",()=>{localStorage.removeItem(storageKey);result.insertAdjacentText("beforeend","\nSaved analysis deleted.");});
   zoom.addEventListener("input",draw);
   document.getElementById("signal-pan").addEventListener("input",draw);
 }
