@@ -52,6 +52,22 @@
     <label>Cursor B (µs) <input id="signal-cursor-b" type="number" min="0" value="0"></label>
     <output id="signal-delta">Δt: 0 µs</output>
     <div class="actions"><select id="signal-saved-select" aria-label="Saved signal analyses"></select><button id="signal-save" type="button">Save analysis locally</button><button id="signal-load" type="button">Load saved analysis</button><button id="signal-clear" type="button">Delete saved analysis</button></div>
+    <section class="signal-workbench" aria-labelledby="signal-workbench-title">
+      <div class="title-row"><h3 id="signal-workbench-title">Timing &amp; decode workbench</h3><span class="section-kicker">Offline · heuristic</span></div>
+      <p class="hint">Select a histogram bar to highlight matching pulses. Compare frames and inspect alternative bitstream hypotheses without changing the source capture.</p>
+      <div class="signal-workbench-controls">
+        <label>Timing level <select id="signal-timing-level"><option value="high">High pulses</option><option value="low">Low gaps</option></select></label>
+        <label>Decode hypothesis <select id="signal-decode-choice" aria-label="Decode hypothesis"></select></label>
+        <label><input id="signal-invert-bits" type="checkbox"> Invert candidate bits</label>
+      </div>
+      <div id="signal-timing-chart" class="signal-timing-chart" role="group" aria-label="Interactive pulse timing histogram">Import a RAW capture to view timing distribution.</div>
+      <output id="signal-timing-selection" aria-live="polite">No timing cluster selected.</output>
+      <div class="signal-workbench-grid">
+        <section><h4>Candidate bitstream</h4><pre id="signal-decode-preview">No capture loaded.</pre></section>
+        <section><h4>Frame comparison</h4><div id="signal-frame-compare">Import a capture with repeated frames.</div></section>
+      </div>
+      <div class="actions"><button type="button" id="signal-export-report">Export analysis JSON</button></div>
+    </section>
     <div id="signal-analysis-results" aria-live="polite">Select a .sub RAW file to begin.</div>
   </div>
 </details>
