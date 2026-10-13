@@ -19,7 +19,7 @@ test("M5 fixture: repeated OOK RAW frames decode to identical 48-bit NRZ candida
  assert.deepEqual(analysis.frames.map(f=>f.durationsUs.length),[38,38,38]);
  const bits=analysis.frames.map(f=>decodeHypotheses(f.durationsUs,analysis.estimatedUnitUs).candidates.find(c=>c.encoding==="NRZ").bits);
  assert.deepEqual(bits,[expected,expected,expected]);
- assert.equal(BigInt("0b"+bits[0]).toString(16).toUpperCase(),"AAAAA CCB28E".replace(/ /g,""));
+ assert.equal(BigInt("0b"+bits[0]).toString(16).toUpperCase(),"AAAAAACCB28E");
  const inferred=inferVariableRuns(bits);
  assert.equal(inferred.stableBits,48);
  assert.deepEqual(inferred.variableRuns,[]);
