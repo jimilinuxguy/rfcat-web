@@ -4,6 +4,7 @@ export const C = Object.freeze({
   SYS_PEEK: 0x80,
   SYS_POKE: 0x81,
   SYS_PING: 0x82,
+  SYS_BOOTLOADER: 0x87,
   SYS_RFMODE: 0x88,
   SYS_PARTNUM: 0x8e,
   NIC_RECV: 0x01,
