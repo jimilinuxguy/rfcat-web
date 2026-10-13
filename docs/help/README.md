@@ -101,3 +101,7 @@ Contextual Help topics cover burst tracking, the duplicate window, and JSON expo
 4. Search Help for `burst` and `duplicate`; confirm contextual topics open the Capture Pipeline guide.
 5. Confirm no tutorial action starts reception, changes the radio configuration, transmits, or exports without an explicit user action.
 6. Check narrow viewport, keyboard navigation, and `npm test`.
+
+## Milestone 7: RF Test Bench tutorial
+
+The wizard and searchable Help Center now include a seven-step **RF Test Bench** tour. It highlights packet input, repeat limits, offline preview, authorization, explicit TX confirmation, result interpretation and JSON export. Tour steps do not operate radio hardware or initiate transmission. See [RF Test Bench](../rf-test-bench.md) for safety limits and manual acceptance.
