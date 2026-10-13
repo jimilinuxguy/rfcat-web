@@ -100,3 +100,6 @@ Choose **Troubleshoot receiver** for prioritized, read-only checks of connection
 For complete walkthroughs, limitations and manual acceptance checks, see [Guided Help](docs/help/README.md). Run `npm test` locally; browser/hardware validation remains separate from unit tests.
 
 **Milestone 4 — Advanced Signal Analysis:** The RF Signal Analyzer adds interactive high/low timing histograms with waveform highlighting, selectable decode hypotheses with polarity inversion, repeated-frame pulse comparison and JSON report export. See [Signal Analyzer](docs/signal-analyzer.md). These are offline heuristics, not verified modulation or protocol decoding.
+
+
+**Milestone 5 — Protocol Reverse-Engineering Workbench:** Inspect candidate bits, name non-overlapping fields, view bit-order-aware hex/decimal values, identify variable regions across equal-length repeated frames, check simple sum8/xor8 hypotheses, and export a versioned protocol JSON definition. All findings are unverified and offline; definitions are not executable decoders. See [Protocol Workbench](docs/protocol-workbench.md).
