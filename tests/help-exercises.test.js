@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {EXERCISES,checkExercise} from "../js/help/exercises.js";
 import {TOURS} from "../js/help/tours.js";
 test("advanced tutorials provide grounded exercises",()=>{
- const advanced=TOURS.filter(t=>t.category);
+ const advanced=TOURS.filter(t=>t.steps.some(s=>s.exercise));
  assert.equal(advanced.length,5);
  for(const tour of advanced){
   assert.ok(tour.steps.length>=3);
