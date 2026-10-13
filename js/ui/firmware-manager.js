@@ -4,10 +4,10 @@ import {readApplication,compareApplication,exportApplicationHex,verifyImageAgain
 import {SerialBootloaderTransport} from "../firmware/serial-transport.js";
 export function initFirmwareManager({radio}){
  const $=id=>document.getElementById(id),host=document.createElement("details");host.id="firmware-manager";host.className="section";
- host.innerHTML='<summary>Firmware Manager — YARD Stick One</summary><div class="section-body"><p>CC1111 bootloader uses USB CDC ACM (Web Serial), not normal RFCat WebUSB. Flashing requires a bootloader already installed. Use only YARD Stick One application firmware built for the 0x1400 bootloader offset.</p><p id="fw-device">Checking USB devices…</p><button type="button" id="fw-refresh">Refresh device detection</button> <button type="button" id="fw-enter">Enter bootloader from normal RFCat</button><button type="button" id="fw-connect">Connect bootloader (Web Serial)</button> <button type="button" id="fw-disconnect">Disconnect</button> <button type="button" id="fw-readback" disabled>Test readback (16 bytes, no writes)</button> <button type="button" id="fw-backup" disabled>Backup and verify application flash (Intel HEX)</button><p>Firmware source: <a href="https://github.com/atlas0fd00m/rfcat/releases" target="_blank" rel="noopener">Official RFCat releases</a>. Download a YARD Stick One bootloader-compatible Intel HEX file and select it below.</p><label>Firmware Intel HEX <input id="fw-file" type="file" accept=".hex,.ihx,.txt"></label><p id="fw-info">No firmware selected</p><label><input id="fw-confirm" type="checkbox"> I have confirmed this is a YARD Stick One with the CC bootloader and this firmware targets 0x1400–0x7FFF. I understand the user flash will be erased.</label><p><button type="button" id="fw-verify-device" disabled>Verify device against HEX (read-only)</button> <button type="button" id="fw-flash" disabled>Erase, flash and verify</button> <button type="button" id="fw-run" disabled>Run verified firmware</button></p><progress id="fw-progress" max="100" value="0"></progress><pre id="fw-status" aria-live="polite"></pre><p>If interrupted, reconnect in bootloader mode and retry a complete verified flash. If the bootloader itself is absent or corrupted, browser flashing cannot recover it; use a CC1111-compatible hardware debugger.</p></div>';
+ host.innerHTML='<summary>Firmware Manager — YARD Stick One</summary><div class="section-body"><p>CC1111 bootloader uses USB CDC ACM (Web Serial), not normal RFCat WebUSB. Flashing requires a bootloader already installed. Use only YARD Stick One application firmware built for the 0x1400 bootloader offset.</p><p id="fw-device">Checking USB devices…</p><button type="button" id="fw-refresh">Refresh device detection</button> <button type="button" id="fw-enter">Enter bootloader from normal RFCat</button><button type="button" id="fw-connect">Connect bootloader (Web Serial)</button> <button type="button" id="fw-disconnect">Disconnect</button> <button type="button" id="fw-readback" disabled>Test readback (16 bytes, no writes)</button> <button type="button" id="fw-backup" disabled>Backup and verify application flash (Intel HEX)</button><p>Firmware source: <a href="https://github.com/atlas0fd00m/rfcat/releases" target="_blank" rel="noopener">Official RFCat releases</a>. Download a YARD Stick One bootloader-compatible Intel HEX file and select it below.</p><label>Firmware Intel HEX <input id="fw-file" type="file" accept=".hex,.ihx,.txt"></label><p id="fw-info">No firmware selected</p><label><input id="fw-confirm" type="checkbox"> I have confirmed this is a YARD Stick One with the CC bootloader and this firmware targets 0x1400–0x7FFF. I understand the user flash will be erased and the backup does not contain the bootloader.</label><p><button type="button" id="fw-verify-device" disabled>Verify device against HEX (read-only)</button> <button type="button" id="fw-flash" disabled>Erase, flash and verify</button> <button type="button" id="fw-run" disabled>Run verified firmware</button></p><progress id="fw-progress" max="100" value="0"></progress><pre id="fw-status" aria-live="polite"></pre><p>If interrupted, reconnect in bootloader mode and retry a complete verified flash. If the bootloader itself is absent or corrupted, browser flashing cannot recover it; use a CC1111-compatible hardware debugger.</p></div>';
  const toolsPanel=$("freq")?.closest("details.card")||document.querySelector("main");
  toolsPanel.append(host);
- let transport=null,plan=null,image=null,busy=false,verified=false;
+ let transport=null,plan=null,image=null,busy=false,verified=false,backupVerified=false;
  async function refreshDevices(){
   const found=[];
   if(radio.device?.opened)found.push("Normal RFCat connected via WebUSB ("+radio.device.vendorId.toString(16)+":"+radio.device.productId.toString(16)+")");
@@ -50,14 +50,14 @@ export function initFirmwareManager({radio}){
  document.getElementById("disconnect")?.addEventListener("click",()=>{setTimeout(refreshDevices,500);setTimeout(()=>{refreshDevices();buttons();},1800);});
  refreshDevices();
  const status=message=>{$("fw-status").textContent+=message+"\n";};
- function buttons(){$("fw-verify-device").disabled=busy||!transport||!image;$("fw-backup").disabled=busy||!transport;$("fw-readback").disabled=busy||!transport;$("fw-enter").disabled=busy||!!transport||!radio.device?.opened;$("fw-connect").disabled=busy||!!transport;$("fw-disconnect").disabled=busy||!transport;$("fw-flash").disabled=busy||!transport||!plan||!$("fw-confirm").checked;$("fw-run").disabled=busy||!transport||!verified;}
+ function buttons(){$("fw-verify-device").disabled=busy||!transport||!image;$("fw-backup").disabled=busy||!transport;$("fw-readback").disabled=busy||!transport;$("fw-enter").disabled=busy||!!transport||!radio.device?.opened;$("fw-connect").disabled=busy||!!transport;$("fw-disconnect").disabled=busy||!transport;$("fw-flash").disabled=busy||!transport||!plan||!backupVerified||!$("fw-confirm").checked;$("fw-run").disabled=busy||!transport||!verified;}
  $("fw-confirm").onchange=buttons;
  $("fw-file").onchange=async()=>{
   plan=null;image=null;verified=false;$("fw-progress").value=0;
   try{const file=$("fw-file").files[0];if(!file)return; if(file.size>512*1024)throw Error("HEX file too large");image=parseIntelHex(await file.text());plan=validateFirmware(image);$("fw-info").textContent=`${file.name}: ${plan.bytes} bytes, ${plan.records.length} records, ${plan.pages} pages, addresses 0x${plan.min.toString(16)}–0x${plan.max.toString(16)}. File contents cannot prove board identity or firmware authenticity.`;status("Firmware validated structurally. Verify its provenance and target manually.");}catch(e){$("fw-info").textContent="Rejected: "+e.message;}buttons();
  };
- $("fw-connect").onclick=async()=>{try{if(radio.device?.opened)throw Error("Disconnect normal RFCat WebUSB before connecting the bootloader");transport=new SerialBootloaderTransport();await transport.connect();await refreshDevices();status("Bootloader connected. No writes performed.");}catch(e){await transport?.close();transport=null;status("Connection failed: "+e.message);}buttons();};
- $("fw-disconnect").onclick=async()=>{await transport?.close();transport=null;verified=false;await refreshDevices();buttons();};
+ $("fw-connect").onclick=async()=>{try{if(radio.device?.opened)throw Error("Disconnect normal RFCat WebUSB before connecting the bootloader");transport=new SerialBootloaderTransport();await transport.connect();backupVerified=false;await refreshDevices();status("Bootloader connected. No writes performed.");}catch(e){await transport?.close();transport=null;status("Connection failed: "+e.message);}buttons();};
+ $("fw-disconnect").onclick=async()=>{await transport?.close();transport=null;verified=false;backupVerified=false;await refreshDevices();buttons();};
  $("fw-readback").onclick=async()=>{
   if(busy||!transport)return;
   busy=true;buttons();
@@ -85,6 +85,7 @@ export function initFirmwareManager({radio}){
    status("First pass complete. Reading again to verify backup…");
    const second=await readApplication(protocol,fraction=>{$("fw-progress").value=50+Math.round(fraction*50);});
    compareApplication(first,second);
+   backupVerified=true;
    const hex=exportApplicationHex(first);
    const blob=new Blob([hex],{type:"text/plain"});
    const url=URL.createObjectURL(blob);
@@ -93,8 +94,9 @@ export function initFirmwareManager({radio}){
    document.body.append(a);a.click();a.remove();
    setTimeout(()=>URL.revokeObjectURL(url),60000);
    status("Backup verified: two identical full reads of 0x1400–0x7FFF (27648 bytes). Intel HEX download started. Keep this file safe.");
+   status("Flashing unlocked for this bootloader connection after successful verified backup. This backup does not include the bootloader.");
    status("To restore, select the saved HEX in Firmware Intel HEX, inspect its range and use the existing confirmed erase/flash/verify workflow.");
-  }catch(e){status("BACKUP FAILED — no file exported: "+e.message+". No flash write attempted.");}
+  }catch(e){backupVerified=false;status("BACKUP FAILED — no file exported: "+e.message+". No flash write attempted.");}
   finally{busy=false;buttons();}
  };
  $("fw-verify-device").onclick=async()=>{
@@ -108,9 +110,9 @@ export function initFirmwareManager({radio}){
   finally{busy=false;buttons();}
  };
  $("fw-flash").onclick=async()=>{
-  if(busy||!transport||!plan||!$("fw-confirm").checked)return;
+  if(busy||!transport||!plan||!backupVerified||!$("fw-confirm").checked)return;
   if(radio.device?.opened)return status("Disconnect RFCat WebUSB first.");
-  if(!confirm("ERASE ALL USER FLASH on the connected YARD Stick One, then program and verify every written byte?"))return;
+  if(!confirm("A verified backup was downloaded during this connection. Confirm it is safely saved before continuing. The bootloader is NOT included. ERASE ALL USER FLASH on the connected YARD Stick One, then program and verify every written byte?"))return;
   busy=true;verified=false;buttons();
   try{const protocol=new BootloaderProtocol(transport);status("Erasing user flash…");await protocol.flash(plan,({phase,fraction})=>{$("fw-progress").value=Math.round(fraction*100);if(phase==="erased"||phase==="verified")status(phase);});verified=true;status("Readback verified for all programmed records. Firmware not yet rebooted.");}
   catch(e){verified=false;status("FLASH FAILED / NOT VERIFIED: "+e.message+" — reconnect bootloader and retry full image.");}
