@@ -34,7 +34,8 @@
             </div>
         </header>
 
-        <main>\n<details class="card collapsible" id="signal-analyzer-panel">
+        <main>
+<details class="card collapsible" id="signal-analyzer-panel">
   <summary class="section-summary"><span>RF Signal Analyzer</span><span class="summary-note">Flipper RAW import and timing fingerprints</span></summary>
   <div class="section-body">
     <p>Import Flipper .sub RAW captures. Receiver presets are configuration evidence only, not verified modulation.</p>
@@ -43,6 +44,10 @@
     <label>Zoom <input id="signal-zoom" type="range" min="1" max="50" value="1"></label>
     <label>Pan <input id="signal-pan" type="range" min="0" max="100" value="0"></label>
     <p id="signal-window"></p>
+    <label>Cursor A (µs) <input id="signal-cursor-a" type="number" min="0" value="0"></label>
+    <label>Cursor B (µs) <input id="signal-cursor-b" type="number" min="0" value="0"></label>
+    <output id="signal-delta">Δt: 0 µs</output>
+    <div class="actions"><button id="signal-save" type="button">Save analysis locally</button><button id="signal-load" type="button">Load saved analysis</button><button id="signal-clear" type="button">Delete saved analysis</button></div>
     <div id="signal-analysis-results" aria-live="polite">Select a .sub RAW file to begin.</div>
   </div>
 </details>
