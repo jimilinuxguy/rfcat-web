@@ -3,6 +3,7 @@ export function createTourEngine({onChange=()=>{},onFinish=()=>{}}={}){
  let tour=null,index=0,highlight=null,unsubscribe=()=>{};
  function clear(){unsubscribe();unsubscribe=()=>{};highlight?.classList.remove("help-target");highlight=null;}
  function locate(step){
+  if(step.workspace)document.dispatchEvent(new CustomEvent("rfcat:workspace-activate",{detail:{workspace:step.workspace}}));
   const node=revealHelpTarget(step.target);
   if(!node)return null;
   node.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"});
