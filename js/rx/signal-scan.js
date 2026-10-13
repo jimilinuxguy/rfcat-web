@@ -47,8 +47,11 @@ export async function scanReceiverPresets(device, { frequencyHz, dwellMs=1200, p
     try{
       await device.mode(C.RF_IDLE);
       const regs=original.raw;
-      const writable=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38];
+      // CC1111 writable configuration offsets, excluding reserved/read-only registers.
+      const writable=[0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,0x20,0x21,0x23,0x24,0x25,0x26,0x27,0x28,0x29,0x2a,0x2b,0x2c];
       for(const i of writable)await device.poke(R.SYNC1+i,new Uint8Array([regs[i]]));
+      // PATABLE is a separate burst register; restore only its first entry.
+      await device.poke(R.PA_TABLE0,new Uint8Array([regs[0x2e]]));
     }catch(error){throw new Error("Receiver configuration restore failed: "+error.message);}
   }
   return {results,cancelled:!!signal?.aborted,restored:true,originalState:"left idle"};
