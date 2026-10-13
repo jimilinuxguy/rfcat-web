@@ -60,7 +60,7 @@ function makeToolbar(onReset) {
     const toolbar = document.createElement("div");
     toolbar.className = "workspace-toolbar";
     const copy = document.createElement("div");
-    copy.innerHTML = "<strong>Workspace</strong><span>Drag panels by the grip. Resize from the lower-right corner.</span>";
+    copy.innerHTML = "<strong>Workspace</strong><span>Drag panels by the grip. Resize horizontally from the right edge.</span>";
     const reset = document.createElement("button");
     reset.type = "button";
     reset.textContent = "Reset layout";
