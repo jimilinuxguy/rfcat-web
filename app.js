@@ -398,15 +398,17 @@ function cwDraw(runs){
 }
 function cwShowPreview(){
  try{
-  const {encoded,packed}=cwPlan();
-  $("cw-preview-output").textContent=`Morse: ${encoded.code}\nWPM: ${encoded.wpm} · dot: ${encoded.unitMs} ms · duration: ${Math.round(encoded.durationMs)} ms\nOOK bitstream: ${packed.bytes.length} bytes at ${packed.sampleRate} symbols/s. Packet-mode RF timing requires hardware verification.`;
+  const encoded=encodeMorse($("cw-message").value,Number($("cw-wpm").value));
+  let packed=null,warning="";
+  try{packed=packOokRuns(encoded.runs,{sampleRate:Number($("cw-rate").value)});}catch(error){warning=error.message;}
+  $("cw-preview-output").textContent=`Morse: ${encoded.code}\nWPM: ${encoded.wpm} · dot: ${encoded.unitMs} ms · duration: ${Math.round(encoded.durationMs)} ms\nOOK bitstream: ${packed?packed.bytes.length+" bytes at "+packed.sampleRate+" symbols/s":warning}. Packet-mode RF timing requires hardware verification.`;
   cwDraw(encoded.runs);return {encoded,packed};
  }catch(error){$("cw-preview-output").textContent="Preview: "+error.message;return null;}
 }
 $("cw-preview").onclick=cwShowPreview;
 $("cw-audio").onclick=async()=>{
  try{
-  const {encoded}=cwPlan();
+  const encoded=encodeMorse($("cw-message").value,Number($("cw-wpm").value));
   if(cwAudio){await cwAudio.close();cwAudio=null;}
   const AudioContextClass=window.AudioContext||window.webkitAudioContext;
   if(!AudioContextClass)throw Error("Web Audio not available");
