@@ -75,3 +75,9 @@ The searchable Help index groups contextual topics into **Radio configuration**,
 ## Radio panel contextual-help layout
 
 Radio field explanations are accessed using compact help buttons aligned to the right of the corresponding field labels. Checkbox settings (CRC, data whitening, RSSI/LQI status and lowball/raw OOK receive) display the checkbox, its label and contextual-help button together in a bordered row. This layout is CSS-only: it does not change the configuration values or hardware behavior. Verify the alignment at wide and narrow workspace sizes and after resizing the Radio panel. The Help Center's illustrated topic cards are separate from these inline field help buttons.
+
+## Milestone 4: wizard and guided analyzer workbench
+
+The welcome wizard now offers **Advanced Signal Analysis workbench** as a dedicated offline goal alongside the original **Analyze a Flipper RAW capture** workflow. The existing analyzer tour has been expanded to cover timing histogram selection, decode hypotheses, repeated-frame comparison, JSON export and saving. A separate seven-step advanced tour covers high/low pulse selection, clickable histogram bins, display-only bit inversion, frame stability and export. All steps target actual controls, require explicit user interaction, and do not operate radio hardware.
+
+To test, open **? Help → Restart welcome wizard**, select **Advanced Signal Analysis workbench**, and follow the highlighted controls after importing a RAW `.sub` file. Verify Back/Next/Exit, collapsed-panel expansion, and that the tour remains available from the searchable Help library. Browser interaction must be verified separately from the selector tests.
