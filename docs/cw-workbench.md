@@ -1,6 +1,6 @@
-# Milestone 8 — Morse Code / CW Workbench
+# Morse Code / CW Workbench
 
-This milestone is on `feature/cw-workbench-m8`. **No pull request has been opened and nothing is merged.**
+This workbench is included in the main application.
 
 ## Capabilities
 
