@@ -52,3 +52,18 @@ The Help interface now includes grouped tutorial tiles, a step-progress indicato
 4. Open the encrypted chat lab without a radio; confirm that nothing is transmitted and no secrets are displayed by the tutorial.
 5. Test the tutorial UI at narrow widths, zoomed browser text, keyboard-only input, and reduced-motion settings.
 6. Run `npm test` to check definitions, exercises and DOM selectors.
+
+## Milestone 3: context-aware RF diagnostics
+
+Open **? Help → Troubleshoot receiver**. The diagnostic studio reads the current UI connection indicator, receiver state, configured frequency, RX event count, decoded/rejected/duplicate counters and capture filter. It prioritizes connection and unsupported-frequency problems, then idle RX, no packets, decode failures, rejected or repeated frames, and filters that hide undecoded traffic.
+
+Each finding includes a severity cue and an **Inspect** button that opens and scrolls to the relevant control. **Refresh checks** reads current state again; it does not poll hardware or send commands. The results are hypotheses based on displayed values, **not** hardware measurements or proof that a signal is absent. No RF configuration, receive state, stored capture or encryption secret is changed by running diagnostics.
+
+### Manual validation
+
+1. With no hardware connected, verify the connection finding and its Inspect button.
+2. Enter an out-of-band frequency and verify the frequency finding (do not apply it to hardware).
+3. Connect and start receiving: with zero RX events, verify the no-packets guidance.
+4. Load or capture undecoded frames, choose **Decoded only**, and verify decode/filter findings.
+5. Verify the Refresh button updates counts and that Inspect opens the relevant workspace panel.
+6. Check keyboard focus, narrow viewports and browser console. Run `npm test`.
