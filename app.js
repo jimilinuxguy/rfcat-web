@@ -1,3 +1,4 @@
+import {prepareReplay,replaySummary,replayAt} from "./js/rx/session-replay.js";
 import { MomentumCrypto, momentumKeyFromPassword, momentumKeyFromHex } from "./js/chat/momentum-crypto.js";
 import { encodePlaintextChat, decodePlaintextChat } from "./js/chat/momentum-plaintext.js";
 // RFCat Web UI/event wiring. Hardware/protocol logic lives under js/.
@@ -1308,6 +1309,7 @@ async function saveSession() {
 }
 
 async function openSavedSession(id) {
+    document.dispatchEvent(new Event("rfcat:replay-reset"));
     const session = await getSession(id);
     if (!session) return;
     activeSessionId = session.id;
@@ -1351,6 +1353,7 @@ async function openSavedSession(id) {
 }
 
 $("session-new").onclick = () => {
+    document.dispatchEvent(new Event("rfcat:replay-reset"));
     activeSessionId = null;
     $("session-notes").value = "";
     rxCaptures.length = 0;
@@ -1364,6 +1367,35 @@ $("session-new").onclick = () => {
     refreshSessionList();
     log("Started a new capture session");
 };
+// M11: read-only offline replay of captures already loaded into the session.
+const replayHost=document.createElement("section");
+replayHost.id="session-replay";
+replayHost.setAttribute("aria-label","Offline capture replay");
+replayHost.innerHTML='<h3>Offline capture replay</h3><p>Inspect saved or imported captures without transmitting RF.</p><button type="button" id="replay-load">Prepare replay</button> <button type="button" id="replay-prev" disabled>Previous</button> <button type="button" id="replay-next" disabled>Next</button><output id="replay-summary" aria-live="polite">No replay prepared.</output><pre id="replay-frame"></pre>';
+$("session-save").parentElement?.append(replayHost);
+let replayFrames=[],replayIndex=0;
+function showReplay(){
+ const frame=replayAt(replayFrames,replayIndex);
+ $("replay-prev").disabled=!frame||replayIndex===0;
+ $("replay-next").disabled=!frame||replayIndex===replayFrames.length-1;
+ $("replay-frame").textContent=frame?`Capture ${frame.index+1}/${replayFrames.length} · ${frame.bytes.length} bytes · ${frame.timestampMs===null?"No timestamp":new Date(frame.timestampMs).toISOString()}\n${frame.hex}`:"";
+}
+function resetReplay(){
+ replayFrames=[];replayIndex=0;
+ $("replay-summary").textContent="No replay prepared.";
+ showReplay();
+}
+$("replay-load").onclick=()=>{
+ try{
+  replayFrames=prepareReplay(rxCaptures);replayIndex=0;
+  const stats=replaySummary(replayFrames);
+  $("replay-summary").textContent=`${stats.count} captures · ${stats.uniquePayloads} unique payloads · ${stats.duplicates} repeated · ${stats.totalBytes} total bytes`;
+  showReplay();
+ }catch(error){resetReplay();$("replay-summary").textContent=`Replay error: ${error.message}`;}
+};
+$("replay-prev").onclick=()=>{if(replayIndex>0){replayIndex--;showReplay();}};
+$("replay-next").onclick=()=>{if(replayIndex<replayFrames.length-1){replayIndex++;showReplay();}};
+document.addEventListener("rfcat:replay-reset",resetReplay);
 $("session-save").onclick = () => saveSession().catch((error) => log(`Session save error: ${error.message}`));
 $("session-open").onclick = () => openSavedSession($("session-select").value).catch((error) => log(`Session open error: ${error.message}`));
 $("session-rename").onclick = async () => {
