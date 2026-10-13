@@ -105,3 +105,7 @@ Contextual Help topics cover burst tracking, the duplicate window, and JSON expo
 ## Milestone 7: RF Test Bench tutorial
 
 The wizard and searchable Help Center now include a seven-step **RF Test Bench** tour. It highlights packet input, repeat limits, offline preview, authorization, explicit TX confirmation, result interpretation and JSON export. Tour steps do not operate radio hardware or initiate transmission. See [RF Test Bench](../rf-test-bench.md) for safety limits and manual acceptance.
+
+## Milestone 8 — Morse Code / CW Workbench
+
+The welcome wizard and Help Center include a nine-step **Morse Code / CW Workbench** tour covering message input, WPM, offline waveform preview, local sidetone, RF authorization, TX, live raw OOK RX, offline decoding and JSON export. The wizard does not initiate transmissions. [CW guide](../cw-workbench.md).

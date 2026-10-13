@@ -10,6 +10,7 @@ Technical reference, protocol notes, and validation guidance for the [RFCat Web 
 | [RF Signal Analyzer](signal-analyzer.md) | Flipper RAW import, draggable timing cursors, local persistence, guided YARD Stick One scanning, validation, and limitations |
 | [Intelligent Receiver & Capture Pipeline](capture-pipeline.md) | Live packet burst grouping, configurable duplicate window, RSSI ranges, JSON export, guided test matrix and limitations (M6 merged) |
 | [Receiver and Protocol Decoders](receiver-decoders.md) | Capture, raw/auto decode, POCSAG/CAME/Retekess RX, offline import, sessions, compare, inference, and preset builder |
+| [Morse Code / CW Workbench](cw-workbench.md) | M8 Morse encoding, OOK waveform and sidetone preview, raw OOK TX/RX, Flipper RAW import, guided wizard and hardware caveats (feature branch) |
 | [RF Test Bench](rf-test-bench.md) | M7 packet builder, bounded TX sequences, RX comparison, safety checks and manual validation (feature branch) |
 | [Radio Configuration](radio.md) | CC1111 registers, RF settings, amplifier behavior, lowball receive, and timing quantization |
 | [RFCat USB Protocol](rfcat-usb.md) | WebUSB endpoints, framing, commands, connect/reconnect, and TX/RX transport |

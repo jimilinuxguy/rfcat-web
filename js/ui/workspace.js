@@ -13,6 +13,10 @@ const PANEL_DEFINITIONS = [
     ["transmitter", ".transmitter-card"],
     ["waveform", ".waveform-card"],
     ["activity", ".console"],
+    ["signal-analyzer", "#signal-analyzer-panel"],
+    ["test-bench", ".test-bench-card"],
+    ["cw", ".cw-card"],
+    ["momentum-chat", ".momentum-chat-card"],
 ];
 
 function panelId(panel) {
@@ -27,10 +31,8 @@ function captureLayout(workspace) {
             .map((panel, order) => ({
                 id: panelId(panel),
                 order,
-                width: Math.round(panel.getBoundingClientRect().width),
-                height: panel.tagName === "DETAILS" && !panel.open
-                    ? 58
-                    : Math.round(panel.getBoundingClientRect().height),
+                width: panel.hidden ? (parseInt(panel.style.width, 10) || 520) : Math.round(panel.getBoundingClientRect().width),
+                height: null, // Expanded panels grow with their content.
                 open: panel.tagName === "DETAILS" ? panel.open : null,
             })),
     };
@@ -48,7 +50,8 @@ function applyLayout(workspace, layout) {
         workspace.append(panel);
         if (!state) continue;
         if (state.width) panel.style.width = `${state.width}px`;
-        if (state.height && state.open !== false) panel.style.height = `${state.height}px`;
+        // Legacy fixed heights clipped expanded content; preserve widths and open state only.
+        panel.style.height = "";
         if (panel.tagName === "DETAILS" && state.open !== null) panel.open = state.open;
     }
 }
@@ -57,7 +60,7 @@ function makeToolbar(onReset) {
     const toolbar = document.createElement("div");
     toolbar.className = "workspace-toolbar";
     const copy = document.createElement("div");
-    copy.innerHTML = "<strong>Workspace</strong><span>Drag panels by the grip. Resize from the lower-right corner.</span>";
+    copy.innerHTML = "<strong>Workspace</strong><span>Drag panels by the grip. Resize horizontally from the right edge.</span>";
     const reset = document.createElement("button");
     reset.type = "button";
     reset.textContent = "Reset layout";
@@ -158,4 +161,5 @@ export async function initWorkspace() {
     const layout = await loadWorkspaceLayout().catch(() => null);
     applyLayout(workspace, layout);
     restoring = false;
+    document.dispatchEvent(new CustomEvent("rfcat:workspace-ready", {detail:{workspace}}));
 }

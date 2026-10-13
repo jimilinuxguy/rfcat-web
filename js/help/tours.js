@@ -10,6 +10,17 @@ export const TOURS=Object.freeze([
   {target:"#rx-burst-list",title:"Inspect repeat timing and RSSI",text:"Each visible burst shows its retained packet count, first/last arrival time, payload prefix and RSSI range when available."},
   {target:"#rx-burst-export",title:"Export diagnostics",text:"Export JSON with individual packet events and burst summaries. The Reset grouping button clears only burst statistics; the main Receiver Clear resets both."}
  ]},
+ {id:"cw-workbench",title:"Morse Code / CW Workbench",category:"Transmission & tools",steps:[
+  {target:"#cw-message",title:"Write Morse",text:"Enter a short message in International Morse. This wizard never transmits RF."},
+  {target:"#cw-wpm",title:"Set keying rate",text:"Choose 5–40 words per minute. One dot is 1200/WPM milliseconds."},
+  {target:"#cw-preview",title:"Preview offline",text:"Inspect the dot/dash sequence, waveform and sample byte count. Long messages may exceed the packet capacity."},
+  {target:"#cw-audio",title:"Listen locally",text:"Play a 650 Hz sidetone in your browser. This makes no RF transmission."},
+  {target:"#cw-authorized",title:"Check RF authorization",text:"The OOK transmitter changes CC1111 radio settings. Confirm that your frequency and equipment are authorized."},
+  {target:"#cw-send",title:"Transmit deliberately",text:"Hardware transmission requires a connected YARD Stick One, explicit authorization and a confirmation dialog. The wizard does not press Send."},
+  {target:"#cw-rx-start",title:"Receive raw OOK",text:"Configure main Receiver for matching raw OOK samples, then enable live Morse decode. Raw packet boundaries can affect decoding."},
+  {target:"#cw-rx-decode",title:"Decode offline",text:"Paste a complete raw OOK byte capture to decode Morse without hardware. This is not an audio CW decoder."},
+  {target:"#cw-export",title:"Export Morse evidence",text:"Save the timing plan, raw OOK samples and last firmware TX acknowledgement to JSON."}
+ ]},
  {id:"rf-test-bench",title:"RF Test Bench",category:"Transmission & tools",steps:[
  {target:"#bench-payload",title:"Build a test packet",text:"Enter 1–255 bytes of hexadecimal data. Preview works without hardware and does not transmit."},
  {target:"#bench-repeat",title:"Bound the sequence",text:"Choose 1–20 packets and a 100–10000 ms interval. Repeats are deliberately bounded."},
@@ -37,6 +48,9 @@ export const TOURS=Object.freeze([
  {"id":"encrypted-chat-lab","title":"Encrypted Momentum Chat lab","category":"Secure interoperability","steps":[{"target":"#momentum-chat-security","title":"Choose security mode","text":"Both peers must use compatible plaintext or encrypted chat mode. Do not share secrets in screenshots."},{"target":"#momentum-chat-secret","title":"Configure shared secret","text":"Use the same supported password or hex key on both peers. Never put secrets in test captures or documentation.","exercise":"crypto"},{"target":"#momentum-chat-frequency","title":"Verify radio settings","text":"Match frequency and packet settings before attempting a test."},{"target":"#momentum-chat-message","title":"Prepare a harmless test message","text":"Type a non-sensitive test message. Sending remains a separate explicit user action."}]}
 ]);
 export const HELP_TOPICS=Object.freeze([
+ {target:"#cw-message",title:"Morse CW Workbench",text:"Encode International Morse, preview waveform and sidetone, and test raw Sub-GHz OOK.",doc:"docs/cw-workbench.md"},
+ {target:"#cw-rx-start",title:"Morse live decoder",text:"Requires raw OOK bit samples from the Receiver at the configured sample rate; cannot decode conventional audio CW.",doc:"docs/cw-workbench.md"},
+ {target:"#cw-send",title:"Morse OOK transmission",text:"Changes CC1111 radio configuration and requires explicit RF authorization. Verify actual on-air timing with a second receiver.",doc:"docs/cw-workbench.md"},
  {target:"#bench-payload",title:"RF Test Bench payload",text:"Enter hex packet bytes for bounded, explicitly confirmed transmission. Preview is offline.",doc:"docs/rf-test-bench.md"},
  {target:"#bench-send",title:"RF Test Bench transmission",text:"Requires an authorized frequency, explicit confirmation, idle RF workflows and a connected YARD Stick One.",doc:"docs/rf-test-bench.md"},
  {target:"#rx-burst-enabled",title:"Track receiver bursts",text:"Analyze consecutive matching received packet chunks without suppressing normal captures or sending RF commands.",doc:"docs/capture-pipeline.md"},

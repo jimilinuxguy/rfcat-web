@@ -294,3 +294,38 @@ main[data-workspace-ready="true"]{display:block;max-width:1440px}
 .test-bench-card .bench-confirm{display:flex;align-items:flex-start;gap:10px;margin:14px 0;line-height:1.4}
 .test-bench-card .bench-confirm input{width:auto;flex-shrink:0;margin-top:3px}
 .test-bench-card .bench-output{white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto;padding:12px;border-radius:8px;background:rgba(127,127,127,.08)}
+
+/* Milestone 8 Morse/CW workbench */
+.cw-card .cw-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:12px 0}
+.cw-card .cw-fields input,.cw-card textarea,.cw-card .cw-receiver input,.cw-card .cw-receiver textarea{width:100%}
+.cw-card #cw-waveform{display:block;width:100%;max-width:100%;border-radius:8px;background:rgba(127,127,127,.08);margin:12px 0}
+.cw-card .bench-confirm{display:flex;gap:10px;align-items:flex-start;margin:12px 0}
+.cw-card .bench-confirm input{width:auto;flex-shrink:0}
+.cw-card .cw-receiver{border-top:1px solid var(--border-color,rgba(127,127,127,.3));margin-top:18px;padding-top:12px}
+.cw-card .bench-output{white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;padding:12px;background:rgba(127,127,127,.08);border-radius:8px}
+
+/* M9 workspaces: visibility only; keep WebUSB and protocol controllers mounted. */
+.workspace-nav{max-width:1180px;margin:20px auto 0;padding:0 24px;display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.workspace-nav-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:5px;border:1px solid #263244;border-radius:12px;background:#0f1621}
+.workspace-nav-tabs button{font-size:12px;font-weight:650;border:1px solid transparent;background:transparent;color:#9fb0c5;padding:10px 15px}
+.workspace-nav-tabs button[aria-selected="true"]{background:#1b3658;color:#e7edf5;border-color:#3578d4}
+.workspace-nav-tabs button:focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
+.workspace-nav-hint{font-size:11px;color:#8190a3}
+#workspace-main{margin-top:18px}
+#workspace-main [hidden]{display:none!important}
+#workspace-main .workspace-activity{grid-column:1/-1}
+#workspace-main[data-workspace="receive"] .receiver-card{grid-column:1/-1}
+#workspace-main[data-workspace="tools"] .radio{grid-column:1/-1}
+#workspace-main[data-workspace="analyze"] #signal-analyzer-panel{grid-column:1/-1}
+#workspace-main[data-workspace="transmit"] .rx-tx-tools,#workspace-main[data-workspace="protocols"] .rx-tx-tools,#workspace-main[data-workspace="analyze"] .rx-tx-tools{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));align-items:start}
+#workspace-main .rx-tx-tools>.card{min-width:0}
+@media(max-width:650px){.workspace-nav{padding:0 14px}.workspace-nav-tabs{width:100%}.workspace-nav-tabs button{flex:1;padding:9px 6px}.workspace-nav-hint{display:none}}
+
+/* Hidden workspace panels must override the draggable flex and collapsed details rules. */
+.workspace > .workspace-panel[hidden] { display: none !important; }
+
+/* Let expanded panels grow with content; keep manual horizontal resizing. */
+.workspace > .workspace-panel:not([hidden]){height:auto!important;overflow:visible;resize:horizontal}
+.workspace > details.workspace-panel:not([open]){overflow:hidden;resize:horizontal}
+/* Shared activity is always the last visible panel, regardless of saved drag order. */
+.workspace > .workspace-panel[data-workspace-panel="activity"]{order:9999!important;flex-basis:100%;width:100%}
