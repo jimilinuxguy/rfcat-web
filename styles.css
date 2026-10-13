@@ -261,3 +261,17 @@ main[data-workspace-ready="true"]{display:block;max-width:1440px}
 .signal-workbench-grid section{min-width:0}
 .signal-workbench-grid pre{max-height:210px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:750px){.signal-workbench-controls,.signal-workbench-grid{grid-template-columns:1fr}.signal-workbench{padding:12px}}
+
+/* Milestone 5 offline protocol workbench */
+.protocol-workbench{margin-top:20px;padding:18px;border:1px solid #30465c;border-radius:12px;background:#101c2b}
+.protocol-workbench .title-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.protocol-workbench-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px;margin:12px 0}
+.protocol-workbench-controls label{font-size:12px;color:#a8bfd1}
+.protocol-workbench-controls input,.protocol-workbench-controls select{display:block;width:100%;margin-top:5px}
+#protocol-bit-inspector{padding:12px;max-height:230px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.8;cursor:crosshair}
+#protocol-bit-inspector span:hover{background:#315a75}
+#protocol-bit-inspector .protocol-selected-bit{background:#9b6937;color:#fff}
+.protocol-field-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid #30465c;overflow-wrap:anywhere;font-family:monospace;font-size:12px}
+.protocol-field-row button{flex-shrink:0}
+#protocol-inference{white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto}
+@media(max-width:750px){.protocol-workbench{padding:12px}}

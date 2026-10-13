@@ -1,3 +1,4 @@
+import {inspectField,defineProtocol,inferVariableRuns,checksumCandidates} from "../rx/protocol-workbench.js";
 import {timingHistogram,compareAlignedCaptures,pulseRange} from "../rx/signal-workbench.js";
 import { waveformWindow, cursorTimeFromX, cursorXFromTime } from "../rx/waveform-cursors.js";
 import { parseFlipperRaw, analyzePulses } from "../rx/signal-fingerprint.js";
@@ -100,11 +101,68 @@ export function initSignalAnalyzer() {
     }
     document.getElementById("signal-window").textContent=`Window: ${Math.round(offset)}–${Math.round(offset+visible)} µs`;
   }
+  const protocolBits=document.getElementById("protocol-bit-inspector");
+  const protocolFields=document.getElementById("protocol-field-list");
+  const protocolInference=document.getElementById("protocol-inference");
+  const protocolStatus=document.getElementById("protocol-workbench-status");
+  const fieldStart=document.getElementById("protocol-field-start");
+  const fieldLength=document.getElementById("protocol-field-length");
+  const fieldName=document.getElementById("protocol-field-name");
+  const fieldOrder=document.getElementById("protocol-field-order");
+  const protocolName=document.getElementById("protocol-workbench-name");
+  let protocolFieldsData=[];
+  let analyzedFrames=[];
+  const candidateBits=()=>{
+    const c=currentReport?.hypotheses?.[Number(decodeChoice.value)];
+    return c?(invertBits.checked?c.bits.replace(/[01]/g,b=>b==="0"?"1":"0"):c.bits):"";
+  };
+  function renderProtocol(){
+    const bits=candidateBits();
+    protocolBits.replaceChildren();
+    if(!bits){protocolBits.textContent="Import a capture and select a decode hypothesis.";protocolFields.textContent="No candidate bits.";protocolInference.textContent="Awaiting capture.";return;}
+    const start=Number(fieldStart.value),length=Number(fieldLength.value);
+    for(let i=0;i<Math.min(bits.length,2048);i++){
+      const span=document.createElement("span");span.textContent=bits[i];
+      span.className=i>=start&&i<start+length?"protocol-selected-bit":"";
+      span.dataset.index=String(i);protocolBits.append(span);
+      if((i+1)%8===0)protocolBits.append(document.createTextNode(" "));
+      if((i+1)%64===0)protocolBits.append(document.createTextNode("\n"));
+    }
+    if(bits.length>2048)protocolBits.append(document.createTextNode("\nPreview truncated to 2048 bits."));
+    protocolFields.replaceChildren();
+    for(const field of protocolFieldsData){
+      const line=document.createElement("div");line.className="protocol-field-row";
+      try{const inspected=inspectField(bits,field.start,field.length,field);line.textContent=`${field.name} [${field.start}:${field.start+field.length}] ${inspected.hex} (${inspected.decimal})`;}
+      catch(error){line.textContent=field.name+": "+error.message;}
+      const remove=document.createElement("button");remove.type="button";remove.textContent="Remove";remove.addEventListener("click",()=>{protocolFieldsData=protocolFieldsData.filter(f=>f!==field);renderProtocol();});line.append(remove);protocolFields.append(line);
+    }
+    if(!protocolFieldsData.length)protocolFields.textContent="No fields defined.";
+    try{
+      const chosen=currentReport?.hypotheses?.[Number(decodeChoice.value)];
+      const frames=analyzedFrames.map(p=>decodeHypotheses(p,currentReport.unitUs).candidates.find(c=>c.encoding===chosen.encoding)?.bits).filter(Boolean);
+      const normalized=invertBits.checked?frames.map(s=>s.replace(/[01]/g,b=>b==="0"?"1":"0")):frames;
+      const inference=normalized.length>=2?inferVariableRuns(normalized):{warning:"Two or more equally sized decoded frames are needed for variable-region inference."};
+      const checks=bits.length%8===0&&bits.length>=16?checksumCandidates(bits.match(/.{8}/g).map(b=>parseInt(b,2))):[];
+      protocolInference.textContent=JSON.stringify({inference,checks,warning:"Checksum matches are coincidences until verified with independent samples."},null,2);
+    }catch(error){protocolInference.textContent="Inference unavailable: "+error.message;}
+  }
+  protocolBits.addEventListener("click",event=>{const i=event.target.dataset?.index;if(i===undefined)return;fieldStart.value=i;renderProtocol();});
+  for(const el of [fieldStart,fieldLength])el.addEventListener("input",renderProtocol);
+  document.getElementById("protocol-field-add").addEventListener("click",()=>{
+    try{const bits=candidateBits();const field={name:fieldName.value.trim(),start:Number(fieldStart.value),length:Number(fieldLength.value),endianness:fieldOrder.value};defineProtocol({name:protocolName.value,bitLength:bits.length,fields:[...protocolFieldsData,field]});protocolFieldsData.push(field);protocolStatus.textContent="Field added (unverified).";renderProtocol();}
+    catch(error){protocolStatus.textContent=error.message;}
+  });
+  document.getElementById("protocol-fields-clear").addEventListener("click",()=>{protocolFieldsData=[];protocolStatus.textContent="Fields cleared.";renderProtocol();});
+  document.getElementById("protocol-definition-export").addEventListener("click",()=>{
+    try{const bits=candidateBits();const definition=defineProtocol({name:protocolName.value,bitLength:bits.length,fields:protocolFieldsData});const url=URL.createObjectURL(new Blob([JSON.stringify({...definition,encoding:currentReport.hypotheses[Number(decodeChoice.value)].encoding,warning:"Candidate protocol only; verify with independent captures."},null,2)],{type:"application/json"}));const link=document.createElement("a");link.href=url;link.download="rfcat-protocol-definition.json";link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);protocolStatus.textContent="Definition exported locally.";}
+    catch(error){protocolStatus.textContent=error.message;}
+  });
   function renderDecode(){
     const candidate=currentReport?.hypotheses?.[Number(decodeChoice.value)];
-    if(!candidate){decodePreview.textContent="No candidate available.";return;}
+    if(!candidate){decodePreview.textContent="No candidate available.";renderProtocol();return;}
     const bits=invertBits.checked?candidate.bits.replace(/[01]/g,bit=>bit==="0"?"1":"0"):candidate.bits;
     decodePreview.textContent=JSON.stringify({encoding:candidate.encoding,confidence:candidate.confidence,errors:candidate.errors,verified:candidate.verified,bitLength:bits.length,preview:bits.slice(0,512),note:"Unverified candidate; polarity and framing may be incorrect."},null,2);
+    renderProtocol();
   }
   function renderWorkbench(analysis){
     selectedIndices=[];currentReport=null;timingSelection.textContent="Select a histogram bar to highlight matching pulses.";
@@ -124,7 +182,9 @@ export function initSignalAnalyzer() {
     if(analysis.estimatedUnitUs){
       try{hypotheses=decodeHypotheses(analysis.frames[0]?.durationsUs??capture.durationsUs,analysis.estimatedUnitUs).candidates;}catch(error){decodePreview.textContent=error.message;}
     }
-    currentReport={histogram:hist,comparison,hypotheses};
+    currentReport={histogram:hist,comparison,hypotheses,unitUs:analysis.estimatedUnitUs};
+    analyzedFrames=frames;
+    protocolFieldsData=[];
     decodeChoice.replaceChildren();
     hypotheses.forEach((candidate,i)=>{const option=document.createElement("option");option.value=String(i);option.textContent=`${candidate.encoding} · ${candidate.confidence}% heuristic`;decodeChoice.append(option);});
     renderDecode();

@@ -64,3 +64,6 @@ Operate only on authorized frequencies and equipment. Prefer controlled, short b
 [Guided Help](help/README.md) documents the welcome wizard, illustrated topic cards, advanced interactive tutorials, contextual field help, and read-only RF troubleshooting. The Radio panel uses aligned checkbox/label/help controls. Tests and browser acceptance checks are documented there.
 
 **Advanced Signal Analysis (Milestone 4):** See [RF Signal Analyzer](signal-analyzer.md) for interactive timing histograms, decode hypothesis exploration, repeated-frame comparisons, report export and limitations.
+
+
+- [Protocol Reverse-Engineering Workbench](protocol-workbench.md) — candidate bit fields, frame differences, checksum hints and JSON definitions.

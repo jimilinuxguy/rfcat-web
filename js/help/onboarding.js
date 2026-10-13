@@ -1,4 +1,4 @@
-export const ONBOARDING_GOALS=["receive","transmit","analyze","signal-workbench","configure","scan","save"];
+export const ONBOARDING_GOALS=["receive","transmit","analyze","signal-workbench","protocol-reverse-engineering","configure","scan","save"];
 export function onboardingCopy(step){
  return [
  {title:"Welcome to RFCat Web",body:"Your browser-based RF workspace. Explore offline or connect a YARD Stick One for live radio work."},
