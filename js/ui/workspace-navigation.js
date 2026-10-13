@@ -29,6 +29,7 @@ export function initWorkspaceNavigation(doc=document,storage=globalThis.localSto
    tab.tabIndex=selected?0:-1;
   }
   root.dataset.workspace=current;
+  doc.dispatchEvent(new CustomEvent("rfcat:workspace-changed",{detail:{workspace:current}}));
   if(persist){try{storage?.setItem("rfcat.workspace.active.v1",current);}catch{}}
  }
  for(const tab of tabs){
@@ -50,6 +51,11 @@ export function initWorkspaceNavigation(doc=document,storage=globalThis.localSto
   const activity=root.querySelector('[data-workspace-panel="activity"]');
   if(activity)activity.classList.add("workspace-activity");
   activate(current,{persist:false});
+ });
+ // Help tours and diagnostics use the same navigation path as the tabs.
+ doc.addEventListener("rfcat:workspace-activate",event=>{
+  const requested=event.detail?.workspace;
+  if(WORKSPACES.includes(requested))activate(requested);
  });
  return activate;
 }

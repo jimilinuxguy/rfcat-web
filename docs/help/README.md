@@ -109,3 +109,9 @@ The wizard and searchable Help Center now include a seven-step **RF Test Bench**
 ## Milestone 8 — Morse Code / CW Workbench
 
 The welcome wizard and Help Center include a nine-step **Morse Code / CW Workbench** tour covering message input, WPM, offline waveform preview, local sidetone, RF authorization, TX, live raw OOK RX, offline decoding and JSON export. The wizard does not initiate transmissions. [CW guide](../cw-workbench.md).
+
+## Workspace-aware guided tours (M9 follow-up)
+
+The **Help** wizard and guided tours automatically select the workspace containing the highlighted control. Radio configuration is under **Tools**; RX capture and burst grouping under **Receive**; protocol transmission and RF Test Bench under **Transmit**; Flipper RAW and signal analysis under **Analyze**; and Morse/CW and Momentum Chat under **Protocols**. A tour can move between tabs without clearing controls, starting reception, or transmitting. Diagnostic suggestions use the same navigation behavior.
+
+If a tutorial step is missing, ensure the feature is present in the current build. Help will report unavailable targets instead of transmitting or changing radio settings. The current tab is saved locally as usual.
