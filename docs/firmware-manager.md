@@ -39,3 +39,7 @@ CC1111 flash is **0x0000–0x7FFF**, 1 KiB pages, bootloader **0x0000–0x13FF**
 Run `npm run verify` locally. `tests/firmware-manager.test.js` exercises HEX validation, bounds, command encoding, simulated erase/write/readback and failure injection. Mock results do not establish real USB timing, serial-driver interoperability, or RF behavior.
 
 Hardware acceptance still needed: identify bootloader with Chrome on Windows/macOS/Linux, confirm serial permission/reconnect behavior, read known firmware without erasing, flash a known-good `RfCatYS1CCBootloader.hex` with recovery equipment available, verify all programmed records, run, and reconnect normal RFCat. Test disconnection mid-write, read timeout, and recovery using a sacrificial device.
+
+## Non-destructive bootloader readback test
+
+After connecting the bootloader through Web Serial, click **Test readback (16 bytes, no writes)**. This sends only the CC bootloader's Intel HEX read command (type 0x25) for application addresses 0x1400–0x140F, validates that all 16 bytes were returned, and displays the hexadecimal values. It does not erase, program, reset, or run firmware, and does not require a firmware file. The contents may be arbitrary or all FF; successful communication and complete readback are what matter. A successful readback does not by itself establish firmware authenticity or prove write support. Hardware validation remains pending.
