@@ -1,3 +1,4 @@
+import { waveformWindow, cursorTimeFromX, cursorXFromTime } from "../rx/waveform-cursors.js";
 import { parseFlipperRaw, analyzePulses } from "../rx/signal-fingerprint.js";
 import { decodeHypotheses, findPreambleCandidates, alignBitstreams } from "../rx/signal-decode.js";
 import {saveSignalAnalysis,loadSignalAnalysis,listSignalAnalyses,deleteSignalAnalysis} from "../storage/signal-analysis-store.js";
@@ -19,6 +20,38 @@ export function initSignalAnalyzer() {
     delta.textContent=Number.isFinite(a)&&Number.isFinite(b)?`Δt: ${Math.abs(b-a).toLocaleString()} µs (capture: ${total.toLocaleString()} µs)`:"Invalid cursor";
     draw();
   }
+  // Pointer capture supports dragging beyond the canvas bounds.
+  let activeCursor=null;
+  const pan=document.getElementById("signal-pan");
+  const pointerX=event=>{
+    const rect=canvas.getBoundingClientRect();
+    return (event.clientX-rect.left)/rect.width*canvas.width;
+  };
+  const nearestCursor=x=>{
+    const a=cursorXFromTime(Number(cursorA.value),canvas.width,totalUs(),Number(zoom.value),Number(pan.value)/100);
+    const b=cursorXFromTime(Number(cursorB.value),canvas.width,totalUs(),Number(zoom.value),Number(pan.value)/100);
+    return Math.abs(x-a)<=Math.abs(x-b)?cursorA:cursorB;
+  };
+  const moveCursor=event=>{
+    if(!capture||!activeCursor)return;
+    activeCursor.value=String(cursorTimeFromX(pointerX(event),canvas.width,totalUs(),Number(zoom.value),Number(pan.value)/100));
+    updateCursors();
+  };
+  canvas.style.touchAction="none";
+  canvas.style.cursor="crosshair";
+  canvas.addEventListener("pointerdown",event=>{
+    if(!capture||event.button!==0)return;
+    activeCursor=nearestCursor(pointerX(event));
+    canvas.setPointerCapture(event.pointerId);
+    moveCursor(event);
+  });
+  canvas.addEventListener("pointermove",event=>{
+    if(activeCursor&&canvas.hasPointerCapture(event.pointerId))moveCursor(event);
+  });
+  const finishDrag=()=>{activeCursor=null;};
+  canvas.addEventListener("pointerup",finishDrag);
+  canvas.addEventListener("pointercancel",finishDrag);
+  canvas.addEventListener("lostpointercapture",finishDrag);
   cursorA.addEventListener("input",updateCursors);
   cursorB.addEventListener("input",updateCursors);
   function draw() {
@@ -28,8 +61,7 @@ export function initSignalAnalyzer() {
     ctx.clearRect(0,0,width,height);
     const total=capture.durationsUs.reduce((a,b)=>a+Math.abs(b),0);
     const scale=Number(zoom.value);
-    const visible=total/scale;
-    const offset=Number(document.getElementById("signal-pan").value)/100*Math.max(0,total-visible);
+    const {visible,offset}=waveformWindow(total,scale,Number(pan.value)/100);
     let t=0;
     ctx.strokeStyle="#2b9e9a";ctx.lineWidth=2;ctx.beginPath();
     for (const d of capture.durationsUs) {
@@ -43,7 +75,7 @@ export function initSignalAnalyzer() {
     for(const [cursor,color] of [[cursorA,"#e69f00"],[cursorB,"#c55"]]){
       const pos=Number(cursor.value);
       if(!Number.isFinite(pos)||pos<offset||pos>offset+visible)continue;
-      const x=(pos-offset)/visible*width;
+      const x=cursorXFromTime(pos,width,total,scale,Number(pan.value)/100);
       ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=1;ctx.moveTo(x,0);ctx.lineTo(x,height);ctx.stroke();
     }
     document.getElementById("signal-window").textContent=`Window: ${Math.round(offset)}–${Math.round(offset+visible)} µs`;
@@ -78,6 +110,6 @@ export function initSignalAnalyzer() {
   document.getElementById("signal-clear").addEventListener("click",async()=>{try{if(!savedSelect.value)throw Error("Select a saved capture");await deleteSignalAnalysis(savedSelect.value);await refreshSaved();result.insertAdjacentText("beforeend","\nSaved analysis deleted.");}catch(e){result.textContent="Delete error: "+e.message;}});
   refreshSaved().catch(e=>{result.textContent="IndexedDB unavailable: "+e.message;});
   zoom.addEventListener("input",draw);
-  document.getElementById("signal-pan").addEventListener("input",draw);
+  pan.addEventListener("input",draw);
 }
 initSignalAnalyzer();
