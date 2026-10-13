@@ -43,3 +43,12 @@ Hardware acceptance still needed: identify bootloader with Chrome on Windows/mac
 ## Non-destructive bootloader readback test
 
 After connecting the bootloader through Web Serial, click **Test readback (16 bytes, no writes)**. This sends only the CC bootloader's Intel HEX read command (type 0x25) for application addresses 0x1400–0x140F, validates that all 16 bytes were returned, and displays the hexadecimal values. It does not erase, program, reset, or run firmware, and does not require a firmware file. The contents may be arbitrary or all FF; successful communication and complete readback are what matter. A successful readback does not by itself establish firmware authenticity or prove write support. Hardware validation remains pending.
+
+## Full application backup and restore
+
+1. Enter bootloader mode from normal RFCat, then connect through Web Serial.
+2. Click **Backup and verify application flash (Intel HEX)**. The browser reads all 27,648 application bytes at 0x1400–0x7FFF in 16-byte blocks using read-only command 0x25. It reads the entire region a second time and compares every byte.
+3. Only if both passes match does the browser download a timestamped Intel HEX file. A read failure or mismatch aborts export. Preserve the downloaded file somewhere safe.
+4. To restore, choose the exported HEX in the firmware file picker. The existing firmware validation and explicit erase/flash/verify confirmation workflow applies. **Restoring is destructive** and requires the CC bootloader to remain operational.
+
+The backup covers **application flash only**, not the protected bootloader, configuration outside application flash, or the hardware's unique identity. Matching two reads confirms repeatability, not cryptographic provenance or that the firmware is valid. Restoring the saved HEX through the current programmer may not reproduce every erased (0xFF) byte as an explicit write; the erase-all operation restores those bytes to 0xFF. The full backup workflow still requires physical hardware validation.
