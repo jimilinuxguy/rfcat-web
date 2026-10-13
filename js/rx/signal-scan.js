@@ -47,7 +47,7 @@ export async function scanReceiverPresets(device, { frequencyHz, dwellMs=1200, p
     try{
       await device.mode(C.RF_IDLE);
       const regs=original.raw;
-      for(let i=0;i<regs.length;i++)await device.poke(R.SYNC1+i,new Uint8Array([regs[i]]));
+      for(let i=0;i<regs.length&&R.SYNC1+i<=R.FSCAL0;i++)await device.poke(R.SYNC1+i,new Uint8Array([regs[i]]));
     }catch(error){throw new Error("Receiver configuration restore failed: "+error.message);}
   }
   return {results,cancelled:!!signal?.aborted,restored:true,originalState:"left idle"};
