@@ -67,3 +67,6 @@ Operate only on authorized frequencies and equipment. Prefer controlled, short b
 
 
 - [Protocol Reverse-Engineering Workbench](protocol-workbench.md) — candidate bit fields, frame differences, checksum hints and JSON definitions.
+
+
+- [Intelligent Receiver & Capture Pipeline](capture-pipeline.md) — live packet grouping, timestamped burst diagnostics and JSON export (M6 in progress).
