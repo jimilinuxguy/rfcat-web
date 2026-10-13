@@ -11,7 +11,7 @@ RFCat Web uses WebUSB to configure radios, transmit test frames, capture and dec
 - **Analyze captures offline:** Import/export JSON, save capture sessions in IndexedDB, compare captures, infer changing fields, and validate declarative protocol presets against positive and negative examples.
 - **Investigate unknown RF timing:** Import Flipper Zero RAW `.sub` captures in the RF Signal Analyzer panel, inspect waveforms, and review conservative encoding hypotheses. See [RF Signal Analyzer](docs/signal-analyzer.md) for current scope and limitations.
 - **Inspect signal timing:** Preview symbol timing and waveform quantization; analyze received OOK pulse distributions.
-- **Get guided help:** An optional first-run wizard, searchable Help panel, contextual (?) explanations, and restartable task-based tours. See [Guided onboarding and help](docs/help/README.md).
+- **Get guided help:** An optional first-run wizard, searchable Help panel, contextual (?) explanations, and restartable, context-aware task-based and protocol-specific tours. See [Guided onboarding and help](docs/help/README.md).
 - **Customize your workspace:** Drag, resize, and collapse panels. Layout preferences persist locally in IndexedDB.
 - **Interoperate with other devices:** Use specialized workflows such as Momentum Enhanced Sub-GHz Chat with a Flipper Zero.
 
