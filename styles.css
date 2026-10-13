@@ -275,3 +275,14 @@ main[data-workspace-ready="true"]{display:block;max-width:1440px}
 .protocol-field-row button{flex-shrink:0}
 #protocol-inference{white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto}
 @media(max-width:750px){.protocol-workbench{padding:12px}}
+
+/* M6 receiver burst diagnostics */
+.rx-burst-panel{border:1px solid #30465c;border-radius:10px;margin:14px 0;padding:12px;background:#101c2b}
+.rx-burst-panel summary{cursor:pointer;font-weight:600}
+.rx-burst-panel summary .summary-note{font-weight:400;margin-left:8px}
+.rx-burst-panel .hint{font-size:12px;color:#afc9dc}
+.rx-burst-controls{display:flex;align-items:end;flex-wrap:wrap;gap:12px;margin:12px 0}
+.rx-burst-controls label{font-size:12px}
+.rx-burst-controls input[type=number]{display:block;width:120px;margin-top:4px}
+.rx-burst-list{max-height:220px;overflow:auto;display:grid;gap:5px;margin-top:8px}
+.rx-burst-item{padding:7px 9px;border-radius:6px;border:1px solid #30465c;background:#17283a;color:#c6dbe8;font-family:monospace;font-size:12px;overflow-wrap:anywhere}

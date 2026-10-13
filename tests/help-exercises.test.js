@@ -19,3 +19,16 @@ test("practice questions validate without side effects",()=>{
  }
  assert.equal(checkExercise("unknown",0),null);
 });
+
+test("M6 burst grouping wizard provides grounded, non-transmitting steps",async()=>{
+ const {ONBOARDING_GOALS}=await import("../js/help/onboarding.js");
+ const {HELP_TOPICS}=await import("../js/help/tours.js");
+ assert.ok(ONBOARDING_GOALS.includes("intelligent-receiver"));
+ const tour=TOURS.find(t=>t.id==="intelligent-receiver");
+ assert.equal(tour.steps.length,8);
+ for(const selector of ["#rx-burst-enabled","#rx-burst-window","#listen","#rx-burst-summary","#rx-burst-list","#rx-burst-export"]){
+  assert.ok(tour.steps.some(s=>s.target===selector),selector);
+ }
+ assert.ok(HELP_TOPICS.some(t=>t.target==="#rx-burst-window"&&t.doc==="docs/capture-pipeline.md"));
+ assert.ok(tour.steps.every(s=>!s.advanceOn||s.advanceOn==="connected"));
+});
