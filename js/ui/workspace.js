@@ -32,9 +32,7 @@ function captureLayout(workspace) {
                 id: panelId(panel),
                 order,
                 width: panel.hidden ? (parseInt(panel.style.width, 10) || 520) : Math.round(panel.getBoundingClientRect().width),
-                height: panel.tagName === "DETAILS" && !panel.open
-                    ? 58
-                    : panel.hidden ? (parseInt(panel.style.height, 10) || 120) : Math.round(panel.getBoundingClientRect().height),
+                height: null, // Expanded panels grow with their content.
                 open: panel.tagName === "DETAILS" ? panel.open : null,
             })),
     };
@@ -52,7 +50,8 @@ function applyLayout(workspace, layout) {
         workspace.append(panel);
         if (!state) continue;
         if (state.width) panel.style.width = `${state.width}px`;
-        if (state.height && state.open !== false) panel.style.height = `${state.height}px`;
+        // Legacy fixed heights clipped expanded content; preserve widths and open state only.
+        panel.style.height = "";
         if (panel.tagName === "DETAILS" && state.open !== null) panel.open = state.open;
     }
 }
