@@ -14,19 +14,18 @@ CC1111 flash is **0x0000–0x7FFF**, 1 KiB pages, bootloader **0x0000–0x13FF**
 
 ## Usage
 
-1. Stop RX/TX and disconnect the normal RFCat WebUSB session.
-2. Put the YARD Stick One in bootloader mode (on hardware supporting it, short P1 pins 7 and 9 during power-up; consult the official YARD Stick One documentation).
-3. In Tools, open Firmware Manager and connect the bootloader using Chrome's serial chooser. Only the expected 1D50:605C USB identity is accepted.
-4. Obtain **YARD Stick One bootloader-compatible application HEX**, such as `RfCatYS1CCBootloader.hex`, from a trusted upstream build. Do **not** upload `CCBootloader-rfcat-ys1.hex` (the bootloader itself) or the non-bootloader-offset `RfCatYS1.hex`. [Upstream releases](https://github.com/atlas0fd00m/rfcat/releases) are linked, but the UI does not claim a vetted release manifest or automatically trust unverified downloads.
-5. Select the local HEX, review address and size validation, check the explicit compatibility acknowledgment, then confirm the destructive erase/write/verify operation.
-6. Only after full programmed-record readback verification succeeds can you choose **Run verified firmware**. Reconnect to normal WebUSB to confirm the application responds.
+1. Stop RX/TX. If the YARD Stick One is connected normally, open Firmware Manager and click **Enter bootloader from normal RFCat**. The command (system 0x87) requests a USB-mode switch and disconnects the normal WebUSB session; it does not erase flash. Wait for re-enumeration. If not connected normally, use the board's documented hardware bootloader procedure (P2_2/DC to ground at power-up).
+2. In Tools, open Firmware Manager and connect the bootloader using Chrome's serial chooser. Only the expected 1D50:605C USB identity is accepted.
+3. Obtain **YARD Stick One bootloader-compatible application HEX**, such as `RfCatYS1CCBootloader.hex`, from a trusted upstream build. Do **not** upload `CCBootloader-rfcat-ys1.hex` (the bootloader itself) or the non-bootloader-offset `RfCatYS1.hex`. [Upstream releases](https://github.com/atlas0fd00m/rfcat/releases) are linked, but the UI does not claim a vetted release manifest or automatically trust unverified downloads.
+4. Select the local HEX, review address and size validation, check the explicit compatibility acknowledgment, then confirm the destructive erase/write/verify operation.
+5. Only after full programmed-record readback verification succeeds can you choose **Run verified firmware**. Reconnect to normal WebUSB to confirm the application responds.
 
 ## Safety and limitations
 
 - **Physical hardware flashing is unverified.** The USB descriptors, protocol and memory layout were inspected in upstream source; browser implementation has not been exercised on a YARD Stick One.
 - USB VID/PID identifies the expected bootloader but cannot cryptographically authenticate firmware, prove the attached board revision, or detect a malicious USB emulator. Validate firmware provenance yourself.
 - Firmware version is not exposed by the bootloader protocol. This UI does not invent one.
-- The application deliberately does not automatically enter bootloader mode: doing so requires coordinating shutdown of all normal WebUSB readers and verifying the mode-switch command against physical hardware. Enter bootloader manually.
+- The Firmware Manager can request entry into bootloader mode using RFCat system command 0x87, which is documented upstream. It has not yet been confirmed on physical YARD Stick One hardware; a command acknowledgment or timeout alone does not prove the transition succeeded. It remains a user-triggered action, not automatic flashing.
 - The browser cannot install or recover a missing/damaged bootloader; use a CC1111 hardware debugger.
 - A failure or USB disconnect during erase/write leaves the application potentially unusable. If bootloader enumerates, reconnect and retry the entire flash; if it does not, use a hardware debugger.
 - The bootloader's one-byte write acknowledgment does **not** prove flash contents. Only the full readback comparison marks the flash verified.
