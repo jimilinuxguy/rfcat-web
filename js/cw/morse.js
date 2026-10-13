@@ -95,3 +95,24 @@ export function runsFromRawBytes(bytes,sampleRate){
  }
  return runs;
 }
+
+export function parseFlipperRawMorse(content){
+ if(typeof content!=="string"||content.length>2_000_000)throw new Error("Invalid Flipper RAW text");
+ if(!/^Filetype:\s*Flipper SubGhz RAW File\s*$/mi.test(content))throw new Error("Expected Flipper SubGhz RAW File header");
+ const lines=content.split(/\r?\n/),runs=[];
+ for(const line of lines){
+  if(!/^RAW_Data:\s*/i.test(line))continue;
+  const tokens=line.replace(/^RAW_Data:\s*/i,"").trim().split(/\s+/);
+  for(const token of tokens){
+   if(!/^[+-]?\d+$/.test(token))throw new Error("Invalid RAW_Data pulse");
+   const value=Number(token);
+   if(!Number.isSafeInteger(value)||value===0||Math.abs(value)>60_000_000)throw new Error("Invalid RAW_Data duration");
+   const level=value>0?1:0,durationMs=Math.abs(value)/1000;
+   if(runs.at(-1)?.level===level)runs.at(-1).durationMs+=durationMs;
+   else runs.push({level,durationMs});
+   if(runs.length>10000)throw new Error("Too many RAW pulses");
+  }
+ }
+ if(!runs.length)throw new Error("No RAW_Data pulses found");
+ return runs;
+}
