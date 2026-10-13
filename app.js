@@ -2,6 +2,7 @@ import { MomentumCrypto, momentumKeyFromPassword, momentumKeyFromHex } from "./j
 import { encodePlaintextChat, decodePlaintextChat } from "./js/chat/momentum-plaintext.js";
 // RFCat Web UI/event wiring. Hardware/protocol logic lives under js/.
 import { C } from "./js/rfcat/constants.js";
+import { createCapturePipeline } from "./js/rx/capture-pipeline.js";
 import { scanReceiverPresets } from "./js/rx/signal-scan.js";
 import { R } from "./js/radio/registers.js";
 import { RFCatUSB } from "./js/rfcat/device.js";
@@ -308,6 +309,51 @@ window.addEventListener("resize", debounce(updateProtocolPreview, 100));
 protocolSelect.addEventListener("change", selectProtocol);
 
 selectProtocol();
+
+const rxBurstPipeline=createCapturePipeline({windowMs:300,maxEvents:1000});
+const burstSummary=$("rx-burst-summary");
+const burstList=$("rx-burst-list");
+const burstWindow=$("rx-burst-window");
+const burstEnabled=$("rx-burst-enabled");
+let burstLastTimestamp=0;
+function renderBurstGroups(){
+    const snapshot=rxBurstPipeline.snapshot();
+    burstSummary.textContent=burstEnabled.checked
+        ? `${snapshot.totalEvents} recent packets · ${snapshot.groups.length} bursts · ${snapshot.duplicateEvents} grouped repeats (not suppressed)`
+        : "Burst grouping paused. Normal receiver decoding remains active.";
+    burstList.replaceChildren();
+    for(const group of snapshot.groups.slice(-15).reverse()){
+        const item=document.createElement("div");
+        item.className="rx-burst-item";
+        const first=new Date(group.firstSeenMs).toLocaleTimeString();
+        const last=new Date(group.lastSeenMs).toLocaleTimeString();
+        item.textContent=`${group.count}× · ${first}–${last} · ${group.hex.slice(0,64)}${group.hex.length>64?"…":""}${group.rssiMin===null?"":` · RSSI ${group.rssiMin.toFixed(1)} to ${group.rssiMax.toFixed(1)} dBm`}`;
+        burstList.append(item);
+    }
+}
+function resetBurstGroups(){
+    rxBurstPipeline.clear();
+    burstLastTimestamp=0;
+    renderBurstGroups();
+}
+burstWindow.addEventListener("change",()=>{
+    const ms=Number(burstWindow.value);
+    if(!Number.isInteger(ms)||ms<0||ms>60000){
+        burstSummary.textContent="Enter a duplicate window from 0 to 60000 ms.";
+        return;
+    }
+    // A new window starts a fresh analysis to avoid mixed grouping semantics.
+    resetBurstGroups();
+});
+burstEnabled.addEventListener("change",renderBurstGroups);
+$("rx-burst-clear").addEventListener("click",resetBurstGroups);
+$("rx-burst-export").addEventListener("click",()=>{
+    const report={schema:"rfcat-web.rx-bursts.v1",generatedAt:new Date().toISOString(),windowMs:Number(burstWindow.value),...rxBurstPipeline.snapshot(),warning:"Packet-level consecutive duplicates only; not RF frame or protocol identity."};
+    const url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:"application/json"}));
+    const link=document.createElement("a");link.href=url;link.download="rfcat-rx-bursts.json";link.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+renderBurstGroups();
 
 let listening = false,
     pc = 0,
@@ -1734,6 +1780,19 @@ d.addEventListener("packet", async (e) => {
     const received = e.detail;
     const status = splitRxStatus(received, $("appendstatus").checked);
     const b = status.payload;
+    if(burstEnabled.checked && b?.length){
+        const windowMs=Number(burstWindow.value);
+        if(Number.isInteger(windowMs)&&windowMs>=0&&windowMs<=60000){
+            try{
+                // Timestamp at receipt, before rolling protocol decoder buffers.
+                const now=Date.now();
+                const timestampMs=Math.max(now,burstLastTimestamp);
+                rxBurstPipeline.ingest({bytes:b,timestampMs,frequencyHz:Number($("freq").value)*1e6,rssi:status.rssi});
+                burstLastTimestamp=timestampMs;
+                renderBurstGroups();
+            }catch(error){burstSummary.textContent="Burst analysis skipped: "+error.message;}
+        }
+    }
     const decodeMode = selectedRxProtocolId();
 
     appendPulseBytes(b);
@@ -1817,6 +1876,7 @@ $("clear").onclick = () => {
     pc = bc = decodedCount = rejectedCount = duplicateCount = 0;
     rxCaptures.length = 0;
     resetPocsagRolling();
+    resetBurstGroups();
 
     updateRxAnalyzerStats();
 };
