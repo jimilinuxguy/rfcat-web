@@ -1,5 +1,6 @@
 import { parseFlipperRaw, analyzePulses } from "../rx/signal-fingerprint.js";
 import { decodeHypotheses } from "../rx/signal-decode.js";
+import {saveSignalAnalysis,loadSignalAnalysis,listSignalAnalyses,deleteSignalAnalysis} from "../storage/signal-analysis-store.js";
 export function initSignalAnalyzer() {
   const input=document.getElementById("signal-sub-file");
   const result=document.getElementById("signal-analysis-results");
@@ -7,7 +8,8 @@ export function initSignalAnalyzer() {
   const zoom=document.getElementById("signal-zoom");
   if (!input || !result || !canvas) return;
   let capture=null;
-  const storageKey="rfcat-web-signal-analysis-v1";
+  const savedSelect=document.getElementById("signal-saved-select");
+  async function refreshSaved(){const items=await listSignalAnalyses();savedSelect.replaceChildren(...items.map(item=>{const option=document.createElement("option");option.value=item.id;option.textContent=`${item.name} · ${item.createdAt}`;return option;}));}
   const cursorA=document.getElementById("signal-cursor-a");
   const cursorB=document.getElementById("signal-cursor-b");
   const delta=document.getElementById("signal-delta");
@@ -65,9 +67,10 @@ export function initSignalAnalyzer() {
       return;
     } catch(e) {capture=null;result.textContent="Import error: "+e.message;}
   });
-  document.getElementById("signal-save").addEventListener("click",()=>{try{if(!capture)throw Error("Import a capture first");localStorage.setItem(storageKey,JSON.stringify(capture));result.insertAdjacentText("beforeend","\nSaved locally.");}catch(e){result.textContent="Save error: "+e.message;}});
-  document.getElementById("signal-load").addEventListener("click",()=>{try{const raw=localStorage.getItem(storageKey);if(!raw)throw Error("No saved capture");const saved=JSON.parse(raw);if(!Array.isArray(saved.durationsUs)||saved.durationsUs.some(v=>!Number.isSafeInteger(v)||v===0))throw Error("Invalid stored capture");showCapture(saved);}catch(e){result.textContent="Load error: "+e.message;}});
-  document.getElementById("signal-clear").addEventListener("click",()=>{localStorage.removeItem(storageKey);result.insertAdjacentText("beforeend","\nSaved analysis deleted.");});
+  document.getElementById("signal-save").addEventListener("click",async()=>{try{if(!capture)throw Error("Import a capture first");const entry=await saveSignalAnalysis(capture);await refreshSaved();savedSelect.value=entry.id;result.insertAdjacentText("beforeend","\nSaved to IndexedDB.");}catch(e){result.textContent="Save error: "+e.message;}});
+  document.getElementById("signal-load").addEventListener("click",async()=>{try{if(!savedSelect.value)throw Error("Select a saved capture");showCapture((await loadSignalAnalysis(savedSelect.value)).capture);}catch(e){result.textContent="Load error: "+e.message;}});
+  document.getElementById("signal-clear").addEventListener("click",async()=>{try{if(!savedSelect.value)throw Error("Select a saved capture");await deleteSignalAnalysis(savedSelect.value);await refreshSaved();result.insertAdjacentText("beforeend","\nSaved analysis deleted.");}catch(e){result.textContent="Delete error: "+e.message;}});
+  refreshSaved().catch(e=>{result.textContent="IndexedDB unavailable: "+e.message;});
   zoom.addEventListener("input",draw);
   document.getElementById("signal-pan").addEventListener("input",draw);
 }
