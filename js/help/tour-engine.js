@@ -1,11 +1,10 @@
+import {revealHelpTarget} from "./workspace-target.js";
 export function createTourEngine({onChange=()=>{},onFinish=()=>{}}={}){
  let tour=null,index=0,highlight=null,unsubscribe=()=>{};
  function clear(){unsubscribe();unsubscribe=()=>{};highlight?.classList.remove("help-target");highlight=null;}
  function locate(step){
-  const node=document.querySelector(step.target);
+  const node=revealHelpTarget(step.target);
   if(!node)return null;
-  const panel=node.closest("details");
-  if(panel)panel.open=true;
   node.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"});
   node.classList.add("help-target");highlight=node;return node;
  }
