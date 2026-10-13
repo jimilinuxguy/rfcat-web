@@ -348,6 +348,7 @@ $("bench-send").onclick=async()=>{
   const execution=await executeBench(plan,{
    signal:benchAbort.signal,wait:waitBench,
    transmit:async bytes=>{
+    if(listening||momentumChatActive||signalScanController)throw Error("Another RF workflow started; sequence stopped");
     if(!d.device?.opened)throw Error("Device disconnected");
     await d.mode(C.RF_IDLE);
     await d.setMaxPower();
