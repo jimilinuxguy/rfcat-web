@@ -6,14 +6,14 @@ Technical reference, protocol notes, and validation guidance for the [RFCat Web 
 
 | Guide | Covers |
 | --- | --- |
-| [M11 offline capture replay](m11-capture-replay.md) | Manual step-through of saved captures, summary statistics and validation limits |
+| [M11 offline capture replay](m11-capture-replay.md) | Offline timed playback, timeline navigation, saved-session comparison, guided Help and Playwright acceptance |
 | [M10 polish and reliability](m10-polish-reliability.md) | Shared radio status, Tools shortcut, regression tests, and browser acceptance checklist |
 | [Guided onboarding and help](help/README.md) | First-run wizard, contextual help, guided and protocol-specific tutorials (including live burst grouping), receiver troubleshooting, and browser verification |
 | [RF Signal Analyzer](signal-analyzer.md) | Flipper RAW import, draggable timing cursors, local persistence, guided YARD Stick One scanning, validation, and limitations |
 | [Intelligent Receiver & Capture Pipeline](capture-pipeline.md) | Live packet burst grouping, configurable duplicate window, RSSI ranges, JSON export, guided test matrix and limitations (M6 merged) |
 | [Receiver and Protocol Decoders](receiver-decoders.md) | Capture, raw/auto decode, POCSAG/CAME/Retekess RX, offline import, sessions, compare, inference, and preset builder |
 | [Morse Code / CW Workbench](cw-workbench.md) | M8 Morse encoding, OOK waveform and sidetone preview, raw OOK TX/RX, Flipper RAW import, guided wizard and hardware caveats (merged into main) |
-| [RF Test Bench](rf-test-bench.md) | M7 packet builder, bounded TX sequences, RX comparison, safety checks and manual validation (feature branch) |
+| [RF Test Bench](rf-test-bench.md) | M7 packet builder, bounded TX sequences, RX comparison, safety checks and manual validation |
 | [Radio Configuration](radio.md) | CC1111 registers, RF settings, amplifier behavior, lowball receive, and timing quantization |
 | [RFCat USB Protocol](rfcat-usb.md) | WebUSB endpoints, framing, commands, connect/reconnect, and TX/RX transport |
 | [Momentum Enhanced Sub-GHz Chat](momentum-subghz-chat.md) | Optional Flipper Zero interoperability: plaintext, AES-256-GCM, hardware test steps, and limitations |
@@ -26,7 +26,7 @@ Technical reference, protocol notes, and validation guidance for the [RFCat Web 
 
 **Export configuration:** The IPython exporter records protocol configuration operations and renders equivalent rflib commands. Direct TX protocols can require custom handling.
 
-**Run tests:** `npm test` runs Node's test suite. After `npm install` and `npx playwright install chromium`, `npm run test:browser` runs the 15 Playwright tests, including simulated WebUSB connection, retry, failure, and recovery cases. See [M10 polish and reliability](m10-polish-reliability.md). CI runs through GitHub Actions; inspect the workflow status before interpreting a change as verified.
+**Run tests:** `npm test` runs Node's test suite. After `npm install` and `npx playwright install chromium`, `npm run test:browser` runs the browser regression suite, including the original 15 M10 tests and four M11 acceptance tests, including simulated WebUSB connection, retry, failure, and recovery cases. See [M10 polish and reliability](m10-polish-reliability.md). CI runs through GitHub Actions; inspect the workflow status before interpreting a change as verified.
 
 ## Protocol reference
 
