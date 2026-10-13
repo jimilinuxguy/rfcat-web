@@ -8,7 +8,7 @@ export const DEFAULT_SCAN_PRESETS = Object.freeze([
   { name:"2-FSK 9.6k", modulation:0x00, rate:9600, bandwidth:203125 },
   { name:"GFSK 9.6k", modulation:0x10, rate:9600, bandwidth:203125 }
 ]);
-const wait = ms => new Promise(resolve=>setTimeout(resolve,ms));
+const wait = (ms, signal) => new Promise(resolve=>{if(signal?.aborted)return resolve();const timer=setTimeout(done,ms);function done(){clearTimeout(timer);signal?.removeEventListener("abort",done);resolve();}signal?.addEventListener("abort",done,{once:true});});
 export async function scanReceiverPresets(device, { frequencyHz, dwellMs=1200, presets=DEFAULT_SCAN_PRESETS, signal, onStep=()=>{} }={}) {
   if (!device?.device?.opened) throw Error("Connect YARD Stick One before scanning");
   if (!Number.isFinite(frequencyHz)||!((frequencyHz>=300e6&&frequencyHz<=348e6)||(frequencyHz>=387e6&&frequencyHz<=464e6)||(frequencyHz>=779e6&&frequencyHz<=928e6)))throw Error("Frequency outside supported CC1111 bands");
@@ -33,7 +33,7 @@ export async function scanReceiverPresets(device, { frequencyHz, dwellMs=1200, p
       device.addEventListener("packet",onPacket);
       try{
         await device.mode(C.RF_RX);
-        await wait(dwellMs);
+        await wait(dwellMs,signal);
       }finally{
         device.removeEventListener("packet",onPacket);
         await device.mode(C.RF_IDLE);
@@ -47,7 +47,8 @@ export async function scanReceiverPresets(device, { frequencyHz, dwellMs=1200, p
     try{
       await device.mode(C.RF_IDLE);
       const regs=original.raw;
-      for(let i=0;i<regs.length&&R.SYNC1+i<=R.PA_TABLE0;i++)await device.poke(R.SYNC1+i,new Uint8Array([regs[i]]));
+      const writable=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38];
+      for(const i of writable)await device.poke(R.SYNC1+i,new Uint8Array([regs[i]]));
     }catch(error){throw new Error("Receiver configuration restore failed: "+error.message);}
   }
   return {results,cancelled:!!signal?.aborted,restored:true,originalState:"left idle"};
