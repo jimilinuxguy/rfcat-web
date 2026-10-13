@@ -1,3 +1,4 @@
+import {EXERCISES,checkExercise} from "./exercises.js";
 import {placeHelpCard} from "./tour-position.js";
 import {diagnoseReceiver} from "./diagnostics.js";
 import {TOURS,HELP_TOPICS,findTour} from "./tours.js";
@@ -13,6 +14,7 @@ export async function initHelpCenter(){
  const actions=document.getElementById("help-actions");
  if(!button||!dialog)return;
  let state={onboarded:false,completed:[]},wizard=0,goal="receive",tourTarget=null;
+ const exerciseResults=new Map();
  const dock=()=>{dialog.classList.remove("help-anchored");for(const key of ["left","top","right","bottom"])dialog.style[key]="";};
  const position=()=>{if(!tourTarget||!dialog.open)return;const p=placeHelpCard(tourTarget.getBoundingClientRect(),dialog.offsetWidth,dialog.offsetHeight,innerWidth,innerHeight);dialog.classList.add("help-anchored");dialog.style.left=p.left+"px";dialog.style.top=p.top+"px";dialog.style.right="auto";dialog.style.bottom="auto";};
  addEventListener("resize",position);addEventListener("scroll",position,true);
@@ -21,12 +23,38 @@ export async function initHelpCenter(){
  const node=(tag,text)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;return el;};
  const action=(label,callback)=>{const b=node("button",label);b.type="button";b.addEventListener("click",callback);actions.append(b);return b;};
  const reset=(heading)=>{title.textContent=heading;body.replaceChildren();actions.replaceChildren();if(!dialog.open)dialog.show();};
+ function renderExercise(id){
+  const exercise=EXERCISES[id];if(!exercise)return;
+  const card=node("section");card.className="help-exercise";card.setAttribute("aria-label","Practice exercise");
+  card.append(node("span","INTERACTIVE PRACTICE"),node("h4",exercise.label));
+  const samples=node("div");samples.className="help-samples";
+  for(const sample of exercise.samples)samples.append(node("code",sample));
+  card.append(samples,node("p",exercise.prompt));
+  const choices=node("div");choices.className="help-choices";
+  const feedback=node("p");feedback.className="help-feedback";feedback.setAttribute("role","status");feedback.setAttribute("aria-live","polite");
+  exercise.options.forEach((option,i)=>{
+   const b=node("button",option);b.type="button";b.className="help-choice";
+   b.addEventListener("click",()=>{
+    const result=checkExercise(id,i);
+    exerciseResults.set(id,result.correct);
+    for(const other of choices.children)other.classList.remove("selected");
+    b.classList.add("selected");
+    feedback.textContent=(result.correct?"Correct. ":"Not quite. ")+result.explanation;
+    feedback.dataset.correct=String(result.correct);
+   });
+   choices.append(b);
+  });
+  card.append(choices,feedback);body.append(card);
+ }
  const engine=createTourEngine({
   onChange:detail=>{
    if(!detail){tourTarget=null;dock();if(dialog.open)dialog.close();return;}
    tourTarget=detail.target;
    reset(detail.tour.title+" · "+(detail.index+1)+"/"+detail.tour.steps.length);
-   body.append(node("h3",detail.step.title),node("p",detail.step.text));
+   const progress=node("div");progress.className="help-progress";progress.setAttribute("role","progressbar");progress.setAttribute("aria-valuemin","0");progress.setAttribute("aria-valuemax",String(detail.tour.steps.length));progress.setAttribute("aria-valuenow",String(detail.index+1));
+   const fill=node("span");fill.style.width=((detail.index+1)/detail.tour.steps.length*100)+"%";progress.append(fill);
+   body.append(progress,node("h3",detail.step.title),node("p",detail.step.text));
+   if(detail.step.exercise)renderExercise(detail.step.exercise);
    if(!detail.found)body.append(node("p","This control is not available in the current workspace. You can continue or exit."));
    action("Back",()=>engine.back()).disabled=detail.index===0;
    action(detail.index===detail.tour.steps.length-1?"Finish":"Next",()=>engine.next());
@@ -35,7 +63,7 @@ export async function initHelpCenter(){
   },
   onFinish:tour=>{state.completed=[...new Set([...state.completed,tour.id])];persist();showHome();}
  });
- function startTour(id){const tour=findTour(id);if(tour)engine.start(tour);}
+ function startTour(id){const tour=findTour(id);if(tour){exerciseResults.clear();engine.start(tour);}}
  function showTopic(topic){
   tourTarget=null;dock();
   reset(topic.title);body.append(node("p",topic.text));
@@ -50,8 +78,16 @@ export async function initHelpCenter(){
   const render=()=>{
    list.replaceChildren();
    const query=search.value.trim().toLowerCase();
-   for(const tour of TOURS.filter(t=>(t.title+" "+t.steps.map(s=>s.text).join(" ")).toLowerCase().includes(query))){
-    const b=node("button",tour.title+(state.completed.includes(tour.id)?" ✓":""));b.type="button";b.addEventListener("click",()=>startTour(tour.id));list.append(b);
+   const matches=TOURS.filter(t=>(t.title+" "+(t.category??"")+" "+t.steps.map(s=>s.text).join(" ")).toLowerCase().includes(query));
+   for(const category of [...new Set(matches.map(t=>t.category??"Getting started"))]){
+    const section=node("section");section.className="help-tour-group";
+    section.append(node("h3",category));
+    for(const tour of matches.filter(t=>(t.category??"Getting started")===category)){
+     const b=node("button");b.type="button";b.className="help-tour-tile";
+     const heading=node("strong",tour.title),meta=node("small",tour.steps.length+" steps"+(state.completed.includes(tour.id)?" · Completed":""));
+     b.append(heading,meta);b.addEventListener("click",()=>startTour(tour.id));section.append(b);
+    }
+    list.append(section);
    }
    for(const topic of HELP_TOPICS.filter(t=>(t.title+" "+t.text).toLowerCase().includes(query))){
     const b=node("button","? "+topic.title);b.type="button";b.addEventListener("click",()=>showTopic(topic));list.append(b);

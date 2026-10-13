@@ -58,3 +58,5 @@ Hardware evidence is **feature- and direction-specific**. For example, a success
 ## Safety
 
 Operate only on authorized frequencies and equipment. Prefer controlled, short bench transmissions; consult each protocol's scope and validation notes before relying on real-device behavior.
+
+Advanced interactive help (capture comparison, field inference, presets, waveform timing, encrypted chat) is documented in [Guided onboarding and help](help/README.md).
