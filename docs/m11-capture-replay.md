@@ -29,3 +29,7 @@ Select **Offline capture replay & session comparison** from the welcome wizard o
 ## M12 report export
 
 After **Prepare replay**, choose **Export replay JSON** or **Export replay CSV**. Both download offline reports with capture hex, length, timestamps, RSSI and decoder metadata. If you have compared a saved session, the report also includes every per-payload count and delta (including rows beyond the 200 shown on screen). JSON includes summary statistics and comparison session metadata. Export never transmits or modifies saved captures. Run `npm run verify` locally for Node and browser regression tests; no paid CI is required.
+
+## M12 controller organization
+
+The browser replay UI and playback/compare event wiring now live in `js/ui/replay-controller.js`, initialized by `app.js` with capture and session callbacks. Report formatting is isolated in `js/rx/replay-report.js` and downloads in `js/ui/replay-export.js`. This is a targeted extraction, not a rewrite of the receiver. Browser and Help selector tests cover the module move. The new extraction should be revalidated locally before merging.
