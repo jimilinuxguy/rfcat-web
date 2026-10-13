@@ -17,7 +17,7 @@ export async function initHelpCenter(){
  let state={onboarded:false,completed:[]},wizard=0,goal="receive",tourTarget=null;
  const exerciseResults=new Map();
  const dock=()=>{dialog.classList.remove("help-anchored");for(const key of ["left","top","right","bottom"])dialog.style[key]="";};
- const position=()=>{if(!tourTarget||!dialog.open)return;const p=placeHelpCard(tourTarget.getBoundingClientRect(),dialog.offsetWidth,dialog.offsetHeight,innerWidth,innerHeight);dialog.classList.add("help-anchored");dialog.style.left=p.left+"px";dialog.style.top=p.top+"px";dialog.style.right="auto";dialog.style.bottom="auto";};
+ const position=()=>{if(!tourTarget||!dialog.open)return;const tabBar=document.querySelector("[data-workspace-tab]");const tabBottom=tabBar?.getBoundingClientRect().bottom??0;if(tourTarget.id==="connect"||tourTarget.getBoundingClientRect().top<=tabBottom){dock();return;}const p=placeHelpCard(tourTarget.getBoundingClientRect(),dialog.offsetWidth,dialog.offsetHeight,innerWidth,innerHeight);dialog.classList.add("help-anchored");dialog.style.left=p.left+"px";dialog.style.top=p.top+"px";dialog.style.right="auto";dialog.style.bottom="auto";};
  addEventListener("resize",position);addEventListener("scroll",position,true);
  try{state=await readHelpState();}catch(error){console.warn("Help persistence unavailable",error);}
  const persist=async()=>{try{await writeHelpState(state);}catch(error){console.warn("Could not save help progress",error);}};
