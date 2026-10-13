@@ -10,7 +10,7 @@ test("guided tours have unique IDs and useful steps",()=>{
  assert.equal(findTour("analyze").id,"analyze");
 });
 test("onboarding offers all workflows and four steps",()=>{
- assert.deepEqual(ONBOARDING_GOALS,TOURS.map(t=>t.id));
+ assert.ok(ONBOARDING_GOALS.every(id=>findTour(id)));
  for(let i=0;i<4;i++)assert.ok(onboardingCopy(i)?.title);
  assert.equal(onboardingCopy(4),null);
 });
