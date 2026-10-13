@@ -242,3 +242,22 @@ main[data-workspace-ready="true"]{display:block;max-width:1440px}
 .radio .grid>label.check>input[type="checkbox"]{grid-column:1;grid-row:1;width:17px;height:17px;margin:0;padding:0;accent-color:#6eb9e9;justify-self:center}
 .radio .grid>label.check>.help-question{grid-column:3;grid-row:1;margin:0;width:24px;height:24px;justify-self:end}
 .radio .grid>label.check:focus-within{border-color:#588eb8}
+
+/* M4 offline signal workbench */
+.signal-workbench{margin:20px 0;padding:18px;border:1px solid #36506b;border-radius:14px;background:linear-gradient(140deg,#14263b,#0e1928)}
+.signal-workbench h3,.signal-workbench h4{margin:0;color:#e4f1ff}
+.signal-workbench .hint{margin:10px 0 14px}
+.signal-workbench-controls{display:grid;grid-template-columns:1fr 1fr auto;align-items:end;gap:12px}
+.signal-workbench-controls>label{min-width:0}
+.signal-workbench-controls input[type="checkbox"]{width:18px;height:18px;accent-color:#59c7b4}
+.signal-timing-chart{display:flex;align-items:stretch;gap:4px;height:160px;padding:14px 10px 8px;margin:14px 0 8px;border:1px solid #344b65;border-radius:10px;background:#0b1725;overflow-x:auto}
+.signal-hist-bin{display:flex;flex:1 0 24px;min-width:24px;max-width:65px;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;padding:0 1px;border:0;background:transparent}
+.signal-hist-bin:hover,.signal-hist-bin:focus-visible{background:#223c51}
+.signal-hist-bar{display:block;width:100%;min-height:3px;background:linear-gradient(#6ce0d0,#3686ae);border-radius:4px 4px 0 0}
+.signal-hist-bin[aria-pressed="true"] .signal-hist-bar{background:linear-gradient(#ffd18b,#de9740)}
+.signal-hist-bin small{font-size:9px;color:#9eb2c8}
+#signal-timing-selection{display:block;color:#afc9dc;font-size:12px;min-height:18px}
+.signal-workbench-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+.signal-workbench-grid section{min-width:0}
+.signal-workbench-grid pre{max-height:210px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:750px){.signal-workbench-controls,.signal-workbench-grid{grid-template-columns:1fr}.signal-workbench{padding:12px}}
