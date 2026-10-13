@@ -8,10 +8,10 @@ RFCat Web uses WebUSB to configure radios, transmit test frames, capture and dec
 
 - **Configure and transmit:** Set frequency, modulation, data rate, bandwidth, power, and packet settings; transmit using protocol-specific encoders or direct RF test modes. The RF Test Bench previews bounded hexadecimal packet sequences and compares subsequent RX packets byte-for-byte.
 - **Receive and decode:** Inspect raw captures, select decoders, and review decoded fields. Auto mode attempts applicable decoders without discarding unknown traffic. Live burst diagnostics group repeated packet events with timestamps, RSSI ranges, adjustable duplicate windows, and JSON export.
-- **Analyze captures offline:** Import/export JSON, save capture sessions in IndexedDB, compare captures, infer changing fields, and validate declarative protocol presets against positive and negative examples.
+- **Analyze captures offline:** Import/export JSON, save capture sessions in IndexedDB, step through captures with timed offline playback and timeline navigation, compare saved sessions by payload frequency, compare captures, infer changing fields, and validate declarative protocol presets against positive and negative examples.
 - **Investigate unknown RF timing:** Import Flipper Zero RAW `.sub` captures in the RF Signal Analyzer panel, inspect waveforms, and review conservative encoding hypotheses. See [RF Signal Analyzer](docs/signal-analyzer.md) for current scope and limitations.
 - **Inspect signal timing:** Preview symbol timing and waveform quantization; analyze received OOK pulse distributions.
-- **Get guided help:** An optional first-run wizard, searchable Help panel, contextual (?) explanations, and restartable, context-aware task-based and protocol-specific tours, including Intelligent Receiver & Burst Grouping. See [Guided onboarding and help](docs/help/README.md).
+- **Get guided help:** An optional first-run wizard, searchable Help panel, contextual (?) explanations, and restartable, context-aware task-based and protocol-specific tours, including Intelligent Receiver & Burst Grouping and Offline Capture Replay. See [Guided onboarding and help](docs/help/README.md).
 - **Customize your workspace:** Drag, resize, and collapse panels. Layout preferences persist locally in IndexedDB.
 - **Interoperate with other devices:** Use specialized workflows such as Momentum Enhanced Sub-GHz Chat with a Flipper Zero.
 
@@ -36,7 +36,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-The Playwright suite includes 15 hardware-free tests covering workspace navigation, persistence, Help, mock WebUSB handshake/readback, permission cancellation, disconnects, retries, write failures, and timeouts. See [M10 polish and reliability](docs/m10-polish-reliability.md). Mocked USB tests do not validate RF hardware or over-the-air behavior.
+The Playwright suite includes the original 15 M10 hardware-free regression tests covering workspace navigation, persistence, Help, mock WebUSB handshake/readback, permission cancellation, disconnects, retries, write failures, and timeouts. See [M10 polish and reliability](docs/m10-polish-reliability.md). M11 adds four hardware-free Playwright acceptance tests for replay navigation, playback, saved-session comparison, and Help. Mocked USB tests do not validate RF hardware or over-the-air behavior.
 
 GitHub Actions also runs the Node test workflow. **Check the actual workflow result:** the presence of tests or a merged PR does not imply CI is passing.
 
@@ -54,6 +54,8 @@ The protocol registry includes:
 Not all implementations have the same hardware-validation status. Protocol details, framing, known-good captures, and test boundaries live in [protocol documentation](docs/README.md#protocol-reference).
 
 **Momentum Enhanced Sub-GHz Chat** is a separate interoperability panel (not a registry protocol). It supports plaintext and AES-256-GCM encrypted chat with compatible Flipper Zero firmware. See the [Momentum Chat guide](docs/momentum-subghz-chat.md) for setup, payload limits, and validation notes.
+
+See [M11 offline capture replay](docs/m11-capture-replay.md) for playback controls, timeline, saved-session comparison, limitations and the Help/welcome-wizard walkthrough.
 
 ## Capture and protocol-development workflow
 

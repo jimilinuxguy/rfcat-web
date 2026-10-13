@@ -115,3 +115,9 @@ The welcome wizard and Help Center include a nine-step **Morse Code / CW Workben
 The **Help** wizard and guided tours automatically select the workspace containing the highlighted control. Radio configuration is under **Tools**; RX capture and burst grouping under **Receive**; protocol transmission and RF Test Bench under **Transmit**; Flipper RAW and signal analysis under **Analyze**; and Morse/CW and Momentum Chat under **Protocols**. A tour can move between tabs without clearing controls, starting reception, or transmitting. Diagnostic suggestions use the same navigation behavior.
 
 If a tutorial step is missing, ensure the feature is present in the current build. Help will report unavailable targets instead of transmitting or changing radio settings. The current tab is saved locally as usual.
+
+## Milestone 11 — Offline capture replay tutorial
+
+The welcome wizard offers **Offline capture replay & session comparison**. The Help Center provides an eight-step guided tour for opening a saved session, preparing replay, reviewing summary statistics, using timeline markers, choosing speed, playing/pausing, selecting another session and comparing payload counts. Contextual topics link to the [M11 replay guide](../m11-capture-replay.md). Tours only highlight controls; they do not operate the replay or transmit RF. Prepare replay after opening a session to populate its controls. The first 300 timeline markers are shown, while Previous/Next can inspect all prepared captures.
+
+To validate, restart the welcome wizard, select the replay workflow, check that each step highlights its control in Receive, then use Help search for `replay` and `compare`. Verify that no hardware is required. Run `npm test` and `npm run test:browser`.

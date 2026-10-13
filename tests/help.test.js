@@ -22,12 +22,13 @@ test("help topics have documentation and persistent store version",()=>{
 
 test("every contextual help and tutorial selector exists in index.html",()=>{
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ const dynamic=readFileSync(new URL("../app.js",import.meta.url),"utf8");
  const selectors=[...HELP_TOPICS.map(t=>t.target),...TOURS.flatMap(t=>t.steps.map(s=>s.target))];
  for(const selector of selectors){
   const name=selector.slice(1);
   const exists=selector[0]==="#"
    ? [...html.matchAll(/\bid="([^"]+)"/g)].some(m=>m[1]===name)
    : [...html.matchAll(/\bclass="([^"]+)"/g)].some(m=>m[1].split(/\s+/).includes(name));
-  assert.ok(exists,"Missing help target: "+selector);
+  assert.ok(exists||(selector.startsWith("#replay-")&&dynamic.includes(`id="${name}"`)),"Missing help target: "+selector);
  }
 });
