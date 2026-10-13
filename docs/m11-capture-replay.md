@@ -16,7 +16,7 @@ Preparing replay renders up to 300 numbered timeline markers for direct navigati
 
 ## Planned expansion
 
-Analysis export and richer graphical timeline remain future increments. Browser acceptance of the new controls has not yet been reported.
+Analysis export and richer graphical timeline remain future increments. The user reported passing Node and Playwright tests, including the four M11 browser acceptance tests, on October 13, 2026. CI status and physical hardware behavior have not been independently verified.
 
 ## Guided help
 
@@ -24,4 +24,4 @@ Select **Offline capture replay & session comparison** from the welcome wizard o
 
 ## Automated browser acceptance
 
-`browser-tests/m11.spec.js` adds four Playwright acceptance tests using imported synthetic capture JSON: replay navigation and reset, timed playback with speed/pause, comparison against an IndexedDB-saved session, and all eight Help-tour targets plus exit. The tests run without USB hardware. Run `npm run test:browser` or `npx playwright test browser-tests/m11.spec.js`. The existing browser regression suite also iterates all registered tours. Results must be verified locally; adding tests does not imply they have passed.
+`browser-tests/m11.spec.js` adds four Playwright acceptance tests using imported synthetic capture JSON: replay navigation and reset, timed playback with speed/pause, comparison against an IndexedDB-saved session, and all eight Help-tour targets plus exit. The tests run without USB hardware. Run `npm run test:browser` or `npx playwright test browser-tests/m11.spec.js`. The existing browser regression suite also iterates all registered tours. The user confirmed these tests passed locally on October 13, 2026; CI and physical hardware validation are separate.
