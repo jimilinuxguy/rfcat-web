@@ -1,4 +1,14 @@
 export const TOURS=Object.freeze([
+ {id:"session-replay",title:"Offline capture replay & session comparison",category:"Capture & decoding",steps:[
+  {target:"#session-open",workspace:"receive",title:"Open a saved session",text:"Choose a saved capture session and open it. You can also use captures already imported into the Receiver. No radio is needed."},
+  {target:"#replay-load",title:"Prepare offline replay",text:"Snapshot the currently loaded captures. This does not send WebUSB commands or transmit RF."},
+  {target:"#replay-summary",title:"Read session statistics",text:"Review capture count, unique payloads, repeats and total bytes. Repeats mean matching payload bytes, not confirmed RF retransmissions."},
+  {target:"#replay-timeline",title:"Explore the timeline",text:"Use numbered markers to jump between the first 300 captures, or Previous and Next to step through all prepared captures."},
+  {target:"#replay-speed",title:"Choose playback speed",text:"Select 0.5×–4×. Playback uses recorded timestamps when available, with bounded gaps and fallback delays."},
+  {target:"#replay-play",title:"Play and pause offline",text:"Play advances the inspector locally. Pause stops it. Neither button controls the physical radio."},
+  {target:"#replay-compare-session",title:"Choose a second session",text:"Select a saved capture session for comparison. The prepared replay is the left side; the selected saved session is the right side."},
+  {target:"#replay-compare",title:"Compare payload counts",text:"Compare sessions to see per-payload occurrence counts and deltas. The report shows up to 200 rows and does not change either session."}
+ ]},
  {id:"receive",title:"Receive your first signal",steps:[{target:"#connect",workspace:"receive",advanceOn:"connected",title:"Connect hardware",text:"Connect your YARD Stick One with WebUSB. The receiver requires hardware."},{target:".radio",title:"Configure the radio",text:"Choose an authorized frequency, modulation, bandwidth and framing; apply your settings."},{target:".receiver-card",title:"Start listening",text:"Start the receiver, then inspect incoming packets and decoder results."}]},
  {id:"intelligent-receiver",title:"Intelligent Receiver & Burst Grouping",category:"Capture & decoding",steps:[
   {target:"#connect",workspace:"receive",advanceOn:"connected",title:"Connect the receiver",text:"Connect a YARD Stick One with WebUSB. Live burst grouping requires received packet events; it cannot analyze offline RAW .sub captures."},
@@ -48,6 +58,9 @@ export const TOURS=Object.freeze([
  {"id":"encrypted-chat-lab","title":"Encrypted Momentum Chat lab","category":"Secure interoperability","steps":[{"target":"#momentum-chat-security","title":"Choose security mode","text":"Both peers must use compatible plaintext or encrypted chat mode. Do not share secrets in screenshots."},{"target":"#momentum-chat-secret","title":"Configure shared secret","text":"Use the same supported password or hex key on both peers. Never put secrets in test captures or documentation.","exercise":"crypto"},{"target":"#momentum-chat-frequency","title":"Verify radio settings","text":"Match frequency and packet settings before attempting a test."},{"target":"#momentum-chat-message","title":"Prepare a harmless test message","text":"Type a non-sensitive test message. Sending remains a separate explicit user action."}]}
 ]);
 export const HELP_TOPICS=Object.freeze([
+ {target:"#replay-load",title:"Offline capture replay",text:"Prepare a read-only snapshot of loaded captures. Playback never transmits RF or changes radio configuration.",doc:"docs/m11-capture-replay.md"},
+ {target:"#replay-speed",title:"Replay speed and timestamps",text:"Playback uses bounded timestamp gaps and fallback delays; it is an offline inspector, not on-air replay.",doc:"docs/m11-capture-replay.md"},
+ {target:"#replay-compare",title:"Compare capture sessions",text:"Compare matching payload counts between prepared captures and a saved session; no data is modified.",doc:"docs/m11-capture-replay.md"},
  {target:"#cw-message",title:"Morse CW Workbench",text:"Encode International Morse, preview waveform and sidetone, and test raw Sub-GHz OOK.",doc:"docs/cw-workbench.md"},
  {target:"#cw-rx-start",title:"Morse live decoder",text:"Requires raw OOK bit samples from the Receiver at the configured sample rate; cannot decode conventional audio CW.",doc:"docs/cw-workbench.md"},
  {target:"#cw-send",title:"Morse OOK transmission",text:"Changes CC1111 radio configuration and requires explicit RF authorization. Verify actual on-air timing with a second receiver.",doc:"docs/cw-workbench.md"},
