@@ -3,6 +3,7 @@ import { encodePlaintextChat, decodePlaintextChat } from "./js/chat/momentum-pla
 // RFCat Web UI/event wiring. Hardware/protocol logic lives under js/.
 import { C } from "./js/rfcat/constants.js";
 import { createCapturePipeline } from "./js/rx/capture-pipeline.js";
+import { planBench,compareBenchPacket,executeBench,waitBench } from "./js/test-bench/bench-core.js";
 import { scanReceiverPresets } from "./js/rx/signal-scan.js";
 import { R } from "./js/radio/registers.js";
 import { RFCatUSB } from "./js/rfcat/device.js";
@@ -310,6 +311,67 @@ protocolSelect.addEventListener("change", selectProtocol);
 
 selectProtocol();
 
+let benchExpectedHex="";
+let benchComparisons=[];
+let benchReport=null;
+let benchAbort=null;
+let benchRunning=false;
+const benchPlan=()=>planBench({payload:$("bench-payload").value,repeat:Number($("bench-repeat").value),intervalMs:Number($("bench-interval").value)});
+function benchRefresh(){
+  let valid=false;
+  try{benchPlan();valid=true;}catch{}
+  $("bench-send").disabled=benchRunning||!valid||!$("bench-authorized").checked;
+  $("bench-stop").disabled=!benchRunning;
+  for(const id of ["bench-payload","bench-repeat","bench-interval","bench-authorized"])$(id).disabled=benchRunning;
+}
+for(const id of ["bench-payload","bench-repeat","bench-interval","bench-authorized"])$(id).addEventListener("input",benchRefresh);
+$("bench-preview").onclick=()=>{
+ try{
+  const plan=benchPlan();
+  $("bench-preview-output").textContent=`Payload: ${plan.hex.toUpperCase()}\nBytes: ${plan.length}\nPackets: ${plan.repeat}\nGap: ${plan.intervalMs} ms\nMinimum spacing time: ${plan.estimatedMinimumMs} ms\nRadio settings: current device configuration (not modified by preview)`;
+ }catch(error){$("bench-preview-output").textContent=error.message;}
+};
+$("bench-stop").onclick=()=>benchAbort?.abort();
+$("bench-send").onclick=async()=>{
+ if(benchRunning)return;
+ let plan;
+ try{
+  plan=benchPlan();
+  if(!$("bench-authorized").checked)throw Error("Authorization confirmation required");
+  if(!d.device?.opened)throw Error("Connect YARD Stick One first");
+  if(listening||momentumChatActive||signalScanController)throw Error("Stop RX, chat and scanning before bench TX");
+  if(!window.confirm(`Transmit ${plan.repeat} packet(s) on the CURRENT radio configuration? This sends real RF.`))return;
+  benchRunning=true;benchAbort=new AbortController();benchRefresh();
+  benchExpectedHex=plan.hex;benchComparisons=[];
+  const startedAt=new Date().toISOString();
+  $("bench-result").textContent="Transmitting…";
+  const execution=await executeBench(plan,{
+   signal:benchAbort.signal,wait:waitBench,
+   transmit:async bytes=>{
+    if(listening||momentumChatActive||signalScanController)throw Error("Another RF workflow started; sequence stopped");
+    if(!d.device?.opened)throw Error("Device disconnected");
+    await d.mode(C.RF_IDLE);
+    await d.setMaxPower();
+    await d.setAmpMode(true);
+    try{
+     const reply=await d.transmit(bytes);
+     if(reply?.[0]!==1)throw Error("Unexpected firmware TX response");
+     return "firmware-ack";
+    }finally{await d.setAmpMode(false);await d.mode(C.RF_IDLE);}
+   },
+   onProgress:item=>{$("bench-result").textContent=`Packet ${item.index}/${plan.repeat}: ${item.ok?"firmware acknowledged":"FAILED: "+item.error}`;}
+  });
+  benchReport={schema:"rfcat-web.test-bench.v1",startedAt,plan,execution,rxComparisons:[]};
+  $("bench-result").textContent=`Completed ${execution.completed}/${execution.planned} attempts${execution.cancelled?" (cancelled)":""}. Start RX to compare later received packets; firmware ACK does not prove OTA delivery.`;
+ }catch(error){$("bench-result").textContent="Test bench: "+error.message;}
+ finally{benchRunning=false;benchAbort=null;$("bench-authorized").checked=false;benchRefresh();}
+};
+$("bench-export").onclick=()=>{
+ const report={...(benchReport??{schema:"rfcat-web.test-bench.v1",note:"No TX run"}),rxComparisons:benchComparisons};
+ const url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:"application/json"}));
+ const link=document.createElement("a");link.href=url;link.download="rfcat-test-bench.json";link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+benchRefresh();
 const rxBurstPipeline=createCapturePipeline({windowMs:300,maxEvents:1000});
 const burstSummary=$("rx-burst-summary");
 const burstList=$("rx-burst-list");
@@ -1771,6 +1833,15 @@ $("rx-export").onclick = () => {
 };
 
 d.addEventListener("packet", async (e) => {
+    if(benchExpectedHex && listening && !momentumChatActive){
+      try{
+        const packet=splitRxStatus(e.detail,$("appendstatus").checked).payload;
+        const comparison=compareBenchPacket(benchExpectedHex,packet);
+        benchComparisons.push({timestamp:new Date().toISOString(),...comparison});
+        if(benchComparisons.length>100)benchComparisons.shift();
+        $("bench-result").textContent=`RX compared: ${benchComparisons.length} packet(s), exact matches: ${benchComparisons.filter(x=>x.match).length}. Latest differing byte positions: ${comparison.differences.slice(0,32).join(", ")||"none"}.`;
+      }catch(error){$("bench-result").textContent="RX comparison error: "+error.message;}
+    }
     if (momentumChatActive) {
         if (!e.detail?.length) return;
         try { const message = momentumEncrypted ? await momentumCrypto.decrypt(e.detail) : decodePlaintextChat(e.detail); if (message) appendChatMessage("Flipper", message); }

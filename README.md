@@ -6,7 +6,7 @@ RFCat Web uses WebUSB to configure radios, transmit test frames, capture and dec
 
 ## What you can do
 
-- **Configure and transmit:** Set frequency, modulation, data rate, bandwidth, power, and packet settings; transmit using protocol-specific encoders or direct RF test modes.
+- **Configure and transmit:** Set frequency, modulation, data rate, bandwidth, power, and packet settings; transmit using protocol-specific encoders or direct RF test modes. The RF Test Bench previews bounded hexadecimal packet sequences and compares subsequent RX packets byte-for-byte.
 - **Receive and decode:** Inspect raw captures, select decoders, and review decoded fields. Auto mode attempts applicable decoders without discarding unknown traffic. Live burst diagnostics group repeated packet events with timestamps, RSSI ranges, adjustable duplicate windows, and JSON export.
 - **Analyze captures offline:** Import/export JSON, save capture sessions in IndexedDB, compare captures, infer changing fields, and validate declarative protocol presets against positive and negative examples.
 - **Investigate unknown RF timing:** Import Flipper Zero RAW `.sub` captures in the RF Signal Analyzer panel, inspect waveforms, and review conservative encoding hypotheses. See [RF Signal Analyzer](docs/signal-analyzer.md) for current scope and limitations.
@@ -65,6 +65,8 @@ Configure radio → Capture / Import → Decode → Save session
 Capture sessions and workspace layout are stored locally in the browser's IndexedDB. A protocol preset is an **analysis artifact**, not an automatically installed decoder or an automatic transmission. Exported captures and presets can be shared as JSON.
 
 The [Intelligent Receiver & Capture Pipeline](docs/capture-pipeline.md) adds live burst grouping without suppressing the existing capture list. It tracks packet events rather than guaranteed complete RF frames. The receiver remains packet-engine based. Physical asynchronous OOK remotes may require pulse-oriented sampling, and raw receive boundaries are not always protocol-frame boundaries. See [Receiver and Protocol Decoders](docs/receiver-decoders.md).
+
+See [RF Test Bench](docs/rf-test-bench.md) for repeat limits, authorization safeguards, and validation steps. This experimental Milestone 7 work is on a feature branch and has not been merged.
 
 ## Architecture
 

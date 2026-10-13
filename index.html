@@ -610,6 +610,23 @@
 
             </div>
 
+            <details class="card collapsible test-bench-card">
+                <summary class="section-summary"><span>RF Test Bench</span><span class="summary-note">Bounded packet TX and RX comparison</span></summary>
+                <div class="section-body">
+                    <p class="hint">Uses the current CC1111 radio configuration. Preview is offline; sending requires an explicit confirmation. Do not transmit outside an authorized test setup. Stop RX and Momentum Chat before sending.</p>
+                    <label>Packet bytes (hex)<textarea id="bench-payload" rows="3" spellcheck="false" placeholder="AA 55 01 02"></textarea></label>
+                    <div class="bench-fields">
+                        <label>Repeat count (1–20)<input id="bench-repeat" type="number" min="1" max="20" step="1" value="1"></label>
+                        <label>Gap between packets (ms, 100–10000)<input id="bench-interval" type="number" min="100" max="10000" step="50" value="250"></label>
+                    </div>
+                    <div class="actions"><button id="bench-preview" type="button">Preview sequence</button><button id="bench-export" type="button">Export report</button></div>
+                    <pre id="bench-preview-output" class="bench-output" aria-live="polite">Enter a payload and preview the plan.</pre>
+                    <label class="bench-confirm"><input id="bench-authorized" type="checkbox"> I am authorized to transmit on the currently configured frequency and equipment.</label>
+                    <div class="actions"><button id="bench-send" class="danger" type="button" disabled>Transmit sequence</button><button id="bench-stop" type="button" disabled>Stop after current packet</button></div>
+                    <p class="hint">After transmitting, start the Receiver and send a separate known test packet to compare its bytes. The YARD Stick One cannot receive while transmitting.</p>
+                    <pre id="bench-result" class="bench-output" aria-live="polite">No bench activity yet.</pre>
+                </div>
+            </details>
 
             <details class="card">
                 <summary>Momentum Sub-GHz Chat</summary>
