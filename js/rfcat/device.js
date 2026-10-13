@@ -28,6 +28,7 @@ export class RFCatUSB extends EventTarget {
             filters: SUPPORTED_DEVICES,
         });
 
+        try {
         await this.device.open();
 
         // A previous RFCat session can leave stale endpoint data queued in the
@@ -64,8 +65,11 @@ export class RFCatUSB extends EventTarget {
             }
         }
 
-        await this.disconnect();
         throw lastError;
+        } catch (error) {
+            await this.disconnect();
+            throw error;
+        }
     }
 
     async disconnect() {

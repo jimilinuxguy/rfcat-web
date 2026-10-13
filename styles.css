@@ -329,3 +329,12 @@ main[data-workspace-ready="true"]{display:block;max-width:1440px}
 .workspace > details.workspace-panel:not([open]){overflow:hidden;resize:horizontal}
 /* Shared activity is always the last visible panel, regardless of saved drag order. */
 .workspace > .workspace-panel[data-workspace-panel="activity"]{order:9999!important;flex-basis:100%;width:100%}
+
+/* M10: radio configuration summary stays visible across workspace tabs. */
+.radio-status-shortcut{display:inline-flex;align-items:center;flex-wrap:wrap;gap:8px;margin-left:auto;max-width:100%;padding:7px 12px;border:1px solid #45617b;border-radius:9px;background:#142437;color:#e7edf5;cursor:pointer;text-align:left;font:inherit;font-size:12px}
+.radio-status-shortcut:hover,.radio-status-shortcut:focus-visible{border-color:#7baaff;outline-offset:2px}
+#radio-status-connection{font-weight:700;color:#d9b879}
+body.connected #radio-status-connection{color:#73d5b4}
+#radio-status-details{overflow-wrap:anywhere}
+.radio-status-action{color:#9ac7ff;white-space:nowrap}
+@media(max-width:720px){.workspace-nav{flex-wrap:wrap}.radio-status-shortcut{margin-left:0;width:100%;justify-content:space-between}}

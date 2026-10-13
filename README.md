@@ -27,11 +27,16 @@ python3 -m http.server 8080
 
 Open `http://localhost:8080`, connect the YARD Stick One, configure the radio, and choose a transmit or receive workflow. Use only frequencies and devices you are authorized to operate.
 
-Run the automated JavaScript tests with:
+Run the automated JavaScript and browser regression tests with:
 
 ```bash
+npm install
 npm test
+npx playwright install chromium
+npm run test:browser
 ```
+
+The Playwright suite includes 15 hardware-free tests covering workspace navigation, persistence, Help, mock WebUSB handshake/readback, permission cancellation, disconnects, retries, write failures, and timeouts. See [M10 polish and reliability](docs/m10-polish-reliability.md). Mocked USB tests do not validate RF hardware or over-the-air behavior.
 
 GitHub Actions also runs the Node test workflow. **Check the actual workflow result:** the presence of tests or a merged PR does not imply CI is passing.
 
@@ -66,7 +71,9 @@ Capture sessions and workspace layout are stored locally in the browser's Indexe
 
 The [Intelligent Receiver & Capture Pipeline](docs/capture-pipeline.md) adds live burst grouping without suppressing the existing capture list. It tracks packet events rather than guaranteed complete RF frames. The receiver remains packet-engine based. Physical asynchronous OOK remotes may require pulse-oriented sampling, and raw receive boundaries are not always protocol-frame boundaries. See [Receiver and Protocol Decoders](docs/receiver-decoders.md).
 
-The experimental [Morse Code / CW Workbench](docs/cw-workbench.md) adds text-to-Morse, adjustable WPM, offline timing/waveform and sidetone preview, CC1111 OOK packet transmission, raw-sample Morse decoding and Flipper RAW `.sub` pulse import. It is not an HF audio CW receiver; hardware TX/RX validation remains necessary.\n\nSee [RF Test Bench](docs/rf-test-bench.md) for repeat limits, authorization safeguards, and validation steps. This experimental Milestone 7 work is on a feature branch and has not been merged.
+The experimental [Morse Code / CW Workbench](docs/cw-workbench.md) adds text-to-Morse, adjustable WPM, offline timing/waveform and sidetone preview, CC1111 OOK packet transmission, raw-sample Morse decoding and Flipper RAW `.sub` pulse import. It is not an HF audio CW receiver; hardware TX/RX validation remains necessary.
+
+See [RF Test Bench](docs/rf-test-bench.md) for repeat limits, authorization safeguards, and validation steps. RF Test Bench is available on `main`; hardware validation remains distinct from unit tests.
 
 ## Architecture
 
@@ -75,7 +82,7 @@ The experimental [Morse Code / CW Workbench](docs/cw-workbench.md) adds text-to-
 - `js/protocols/`: protocol metadata, encoding, RF configuration, TX, and optional RX decoding.
 - `js/rx/`, `js/encoding/`, and `js/storage/`: receive analysis, waveform/timing support, and local persistence.
 - `js/chat/`: dedicated Momentum chat plaintext and encrypted packet handling.
-- `tests/`: Node.js automated tests; `tools/`: synthetic capture and waveform utilities.
+- `tests/`: Node.js automated tests; `browser-tests/`: Playwright browser regression and mocked WebUSB tests; `tools/`: synthetic capture and waveform utilities.
 
 Browser modules use explicit relative `.js` imports, and the protocol registry is explicit, so the app does not require a bundler.
 
@@ -107,8 +114,8 @@ For complete walkthroughs, limitations and manual acceptance checks, see [Guided
 **Milestone 5 — Protocol Reverse-Engineering Workbench:** Inspect candidate bits, name non-overlapping fields, view bit-order-aware hex/decimal values, identify variable regions across equal-length repeated frames, check simple sum8/xor8 hypotheses, and export a versioned protocol JSON definition. All findings are unverified and offline; definitions are not executable decoders. See [Protocol Workbench](docs/protocol-workbench.md).
 
 
-### Workspace navigation (M9 preview)
+### Workspace navigation (M9)
 
-The interface now groups existing tools into **Receive**, **Transmit**, **Analyze**, **Protocols**, and **Tools** tabs. Receive shows packet capture and the capture library; Transmit shows the raw transmitter, sequence bench, and waveform preview; Analyze shows the signal analyzer and OOK pulse tools; Protocols contains Morse/CW and Momentum Chat; Tools contains the shared CC1111 radio configuration. The Activity log remains available across workspaces. The active tab is remembered locally under `rfcat.workspace.active.v1`.
+The interface now groups existing tools into **Receive**, **Transmit**, **Analyze**, **Protocols**, and **Tools** tabs. Receive shows packet capture and the capture library; Transmit shows the raw transmitter, sequence bench, and waveform preview; Analyze shows the signal analyzer and OOK pulse tools; Protocols contains Morse/CW and Momentum Chat; Tools contains the shared CC1111 radio configuration. The Activity log remains available across workspaces. The active tab is remembered locally under `rfcat.workspace.active.v1`. M10 adds a read-only status summary of the radio form (frequency, modulation, baud rate, and connection state) on every tab; click it to open Tools. These are form values, not independently verified radio register readings.
 
-This first iteration preserves existing DOM controls and radio sessions when switching tabs; it does not yet extract protocol controllers into independent modules or add workspace-specific drag layouts. To configure the receiver, open **Tools** and return to **Receive**. No radio command is sent merely by changing tabs.
+Workspace navigation preserves existing DOM controls and radio sessions when switching tabs; it does not yet extract protocol controllers into independent modules or add workspace-specific drag layouts. To configure the receiver, open **Tools** and return to **Receive**. No radio command is sent merely by changing tabs.

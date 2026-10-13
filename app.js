@@ -863,6 +863,11 @@ $("connect").onclick = async () => {
 
         await refresh();
     } catch (e) {
+        await d.disconnect();
+        document.body.classList.remove("connected");
+        $("status").textContent = "Disconnected";
+        $("connect").textContent = "Connect YS1";
+        enabled(false);
         log(`ERROR: ${e.message}`);
 
         alert(e.message);
@@ -2116,9 +2121,7 @@ navigator.usb?.addEventListener("disconnect", (e) => {
     if (e.device === d.device) {
         setMonitor(false);
 
-        d.running = false;
-
-        d.device = null;
+        void d.disconnect();
 
         document.body.classList.remove("connected");
 
