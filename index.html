@@ -650,8 +650,11 @@
                         <label>Decode WPM <select id="cw-rx-speed"><option value="auto">Auto-estimate</option><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="40">40</option></select></label>
                         <label>Raw sample rate (symbols/s) <input id="cw-rx-rate" type="number" min="500" max="5000" step="100" value="1000"></label>
                         <div class="actions"><button id="cw-rx-start" type="button">Enable live Morse decode</button><button id="cw-rx-clear" type="button">Clear Morse RX</button></div>
+                        <details class="cw-offline-tools"><summary>Offline capture tools (including Flipper RAW import)</summary>
+                        <p class="hint">Import a Flipper RAW capture for offline Morse analysis. This is separate from Momentum Sub-GHz Chat.</p>
                         <label>Offline raw OOK bytes (hex) <textarea id="cw-rx-hex" rows="2" placeholder="Paste raw OOK sample bytes, not ASCII text"></textarea></label>
                         <div class="actions"><button id="cw-rx-decode" type="button">Decode pasted raw bytes</button><label>Import Flipper RAW .sub <input id="cw-sub-file" type="file" accept=".sub,text/plain"></label></div>
+                        </details>
                         <pre id="cw-rx-output" class="bench-output" aria-live="polite">No Morse decoded yet.</pre>
                     </div>
                 </div>
@@ -734,5 +737,6 @@
         type="module"
         src="app.js"
     ></script>
-    <script type="module" src="./js/ui/signal-analyzer.js"></script>\n</body>
+    <script type="module" src="./js/ui/signal-analyzer.js"></script>
+    </body>
 </html>
