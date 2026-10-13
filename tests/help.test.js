@@ -24,9 +24,10 @@ test("every contextual help and tutorial selector exists in index.html",()=>{
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
  const selectors=[...HELP_TOPICS.map(t=>t.target),...TOURS.flatMap(t=>t.steps.map(s=>s.target))];
  for(const selector of selectors){
-  const name=selector.slice(1).replace(/[.*+?^$\{\}()|[\]\\]/g,"\\$&");
-  const attr=selector[0]==="#"?"id":"class";
-  const pattern=attr==="id"?new RegExp('\\\\bid=["\\\']'+name+'["\\\']'):new RegExp('class=["\\\'][^"\\\']*\\\\b'+name+'\\\\b');
-  assert.match(html,pattern,"Missing help target: "+selector);
+  const name=selector.slice(1);
+  const exists=selector[0]==="#"
+   ? [...html.matchAll(/\\bid="([^"]+)"/g)].some(m=>m[1]===name)
+   : [...html.matchAll(/\\bclass="([^"]+)"/g)].some(m=>m[1].split(/\\s+/).includes(name));
+  assert.ok(exists,"Missing help target: "+selector);
  }
 });
