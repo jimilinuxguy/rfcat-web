@@ -27,7 +27,7 @@ test("every contextual help and tutorial selector exists in index.html",()=>{
   const name=selector.slice(1);
   const exists=selector[0]==="#"
    ? [...html.matchAll(/\bid="([^"]+)"/g)].some(m=>m[1]===name)
-   : [...html.matchAll(/\bclass="([^"]+)"/g)].some(m=>m[1].split(/\\s+/).includes(name));
+   : [...html.matchAll(/\bclass="([^"]+)"/g)].some(m=>m[1].split(/\s+/).includes(name));
   assert.ok(exists,"Missing help target: "+selector);
  }
 });
