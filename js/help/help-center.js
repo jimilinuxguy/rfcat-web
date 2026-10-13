@@ -1,6 +1,6 @@
 import {EXERCISES,checkExercise} from "./exercises.js";
 import {placeHelpCard} from "./tour-position.js";
-import {diagnoseReceiver} from "./diagnostics.js";
+import {analyzeRadioState,readRadioDiagnostics} from "./diagnostics.js";
 import {TOURS,HELP_TOPICS,findTour} from "./tours.js";
 import {readHelpState,writeHelpState} from "../storage/help-store.js";
 import {createTourEngine} from "./tour-engine.js";
@@ -98,13 +98,35 @@ export async function initHelpCenter(){
   action("Restart welcome wizard",()=>showWizard(0));action("Close",()=>dialog.close());
  }
  function showDiagnostics(){
-  tourTarget=null;dock();reset("Receiver troubleshooting");
-  const connected=document.body.classList.contains("connected");
-  const frequencyMHz=Number(document.getElementById("freq")?.value);
-  const receiving=/receiv|listening|rx active/i.test(document.getElementById("status")?.textContent??"");
-  body.append(node("p","Read-only guidance. No radio settings are changed."));
-  const ul=node("ul");for(const finding of diagnoseReceiver({connected,frequencyMHz,receiving}))ul.append(node("li",finding));body.append(ul);
-  action("Receive tutorial",()=>startTour("receive"));action("Back",showHome);
+  tourTarget=null;dock();reset("RF diagnostics");
+  const heading=node("p","Live, read-only checks based on the current page state. These are suggestions, not measurements of RF activity.");
+  const summary=node("div");summary.className="help-diagnostic-summary";
+  const findings=node("div");findings.className="help-diagnostic-list";
+  body.append(heading,summary,findings);
+  const render=()=>{
+   const snapshot=readRadioDiagnostics(document);
+   summary.textContent=(snapshot.connected?"Connected":"Disconnected")+" · "+(snapshot.receiving?"Receiving":"Not receiving")+" · "+snapshot.packets+" RX events · "+snapshot.decoded+" decoded";
+   findings.replaceChildren();
+   for(const issue of analyzeRadioState(snapshot)){
+    const card=node("section");card.className="help-diagnostic-card";card.dataset.severity=issue.severity;
+    const head=node("strong",issue.title),description=node("p",issue.detail);
+    const inspect=node("button",issue.action);inspect.type="button";
+    inspect.addEventListener("click",()=>{
+     const target=document.querySelector(issue.target);
+     if(!target)return;
+     const panel=target.closest("details");if(panel)panel.open=true;
+     dialog.close();target.scrollIntoView({block:"center",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
+     target.focus?.({preventScroll:true});
+     target.classList.add("help-target");
+     setTimeout(()=>target.classList.remove("help-target"),3500);
+    });
+    card.append(head,description,inspect);findings.append(card);
+   }
+  };
+  render();
+  action("Refresh checks",render);
+  action("Receive tutorial",()=>startTour("receive"));
+  action("Back",showHome);
  }
  function showWizard(step){
   tourTarget=null;dock();
