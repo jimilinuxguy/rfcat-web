@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {encodeRecord,parseIntelHex,validateFirmware} from "../js/firmware/intel-hex.js";
 import {BootloaderProtocol,COMMANDS,readCommand,pageEraseCommand} from "../js/firmware/bootloader-protocol.js";
+import {readApplication,compareApplication,exportApplicationHex,BACKUP_BYTES} from "../js/firmware/backup.js";
 import {MockBootloaderTransport} from "../js/firmware/mock-transport.js";
 const sample=encodeRecord(0,0x1400,Array.from({length:16},(_,i)=>i))+ "\n"+encodeRecord(1,0);
 test("Intel HEX parses valid records, checksum and EOF",()=>{
@@ -36,4 +37,30 @@ test("read-only bootloader probe returns application bytes without mutation",asy
  const data=await new BootloaderProtocol(mock).read(0x1400,16);
  assert.deepEqual(Array.from({length:4},(_,i)=>data.get(0x1400+i)),[0x12,0x34,0x56,0x78]);
  assert.deepEqual(mock.flash,before);
+});
+
+test("full application backup roundtrips as restorable Intel HEX without modifying flash",async()=>{
+ const mock=new MockBootloaderTransport();
+ mock.flash[0x1400]=0x02;mock.flash[0x1401]=0x14;mock.flash[0x7fff]=0x55;
+ const before=mock.flash.slice();
+ const protocol=new BootloaderProtocol(mock);
+ const progress=[];
+ const first=await readApplication(protocol,p=>progress.push(p));
+ const second=await readApplication(protocol);
+ assert.equal(first.length,BACKUP_BYTES);
+ assert.equal(progress.at(-1),1);
+ assert.equal(compareApplication(first,second),true);
+ const image=parseIntelHex(exportApplicationHex(first));
+ assert.equal(image.bytes,BACKUP_BYTES);
+ assert.equal(image.memory.get(0x1400),0x02);
+ assert.equal(image.memory.get(0x7fff),0x55);
+ assert.ok(validateFirmware(image).records.length>0);
+ assert.deepEqual(mock.flash,before);
+ second[0]^=1;
+ assert.throws(()=>compareApplication(first,second),/mismatch at 0x1400/);
+});
+test("failed backup read never returns a complete image",async()=>{
+ const mock=new MockBootloaderTransport();
+ mock.fail=true;
+ await assert.rejects(readApplication(new BootloaderProtocol(mock)),/Injected/);
 });
