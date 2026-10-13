@@ -42,6 +42,7 @@
     <div class="actions"><label>Scan frequency (MHz) <input id="signal-scan-frequency" type="number" min="300" max="928" step="0.001" value="433.920"></label><label>Dwell (ms) <input id="signal-scan-dwell" type="number" min="100" max="10000" value="1200"></label><button id="signal-scan-start" type="button">Scan receiver presets</button><button id="signal-scan-stop" type="button" disabled>Cancel scan</button></div>
     <pre id="signal-scan-results" aria-live="polite">Preset scanning requires a connected YARD Stick One.</pre>
     <label>Flipper RAW capture <input id="signal-sub-file" type="file" accept=".sub,text/plain"></label>
+    <p class="muted">Click the waveform to place the nearest cursor; drag to measure. Cursor A/B numeric fields allow precise adjustment.</p>
     <canvas id="signal-waveform" width="960" height="220" style="width:100%;max-width:100%;border:1px solid #777" aria-label="Digital pulse waveform"></canvas>
     <label>Zoom <input id="signal-zoom" type="range" min="1" max="50" value="1"></label>
     <label>Pan <input id="signal-pan" type="range" min="0" max="100" value="0"></label>
