@@ -85,3 +85,12 @@ test("sparse HEX verification requires omitted flash bytes to be erased",async()
  mock.flash[0x140f]=0x00;
  await assert.rejects(verifyImageAgainstDevice(new BootloaderProtocol(mock),image),/mismatch at 0x140f/);
 });
+
+test("post-flash full-region verification passes and detects unwritten-region corruption",async()=>{
+ const mock=new MockBootloaderTransport(),protocol=new BootloaderProtocol(mock);
+ const image=parseIntelHex(sample),plan=validateFirmware(image);
+ await protocol.flash(plan);
+ assert.equal(await verifyImageAgainstDevice(protocol,image),BACKUP_BYTES);
+ mock.flash[0x2000]=0x42;
+ await assert.rejects(verifyImageAgainstDevice(protocol,image),/mismatch at 0x2000/);
+});
