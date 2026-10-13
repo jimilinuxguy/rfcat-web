@@ -1,4 +1,5 @@
 import { parseFlipperRaw, analyzePulses } from "../rx/signal-fingerprint.js";
+import { decodeHypotheses } from "../rx/signal-decode.js";
 export function initSignalAnalyzer() {
   const input=document.getElementById("signal-sub-file");
   const result=document.getElementById("signal-analysis-results");
@@ -39,7 +40,7 @@ export function initSignalAnalyzer() {
         modulationFinding:a.modulationFinding,estimatedUnitUs:a.estimatedUnitUs,
         estimatedSymbolRate:a.estimatedSymbolRate,bitrateStatus:a.bitrateStatus,
         timingConsistency:a.timingConsistency,clusters:a.clusters,gaps:a.gaps,
-        frameCount:a.frames.length,candidates:a.candidates,warnings:a.warnings
+        frameCount:a.frames.length,candidates:a.candidates,decodedHypotheses:a.estimatedUnitUs ? decodeHypotheses(a.frames[0]?.durationsUs ?? capture.durationsUs,a.estimatedUnitUs).candidates.map(({encoding,bits,confidence,errors,verified})=>({encoding,bitstreamPreview:bits.slice(0,256),bitLength:bits.length,confidence,errors,verified})) : [],warnings:a.warnings
       },null,2);
       result.append(pre);draw();
     } catch(e) {capture=null;result.textContent="Import error: "+e.message;}
