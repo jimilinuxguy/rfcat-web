@@ -73,3 +73,5 @@ Operate only on authorized frequencies and equipment. Prefer controlled, short b
 
 - [Protocol Reverse-Engineering Workbench](protocol-workbench.md) — candidate bit fields, frame differences, checksum hints and JSON definitions.
 
+
+| [Firmware Manager](firmware-manager.md) | Experimental browser Web Serial bootloader flashing, Intel HEX validation, readback verification, and recovery guidance |
