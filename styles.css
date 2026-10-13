@@ -217,3 +217,18 @@ main[data-workspace-ready="true"]{display:block;max-width:1440px}
 .help-diagnostic-card[data-severity="ok"]{border-left-color:#69d7b2}
 .help-diagnostic-card strong{font-size:14px}.help-diagnostic-card p{margin:0;color:#c4d1e0;font-size:13px}
 .help-diagnostic-card button{justify-self:start;font-size:12px}
+
+/* Illustrated help topic library */
+.help-topic-group{display:grid;gap:8px;padding:8px 0}
+.help-topic-group>h3{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#9cb1cb;margin:12px 0 4px}
+.help-topic-tile{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 12px;border:1px solid #344a63;border-radius:12px;background:linear-gradient(120deg,#1a2a3f,#131f30);transition:background .15s,border-color .15s,transform .15s}
+.help-topic-tile:hover,.help-topic-tile:focus-visible{background:#253b54;border-color:#74b4dc;transform:translateY(-1px)}
+.help-topic-icon-wrap{width:40px;height:40px;flex:0 0 40px;display:grid;place-items:center;border-radius:11px;background:#26445b;color:#85d9e4}
+.help-topic-group:nth-of-type(3n+2) .help-topic-icon-wrap{background:#3a345a;color:#c2adff}
+.help-topic-group:nth-of-type(3n+3) .help-topic-icon-wrap{background:#27493f;color:#94dfbd}
+.help-topic-icon{width:23px;height:23px;display:block}
+.help-topic-content{min-width:0;display:grid;gap:3px;flex:1}
+.help-topic-content strong{color:#edf5ff;font-size:13px;font-weight:650}
+.help-topic-content small{color:#a1b4c9;font-size:11px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.help-topic-arrow{color:#91a9c1;font-size:22px;line-height:1}
+@media(prefers-reduced-motion:reduce){.help-topic-tile{transition:none}.help-topic-tile:hover{transform:none}}
