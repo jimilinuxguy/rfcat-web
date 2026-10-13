@@ -1,4 +1,5 @@
 import test from "node:test";
+import {readFileSync} from "node:fs";
 import assert from "node:assert/strict";
 import {TOURS,HELP_TOPICS,findTour} from "../js/help/tours.js";
 import {onboardingCopy,ONBOARDING_GOALS} from "../js/help/onboarding.js";
@@ -17,4 +18,15 @@ test("onboarding offers all workflows and four steps",()=>{
 test("help topics have documentation and persistent store version",()=>{
  for(const topic of HELP_TOPICS){assert.ok(topic.doc.startsWith("docs/"));assert.ok(topic.target&&topic.text);}
  assert.ok(RFCAT_DB_VERSION>=4);assert.ok(RFCAT_DB_STORES.includes("help"));
+});
+
+test("every contextual help and tutorial selector exists in index.html",()=>{
+ const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ const selectors=[...HELP_TOPICS.map(t=>t.target),...TOURS.flatMap(t=>t.steps.map(s=>s.target))];
+ for(const selector of selectors){
+  const name=selector.slice(1).replace(/[.*+?^$\{\}()|[\]\\]/g,"\\$&");
+  const attr=selector[0]==="#"?"id":"class";
+  const pattern=attr==="id"?new RegExp('\\\\bid=["\\\']'+name+'["\\\']'):new RegExp('class=["\\\'][^"\\\']*\\\\b'+name+'\\\\b');
+  assert.match(html,pattern,"Missing help target: "+selector);
+ }
 });
