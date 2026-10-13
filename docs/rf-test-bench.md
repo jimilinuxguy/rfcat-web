@@ -1,4 +1,4 @@
-# RF Test Bench — Milestone 7 (feature branch)
+# RF Test Bench
 
 A controlled RF packet experiment panel. No PR has been opened and no changes have been merged.
 
