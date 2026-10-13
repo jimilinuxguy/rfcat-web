@@ -50,3 +50,11 @@ The user reports successful browser tests of RAW import, waveform cursor draggin
 ### Automated tests
 
 Run `npm test` on the feature branch or merged main. Unit tests cover timing analysis, decoding heuristics, persistence helpers, scanner logic, and cursor coordinate transforms. Automated tests do not replace browser or over-the-air verification.
+
+## Milestone 4 — interactive timing and decode workbench
+
+The RF Signal Analyzer now contains an offline **Timing & decode workbench** beneath the waveform. Import a Flipper RAW `.sub` file to see separate high-pulse and low-gap timing histograms. Choose a level, then click a histogram bar to highlight the matching pulse indices in the waveform. Bar labels are microsecond bin starts; the selected interval and absolute time span appear beneath the chart. Large duration ranges are binned, with the 24 most populated bins displayed, so the visualization is a summary rather than a complete distribution.
+
+The candidate selector shows the existing NRZ, Manchester, differential Manchester, PWM and PPM decoding hypotheses when available. **Invert candidate bits** is a display-only polarity experiment; it does not alter capture data. Hypothesis confidence is heuristic and does not prove encoding. Frame comparison uses the existing long-gap segmentation and compares up to 12 frames by signed pulse index; it marks exact matches and differences, but cannot compensate for missing edges, timing jitter or shifted alignment. The comparison is not bit-accurate protocol reconstruction.
+
+**Export analysis JSON** saves timing histogram, frame comparison and candidate bitstreams as an offline report. The report excludes original source text and secret settings; it does not transmit, alter radio configuration, or overwrite local saved captures. Run `npm test` and manually verify histogram selection, cursor interaction, polarity switching, narrow layouts and export using a known RAW fixture.
