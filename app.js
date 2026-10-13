@@ -454,9 +454,10 @@ $("cw-send").onclick=async()=>{
   if(listening||momentumChatActive||signalScanController||benchRunning)throw Error("Stop RX, chat, scanning and RF Test Bench first");
   const frequency=Number($("cw-frequency").value);
   if(!Number.isFinite(frequency)||!((frequency>=300&&frequency<=348)||(frequency>=387&&frequency<=464)||(frequency>=779&&frequency<=928)))throw Error("Frequency outside CC1111 supported bands");
-  if(!window.confirm(`Transmit ${plan.packed.bytes.length} raw OOK bytes at ${frequency.toFixed(3)} MHz? This changes radio configuration and emits real RF.`))return;
+  if(!window.confirm(`Transmit ${plan.encoded.text} (${plan.packed.bytes.length} bytes, ${plan.encoded.wpm} WPM) at ${frequency.toFixed(3)} MHz? This changes radio configuration and emits real RF.`)){log("CW TX canceled by user");return;}
   cwSending=true;$("cw-send").disabled=true;
   $("cw-tx-status").textContent="Configuring OOK modem…";
+  log(`CW TX preparing: ${plan.encoded.text} · ${plan.encoded.code} · ${plan.encoded.wpm} WPM · ${frequency.toFixed(3)} MHz · ${plan.packed.sampleRate} baud · ${plan.packed.bytes.length} bytes`);
   await d.mode(C.RF_IDLE);
   await d.setFrequency(frequency*1e6);
   await d.setModulation(0x30);
@@ -467,13 +468,15 @@ $("cw-send").onclick=async()=>{
   await d.setMaxPower();
   await d.setAmpMode(true);
   try{
+   log(`CW TX sending: ${plan.packed.bytes.length} raw OOK bytes`);
    const reply=await d.transmit(plan.packed.bytes);
    if(reply?.[0]!==1)throw Error("Unexpected firmware TX response");
    cwLastReport={schema:"rfcat-web.cw.v1",timestamp:new Date().toISOString(),message:plan.encoded.text,code:plan.encoded.code,wpm:plan.encoded.wpm,frequencyMHz:frequency,sampleRate:plan.packed.sampleRate,bytes:plan.packed.bytes.length,firmwareAcknowledged:true};
    $("cw-tx-status").textContent="Firmware acknowledged OOK packet TX. Over-the-air keying accuracy and reception are NOT verified. Radio configuration remains changed.";
+   log(`CW TX firmware acknowledged: ${plan.encoded.text} · ${plan.encoded.wpm} WPM · ${frequency.toFixed(3)} MHz · ${plan.packed.bytes.length} bytes (on-air waveform unverified)`);
   }finally{await d.setAmpMode(false);await d.mode(C.RF_IDLE);}
- }catch(error){$("cw-tx-status").textContent="CW TX: "+error.message;}
- finally{cwSending=false;$("cw-send").disabled=false;$("cw-authorized").checked=false;}
+ }catch(error){$("cw-tx-status").textContent="CW TX: "+error.message;log("CW TX error: "+error.message);}
+ finally{cwSending=false;$("cw-send").disabled=false;}
 };
 let cwSending=false;
 $("cw-export").onclick=()=>{
