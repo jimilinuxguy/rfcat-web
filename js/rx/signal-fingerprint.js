@@ -47,14 +47,20 @@ function median(xs) {
 export function analyzePulses(capture) {
   const pulses = capture.durationsUs;
   if (!Array.isArray(pulses) || !pulses.length) throw new Error("Empty capture");
+  if(pulses.length>250000||pulses.some(v=>!Number.isSafeInteger(v)||v===0))throw Error("Invalid capture durations");
   const abs = pulses.map(Math.abs);
   const baseUs = median(abs.filter(v => v <= median(abs))) ?? median(abs);
   const tolerance = Math.max(10, baseUs * 0.22);
   const clusters = [];
+  // A bounded clustering pass avoids retaining a second copy of every pulse.
+  // Sorted values can be grouped in a single pass; medians are approximated
+  // by the current running mean for classification, not symbol verification.
   for (const value of [...abs].sort((a,b)=>a-b)) {
-    const group = clusters.find(c => Math.abs(c.center-value) <= tolerance);
-    if (group) { group.values.push(value); group.center = median(group.values); }
-    else clusters.push({ center: value, values: [value] });
+    const group=clusters[clusters.length-1];
+    if(group && Math.abs(group.center-value)<=tolerance){
+      group.count++;
+      group.center+=(value-group.center)/group.count;
+    } else clusters.push({center:value,count:1});
   }
   const gaps = pulses.flatMap((value,index) => value < 0 && Math.abs(value) >= Math.max(5000, baseUs*6) ? [{ index, durationUs: -value }] : []);
   const frames = [];
@@ -80,7 +86,7 @@ export function analyzePulses(capture) {
     estimatedSymbolRate: baseUs ? Math.round(1e6/baseUs) : null,
     bitrateStatus: "heuristic; unit duration is not necessarily a bit period",
     timingConsistency: stable,
-    clusters: clusters.map(c=>({ centerUs:c.center, count:c.values.length })),
+    clusters: clusters.map(c=>({ centerUs:Math.round(c.center), count:c.count })),
     gaps, frames: frames.map((durationsUs,index)=>({ index, durationsUs })),
     candidates,
     warnings:["ASK/OOK and FSK can produce identical demodulated pulse trains", "Receiver preset does not independently verify transmitted modulation"]
