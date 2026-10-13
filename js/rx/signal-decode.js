@@ -65,3 +65,34 @@ export function compareBitstreams(bitstreams) {
   }
   return { comparedBits, changingBitIndices, lengths: bitstreams.map(v => v.length) };
 }
+
+export function alignBitstreams(bitstreams, { maxShift = 128 } = {}) {
+  if (!Array.isArray(bitstreams) || bitstreams.length < 2 ||
+      bitstreams.some(s => typeof s !== "string" || !/^[01]+$/.test(s)))
+    throw new Error("Expected two or more nonempty binary frames");
+  const reference = bitstreams[0];
+  const aligned = [{ offset: 0, agreement: 1, bitstream: reference }];
+  for (const bits of bitstreams.slice(1)) {
+    let best = { offset: 0, agreement: -1, overlap: 0 };
+    const limit = Math.min(maxShift, Math.max(reference.length, bits.length));
+    for (let offset = -limit; offset <= limit; offset++) {
+      let matches = 0, overlap = 0;
+      for (let i = 0; i < bits.length; i++) {
+        const j = i + offset;
+        if (j >= 0 && j < reference.length) { overlap++; if (bits[i] === reference[j]) matches++; }
+      }
+      if (overlap < Math.min(8, reference.length, bits.length)) continue;
+      const agreement = matches / overlap;
+      if (agreement > best.agreement ||
+          (agreement === best.agreement && overlap > best.overlap))
+        best = { offset, agreement, overlap };
+    }
+    aligned.push({ ...best, bitstream: bits });
+  }
+  const changingBitIndices = [];
+  for (let i = 0; i < reference.length; i++) {
+    const values = aligned.map(frame => frame.bitstream[i - frame.offset]).filter(v => v !== undefined);
+    if (values.length > 1 && new Set(values).size > 1) changingBitIndices.push(i);
+  }
+  return { aligned, changingBitIndices };
+}
