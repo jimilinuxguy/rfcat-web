@@ -68,6 +68,24 @@
       </div>
       <div class="actions"><button type="button" id="signal-export-report">Export analysis JSON</button></div>
     </section>
+    <section class="protocol-workbench" aria-labelledby="protocol-workbench-title">
+      <div class="title-row"><h3 id="protocol-workbench-title">Protocol reverse-engineering</h3><span class="section-kicker">Offline · candidate fields</span></div>
+      <p class="hint">Inspect a candidate bitstream, mark named fields, compare repeated frames and export a reusable JSON definition. No protocol is automatically verified.</p>
+      <div class="protocol-workbench-controls">
+        <label>Protocol name <input id="protocol-workbench-name" value="Unknown OOK" maxlength="80"></label>
+        <label>Start bit <input id="protocol-field-start" type="number" min="0" value="0"></label>
+        <label>Field width <input id="protocol-field-length" type="number" min="1" max="64" value="8"></label>
+        <label>Field name <input id="protocol-field-name" value="field1" maxlength="40"></label>
+        <label>Bit order <select id="protocol-field-order"><option value="msb">MSB first</option><option value="lsb">LSB first</option></select></label>
+      </div>
+      <div class="actions"><button type="button" id="protocol-field-add">Add field</button><button type="button" id="protocol-fields-clear">Clear fields</button><button type="button" id="protocol-definition-export">Export definition JSON</button></div>
+      <pre id="protocol-bit-inspector" tabindex="0" aria-label="Candidate bitstream">Import a RAW capture and select a decode hypothesis.</pre>
+      <div class="signal-workbench-grid">
+        <section><h4>Defined fields</h4><div id="protocol-field-list" aria-live="polite">No fields defined.</div></section>
+        <section><h4>Inference &amp; checks</h4><pre id="protocol-inference" aria-live="polite">Awaiting repeated frames.</pre></section>
+      </div>
+      <p id="protocol-workbench-status" role="status" class="hint"></p>
+    </section>
     <div id="signal-analysis-results" aria-live="polite">Select a .sub RAW file to begin.</div>
   </div>
 </details>
