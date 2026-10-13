@@ -1,32 +1,33 @@
-// Navigation is presentation-only: retain every existing DOM node, listener and radio state.
+// Workspace selection shares panel ownership with the draggable layout manager.
 export const WORKSPACES=["receive","transmit","analyze","protocols","tools"];
 export const WORKSPACE_PANELS={
- "signal-analyzer-panel":"analyze",
- ".radio":"tools",
- ".receiver-card":"receive",
- ".rx-tx-tools .pulse-analyzer-card":"analyze",
- ".rx-tx-tools .transmitter-card":"transmit",
- ".rx-tx-tools .test-bench-card":"transmit",
- ".rx-tx-tools .cw-card":"protocols",
- ".rx-tx-tools .momentum-chat-card":"protocols",
- ".waveform-card":"transmit"
+ "radio":"tools","receiver":"receive","capture-library":"receive",
+ "pulse-analyzer":"analyze","signal-analyzer":"analyze",
+ "transmitter":"transmit","test-bench":"transmit","waveform":"transmit",
+ "cw":"protocols","momentum-chat":"protocols","activity":"shared"
 };
 export function normalizeWorkspace(value){return WORKSPACES.includes(value)?value:"receive";}
+export function panelWorkspace(id){return WORKSPACE_PANELS[id]||null;}
 export function initWorkspaceNavigation(doc=document,storage=globalThis.localStorage){
  const root=doc.getElementById("workspace-main");
  if(!root)return()=>{};
  const tabs=[...doc.querySelectorAll("[data-workspace-tab]")];
- const panels=Object.entries(WORKSPACE_PANELS).map(([selector,workspace])=>[doc.getElementById(selector)||root.querySelector(selector),workspace]).filter(([node])=>node);
- const activity=root.querySelector(".console");
- if(activity){activity.classList.add("workspace-activity");activity.open=false;}
- // Hide the entire old mixed RX/TX column only if none of its children belongs here.
- const toolColumn=root.querySelector(".rx-tx-tools");
  let current="receive";
  function activate(value,{persist=true}={}){
   current=normalizeWorkspace(value);
-  for(const [panel,workspace] of panels)panel.hidden=workspace!==current;
-  if(toolColumn)toolColumn.hidden=![...toolColumn.children].some(child=>!child.hidden&&child.matches(".card"));
-  for(const tab of tabs){const selected=tab.dataset.workspaceTab===current;tab.setAttribute("aria-selected",String(selected));tab.tabIndex=selected?0:-1;}
+  const panels=[...root.querySelectorAll("[data-workspace-panel]")];
+  for(const panel of panels){
+   const owner=panelWorkspace(panel.dataset.workspacePanel);
+   panel.hidden=owner!==current&&owner!=="shared";
+  }
+  // The old mixed column is emptied by the layout manager; never show duplicates.
+  const oldColumn=root.querySelector(".rx-tx-tools");
+  if(oldColumn)oldColumn.hidden=true;
+  for(const tab of tabs){
+   const selected=tab.dataset.workspaceTab===current;
+   tab.setAttribute("aria-selected",String(selected));
+   tab.tabIndex=selected?0:-1;
+  }
   root.dataset.workspace=current;
   if(persist){try{storage?.setItem("rfcat.workspace.active.v1",current);}catch{}}
  }
@@ -43,6 +44,13 @@ export function initWorkspaceNavigation(doc=document,storage=globalThis.localSto
  let saved="receive";
  try{saved=storage?.getItem("rfcat.workspace.active.v1")||saved;}catch{}
  activate(saved,{persist:false});
+ // initWorkspace() restores IndexedDB asynchronously, then signals that all
+ // panels have been moved into the shared layout. Reapply selection afterwards.
+ doc.addEventListener("rfcat:workspace-ready",()=>{
+  const activity=root.querySelector('[data-workspace-panel="activity"]');
+  if(activity)activity.classList.add("workspace-activity");
+  activate(current,{persist:false});
+ });
  return activate;
 }
 if(typeof document!=="undefined")initWorkspaceNavigation();
