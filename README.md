@@ -15,6 +15,18 @@ RFCat Web uses WebUSB to configure radios, transmit test frames, capture and dec
 - **Customize your workspace:** Drag, resize, and collapse panels. Layout preferences persist locally in IndexedDB.
 - **Interoperate with other devices:** Use specialized workflows such as Momentum Enhanced Sub-GHz Chat with a Flipper Zero.
 
+## Screenshots
+
+The screenshots below illustrate the browser workspace without requiring RF hardware. The screenshot generator uses a fixed desktop viewport; disconnected device state is intentional.
+
+![Receive workspace and packet tools](docs/images/receiver-transmitter.png)
+
+![Transmit workspace and waveform tools](docs/images/waveform-preview.png)
+
+![Radio configuration in Tools](docs/images/radio-configuration.png)
+
+Regenerate these images (plus a Firmware Manager screenshot) with `npm run screenshots:readme` after `npm install` and `npx playwright install chromium`. Review the generated images before committing them; they reflect the UI at capture time, not a connected device or verified RF activity. See [Screenshot automation](docs/readme-screenshots.md).
+
 ## Quick start
 
 **Requirements:** RFCat-compatible CC1111 hardware (YARD Stick One is the primary tested device), a WebUSB-capable browser, and a local HTTP server or secure origin. USB permission is granted through the browser.
