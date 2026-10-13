@@ -17,7 +17,7 @@ This milestone is on `feature/cw-workbench-m8`. **No pull request has been opene
 
 **This is Sub-GHz sampled OOK Morse, not conventional HF continuous-wave reception or an audio CW decoder.** The CC1111 firmware's packet transmitter, modem state machine and FIFO can change or truncate intended timing. A firmware acknowledgement **does not** prove a correct RF waveform. TX is restricted to one bounded packet (maximum 255 bytes); longer messages require a different continuous-stream firmware path, not unsafe browser-timed keying.
 
-RX expects a demodulated *raw OOK bitstream* at the specified symbol rate. Do not feed ASCII text, decoded protocol packets or a Flipper `.sub` text file into the raw hex field. The receiver may split frames across packet boundaries; the live decoder buffers the latest 4096 raw bytes and repeatedly decodes that window, so messages may contain incomplete leading/trailing symbols. Auto WPM is a simple shortest-pulse estimator and may misclassify all-dash traffic or noise. Validate with known test signals before relying on results.
+RX expects a demodulated *raw OOK bitstream* at the specified symbol rate. Do not feed ASCII text, decoded protocol packets or a Flipper `.sub` text file into the raw hex field. The receiver may split frames across packet boundaries. The live decoder now reconstructs a continuous sample stream across active packet boundaries, ignores only full frames matching the observed idle signature (`C0` followed by zeroes, or all-zero frames), and finalizes a candidate when idle resumes. It preserves completed messages and reports RX frame counts. This is a heuristic: if a genuine transmission contains a whole frame matching the idle signature, it can be misclassified. Auto WPM is a simple shortest-pulse estimator and may misclassify all-dash traffic or noise. Validate with known test signals before relying on results.
 
 ## First test pass
 
@@ -28,7 +28,7 @@ RX expects a demodulated *raw OOK bitstream* at the specified symbol rate. Do no
 5. Launch the CW wizard and walk all nine steps. Check Help and narrow-screen layout.
 6. With a disconnected radio, check TX refusal. With a connected radio, test unchecked authorization, confirmation cancellation, and active RX/chat/scanning safeguards.
 7. On an **authorized bench setup**, transmit a short Morse message. Capture the actual OOK envelope with a second independent receiver or Flipper RAW capture. Compare measured dot/dash durations with the preview. Do not assume the firmware TX ACK guarantees keying accuracy.
-8. Configure the main Receiver for raw OOK (no sync, CRC, whitening or status) at the same sample rate. Enable live CW decode and send a known test signal from a separate transmitter. Verify decode and buffer reset.
+8. Configure the main Receiver for raw OOK (no sync, CRC, whitening or status) at the same sample rate. Enable live CW decode and send a known test signal from a separate transmitter. Verify frame counts increase, active frames are detected, and completed messages persist after idle frames. Try `SOS` at 20 WPM. Check Clear Morse RX and speed/rate changes.
 9. Check existing Receiver, Test Bench, Momentum Chat and Protocol Transmitter for regressions.
 10. Run `npm test` and inspect browser console.
 
