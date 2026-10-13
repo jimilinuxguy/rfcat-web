@@ -256,6 +256,10 @@ export class RFCatUSB extends EventTarget {
         }
     }
 
+    enterBootloader() {
+        return this.send(C.APP_SYSTEM, C.SYS_BOOTLOADER, new Uint8Array(), 1200);
+    }
+
     ping() {
         return this.send(
             C.APP_SYSTEM,
