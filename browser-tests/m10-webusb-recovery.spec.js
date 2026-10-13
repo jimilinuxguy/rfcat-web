@@ -12,7 +12,7 @@ test("dropped initial ping is retried and connection succeeds",async({page})=>{
 });
 
 test("USB write failure cleans up and a subsequent connection succeeds",async({page})=>{
- await installMockWebUSB(page,{failWrites:1});
+ await installMockWebUSB(page,{failWrites:3});
  page.on("dialog",dialog=>dialog.accept());
  await page.goto("/");
  await page.locator("#connect").click();
@@ -43,6 +43,8 @@ test("unplug during a pending command cancels the waiter and reconnects",async({
  await page.goto("/");
  await page.locator("#connect").click();
  await expect(page.locator("body")).toHaveClass(/connected/);
+ await page.locator("#connect").click();
+ await expect(page.locator("body")).not.toHaveClass(/connected/);
  // Exercise an in-flight system command without emitting any RF transmission.
  const pending=page.evaluate(async()=>{
   const {RFCatUSB}=await import("./js/rfcat/device.js");
@@ -60,6 +62,8 @@ test("unplug during a pending command cancels the waiter and reconnects",async({
   window.__pendingOutcome=await p;
  });
  expect(await page.evaluate(()=>window.__pendingOutcome)).toContain("disconnected");
- await page.evaluate(()=>window.__mockWebUSB.disconnect());
+ await page.locator("#connect").click();
+ await expect(page.locator("body")).toHaveClass(/connected/);
+ await page.locator("#connect").click();
  await expect(page.locator("body")).not.toHaveClass(/connected/);
 });
