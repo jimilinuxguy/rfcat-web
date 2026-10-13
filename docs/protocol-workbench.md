@@ -16,3 +16,7 @@ The RF Signal Analyzer now includes an offline, read-only bit inspector. Import 
 6. Open **? Help** and run the Protocol Reverse-Engineering tour. Test narrow viewport and keyboard navigation. Run `npm test`.
 
 The analysis is offline and does not send RF commands. Real-world validation requires independent captures and controlled changes.
+
+## Acceptance fixture: 01_ook_repeated_frames.sub
+
+The repository includes `tests/fixtures/01_ook_repeated_frames.sub` (three synthetic, identical OOK frames). Expected: 433.920 MHz configured ASK/OOK, 116 total signed intervals, two 10,000 µs separator gaps, three frames of 38 intervals, and an estimated 500 µs unit. Each frame's NRZ candidate is `101010101010101010101010110011001011001010001110` (48 bits). The first 24 bits are `0xAAAAAA`, and the remaining 24 bits are `0xCCB28E`. The inference engine should report 48 stable bits and no variable runs. A unit test verifies parse, decode, field extraction and JSON schema round-trip. These are synthetic expectations, not verified over-the-air protocol semantics.
