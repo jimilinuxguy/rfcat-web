@@ -1,3 +1,4 @@
+import {initFirmwareManager} from "./js/ui/firmware-manager.js";
 import {initReplayController} from "./js/ui/replay-controller.js";
 import { MomentumCrypto, momentumKeyFromPassword, momentumKeyFromHex } from "./js/chat/momentum-crypto.js";
 import { encodePlaintextChat, decodePlaintextChat } from "./js/chat/momentum-plaintext.js";
@@ -28,6 +29,7 @@ import {
 } from "./js/ui/protocols.js";
 
 const d = new RFCatUSB();
+initFirmwareManager({radio:d});
 let signalScanController=null;
 const signalScanStart=document.getElementById("signal-scan-start");
 const signalScanStop=document.getElementById("signal-scan-stop");
