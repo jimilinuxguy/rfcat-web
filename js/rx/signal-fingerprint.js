@@ -18,6 +18,7 @@ export function parseFlipperRaw(text) {
       for (const v of values) {
         const n = Number(v);
         if (!Number.isSafeInteger(n) || n === 0) throw new Error("Invalid pulse duration");
+        if (pulses.length >= 250000) throw new Error("RAW capture exceeds 250000 pulse limit");
         pulses.push(n);
       }
     } else metadata[key] = value;
@@ -36,7 +37,7 @@ export function parseFlipperRaw(text) {
   };
 }
 export function normalizePulseCapture({ source = "rfcat", frequencyHz = null, durationsUs, metadata = {}, configuredModulation = null }) {
-  if (!Array.isArray(durationsUs) || !durationsUs.length || durationsUs.some(n => !Number.isSafeInteger(n) || n === 0)) throw new Error("Invalid signed microsecond durations");
+  if (!Array.isArray(durationsUs) || !durationsUs.length || durationsUs.length > 250000 || durationsUs.some(n => !Number.isSafeInteger(n) || n === 0)) throw new Error("Invalid signed microsecond durations");
   return { source, frequencyHz, durationsUs: [...durationsUs], metadata: { ...metadata }, configuredModulation, verifiedModulation: null };
 }
 function median(xs) {
