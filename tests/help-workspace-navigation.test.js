@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {WORKSPACES,panelWorkspace} from "../js/ui/workspace-navigation.js";
-import {workspaceForTarget,revealHelpTarget} from "../js/help/workspace-target.js";
+import {workspaceForTarget,revealHelpTarget,HELP_TARGET_FALLBACKS} from "../js/help/workspace-target.js";
 
 function makeTarget(id,visible=true){
  const panel={dataset:{workspacePanel:id}};
@@ -62,4 +62,14 @@ test("tour target selectors exist in the page markup",async()=>{
 test("Momentum tutorial targets its chat panel rather than transmitter protocol selector",async()=>{
  const {TOURS}=await import("../js/help/tours.js");
  assert.ok(TOURS.find(t=>t.id==="momentum").steps.some(step=>step.target===".momentum-chat-card"));
+});
+
+test("inactive analysis targets fall back to visible launchers",()=>{
+ for(const [selector,launcher] of Object.entries(HELP_TARGET_FALLBACKS)){
+  const hidden=makeTarget("receiver",false);
+  const visible=makeTarget("receiver",true);
+  const doc={events:[],querySelector(value){return value===selector?hidden:value===launcher?visible:null;},dispatchEvent(event){this.events.push(event);}};
+  assert.equal(revealHelpTarget(selector,doc),visible,selector+" should use "+launcher);
+  assert.equal(doc.events.at(-1).detail.workspace,"receive");
+ }
 });
