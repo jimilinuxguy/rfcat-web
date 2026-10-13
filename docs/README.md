@@ -6,7 +6,7 @@ Technical reference, protocol notes, and validation guidance for the [RFCat Web 
 
 | Guide | Covers |
 | --- | --- |
-| [Guided onboarding and help](help/README.md) | First-run wizard, contextual help, guided and protocol-specific tutorials (including live burst grouping), receiver troubleshooting, and browser verification |
+| [M10 polish and reliability](m10-polish-reliability.md) | Shared radio status, Tools shortcut, regression tests, and browser acceptance checklist |\n| [Guided onboarding and help](help/README.md) | First-run wizard, contextual help, guided and protocol-specific tutorials (including live burst grouping), receiver troubleshooting, and browser verification |
 | [RF Signal Analyzer](signal-analyzer.md) | Flipper RAW import, draggable timing cursors, local persistence, guided YARD Stick One scanning, validation, and limitations |
 | [Intelligent Receiver & Capture Pipeline](capture-pipeline.md) | Live packet burst grouping, configurable duplicate window, RSSI ranges, JSON export, guided test matrix and limitations (M6 merged) |
 | [Receiver and Protocol Decoders](receiver-decoders.md) | Capture, raw/auto decode, POCSAG/CAME/Retekess RX, offline import, sessions, compare, inference, and preset builder |
