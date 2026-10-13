@@ -294,3 +294,12 @@ main[data-workspace-ready="true"]{display:block;max-width:1440px}
 .test-bench-card .bench-confirm{display:flex;align-items:flex-start;gap:10px;margin:14px 0;line-height:1.4}
 .test-bench-card .bench-confirm input{width:auto;flex-shrink:0;margin-top:3px}
 .test-bench-card .bench-output{white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto;padding:12px;border-radius:8px;background:rgba(127,127,127,.08)}
+
+/* Milestone 8 Morse/CW workbench */
+.cw-card .cw-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:12px 0}
+.cw-card .cw-fields input,.cw-card textarea,.cw-card .cw-receiver input,.cw-card .cw-receiver textarea{width:100%}
+.cw-card #cw-waveform{display:block;width:100%;max-width:100%;border-radius:8px;background:rgba(127,127,127,.08);margin:12px 0}
+.cw-card .bench-confirm{display:flex;gap:10px;align-items:flex-start;margin:12px 0}
+.cw-card .bench-confirm input{width:auto;flex-shrink:0}
+.cw-card .cw-receiver{border-top:1px solid var(--border-color,rgba(127,127,127,.3));margin-top:18px;padding-top:12px}
+.cw-card .bench-output{white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;padding:12px;background:rgba(127,127,127,.08);border-radius:8px}
