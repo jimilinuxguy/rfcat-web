@@ -1,4 +1,4 @@
-import {buildReplayReport,replayReportCSV,replayReportJSON} from "./js/rx/replay-report.js";
+import {installReplayExport} from "./js/ui/replay-export.js";
 import {replayDelays,compareReplaySessions} from "./js/rx/replay-analysis.js";
 import {prepareReplay,replaySummary,replayAt} from "./js/rx/session-replay.js";
 import { MomentumCrypto, momentumKeyFromPassword, momentumKeyFromHex } from "./js/chat/momentum-crypto.js";
@@ -1397,20 +1397,7 @@ $("replay-load").onclick=()=>{
  try{
   pauseReplay();
   replayFrames=prepareReplay(rxCaptures);replayIndex=0;replayComparison=null;$("replay-comparison").textContent="";
-  const replayExportControls=document.createElement("div");
-replayExportControls.innerHTML='<button type="button" id="replay-export-json">Export replay JSON</button> <button type="button" id="replay-export-csv">Export replay CSV</button>';
-replayHost.append(replayExportControls);
-function downloadReplayReport(format){
- if(!replayFrames.length){$("replay-summary").textContent="Prepare a non-empty replay before exporting.";return;}
- const report=buildReplayReport(replayFrames,replaySummary(replayFrames),replayComparison);
- const csv=format==="csv";
- const blob=new Blob([csv?replayReportCSV(report):replayReportJSON(report)],{type:csv?"text/csv;charset=utf-8":"application/json"});
- const url=URL.createObjectURL(blob),a=document.createElement("a");
- a.href=url;a.download="rfcat-replay-report."+format;a.click();
- setTimeout(()=>URL.revokeObjectURL(url),1000);
-}
-$("replay-export-json").onclick=()=>downloadReplayReport("json");
-$("replay-export-csv").onclick=()=>downloadReplayReport("csv");
+  installReplayExport({host:replayHost,getFrames:()=>replayFrames,getComparison:()=>replayComparison,getSummary:replaySummary,onEmpty:()=>{$("replay-summary").textContent="Prepare a non-empty replay before exporting.";}});
 void refreshReplayComparisonOptions();
   const stats=replaySummary(replayFrames);
   $("replay-summary").textContent=`${stats.count} captures · ${stats.uniquePayloads} unique payloads · ${stats.duplicates} repeated · ${stats.totalBytes} total bytes`;
