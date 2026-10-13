@@ -379,7 +379,7 @@ let cwStream=null;
 let cwHistory=[];
 function cwRenderStatus(status){
  const recent=cwHistory.slice(-8).map(x=>`[${x.time}] ${x.text} · ${x.wpm} WPM · confidence ${Math.round(x.confidence*100)}% · ${x.bytes} bytes`).join("\n");
- $("cw-rx-output").textContent=`Live CW: ${cwLive?"enabled":"disabled"} · RX frames: ${status.frames} · signal frames: ${status.activeFrames} · buffered bytes: ${status.bufferedBytes}\nState: ${status.reason||"waiting"}${status.candidate?" · candidate: "+status.candidate:""}\n\nCompleted messages:\n${recent||"(none yet)"}`;
+ $("cw-rx-output").textContent=`Live CW: ${cwLive?"enabled":"disabled"} · RX frames: ${status.frames} · signal frames: ${status.activeFrames} · buffered bytes: ${status.bufferedBytes}\nState: ${status.reason||"waiting"}${status.candidate?" · candidate: "+status.candidate:""}${status.lastResult?"\nLast burst: "+status.lastResult.bytes+" bytes · "+status.lastResult.marks+" marks · "+Math.round(status.lastResult.confidence*100)+"% confidence · "+status.lastResult.text+"\nPulse runs: "+status.lastResult.runs:""}\n\nCompleted messages:\n${recent||"(none yet)"}`;
 }
 function cwNewStream(){
  const rate=Number($("cw-rx-rate").value),speed=$("cw-rx-speed").value;
