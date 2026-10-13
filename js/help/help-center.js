@@ -173,7 +173,7 @@ export async function initHelpCenter(){
   action(step===3?"Start tutorial":"Continue",()=>{
    if(step===3){state.onboarded=true;persist();startTour(goal);}else showWizard(step+1);
   });
-  action("Skip",()=>{state.onboarded=true;persist();dialog.close();});
+  action("Skip",async()=>{state.onboarded=true;await persist();dialog.close();});
  }
  button.addEventListener("click",showHome);
  initContextHelp(showTopic);
