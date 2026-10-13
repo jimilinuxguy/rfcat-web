@@ -54,8 +54,9 @@ test("every connection-led tutorial declares its starting workspace",async()=>{
 test("tour target selectors exist in the page markup",async()=>{
  const {TOURS}=await import("../js/help/tours.js");
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ const dynamic=readFileSync(new URL("../app.js",import.meta.url),"utf8");
  for(const tour of TOURS)for(const step of tour.steps){
-  if(step.target.startsWith("#"))assert.ok(html.includes('id="'+step.target.slice(1)+'"'),tour.id+": "+step.target);
+  if(step.target.startsWith("#"))assert.ok(html.includes('id="'+step.target.slice(1)+'"')||(step.target.startsWith("#replay-")&&dynamic.includes('id="'+step.target.slice(1)+'"')),tour.id+": "+step.target);
   else if(step.target.startsWith("."))assert.ok(html.includes(step.target.slice(1)),tour.id+": "+step.target);
  }
 });
