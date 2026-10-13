@@ -13,7 +13,7 @@ export function timingHistogram(durations,{maxBins=24}={}){
    if(!bins.has(start))bins.set(start,{startUs:start,endUs:start+width-1,count:0,indices:[]});
    const bin=bins.get(start);bin.count++;bin.indices.push(item.index);
   }
-  return [...bins.values()].sort((a,b)=>a.startUs-b.startUs);
+  return [level,[...bins.values()].sort((a,b)=>a.startUs-b.startUs)];
  }));
 }
 export function compareAlignedCaptures(captures,{maxFrames=12}={}){
