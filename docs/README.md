@@ -6,6 +6,7 @@ Technical reference, protocol notes, and validation guidance for the [RFCat Web 
 
 | Guide | Covers |
 | --- | --- |
+| [M11 offline capture replay](m11-capture-replay.md) | Manual step-through of saved captures, summary statistics and validation limits |
 | [M10 polish and reliability](m10-polish-reliability.md) | Shared radio status, Tools shortcut, regression tests, and browser acceptance checklist |
 | [Guided onboarding and help](help/README.md) | First-run wizard, contextual help, guided and protocol-specific tutorials (including live burst grouping), receiver troubleshooting, and browser verification |
 | [RF Signal Analyzer](signal-analyzer.md) | Flipper RAW import, draggable timing cursors, local persistence, guided YARD Stick One scanning, validation, and limitations |
