@@ -1,3 +1,4 @@
+import {revealHelpTarget} from "./workspace-target.js";
 import {EXERCISES,checkExercise} from "./exercises.js";
 import {placeHelpCard} from "./tour-position.js";
 import {analyzeRadioState,readRadioDiagnostics} from "./diagnostics.js";
@@ -144,9 +145,8 @@ export async function initHelpCenter(){
     const head=node("strong",issue.title),description=node("p",issue.detail);
     const inspect=node("button",issue.action);inspect.type="button";
     inspect.addEventListener("click",()=>{
-     const target=document.querySelector(issue.target);
+     const target=revealHelpTarget(issue.target);
      if(!target)return;
-     const panel=target.closest("details");if(panel)panel.open=true;
      dialog.close();target.scrollIntoView({block:"center",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
      target.focus?.({preventScroll:true});
      target.classList.add("help-target");
