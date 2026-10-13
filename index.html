@@ -35,7 +35,7 @@
             </div>
         </header>
 
-        <nav class="workspace-nav" aria-label="RF workspaces"><div class="workspace-nav-tabs" role="tablist" aria-label="Workspaces"><button type="button" role="tab" data-workspace-tab="receive" aria-selected="true">Receive</button><button type="button" role="tab" data-workspace-tab="transmit" aria-selected="false">Transmit</button><button type="button" role="tab" data-workspace-tab="analyze" aria-selected="false">Analyze</button><button type="button" role="tab" data-workspace-tab="protocols" aria-selected="false">Protocols</button><button type="button" role="tab" data-workspace-tab="tools" aria-selected="false">Tools</button></div><span class="workspace-nav-hint">Connection and activity stay available; configure the radio under Tools.</span></nav>
+        <nav class="workspace-nav" aria-label="RF workspaces"><div class="workspace-nav-tabs" role="tablist" aria-label="Workspaces"><button type="button" role="tab" data-workspace-tab="receive" aria-selected="true">Receive</button><button type="button" role="tab" data-workspace-tab="transmit" aria-selected="false">Transmit</button><button type="button" role="tab" data-workspace-tab="analyze" aria-selected="false">Analyze</button><button type="button" role="tab" data-workspace-tab="protocols" aria-selected="false">Protocols</button><button type="button" role="tab" data-workspace-tab="tools" aria-selected="false">Tools</button></div><button type="button" id="radio-status-shortcut" class="radio-status-shortcut" title="Current radio form values — open Tools to configure"><span id="radio-status-connection">Disconnected</span><span id="radio-status-details">433.920 MHz · ASK / OOK · 4,800 baud</span><span class="radio-status-action">Configure in Tools →</span></button></nav>
         <main id="workspace-main">
 <details class="card collapsible" id="signal-analyzer-panel">
   <summary class="section-summary"><span>RF Signal Analyzer</span><span class="summary-note">Flipper RAW import and timing fingerprints</span></summary>
@@ -742,5 +742,6 @@
     ></script>
     <script type="module" src="./js/ui/signal-analyzer.js"></script>
     <script type="module" src="./js/ui/workspace-navigation.js"></script>
+        <script type="module" src="./js/ui/radio-status.js"></script>
     </body>
 </html>
