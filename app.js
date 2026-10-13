@@ -31,6 +31,7 @@ if(signalScanStart&&signalScanStop&&signalScanResults){
   signalScanStart.addEventListener("click",async()=>{
     if(signalScanController)return;
     if(!d.device?.opened){signalScanResults.textContent="Connect YARD Stick One first.";return;}
+    if(listening||momentumChatActive){signalScanResults.textContent="Stop active receiver monitoring or Momentum chat before scanning.";return;}
     signalScanController=new AbortController();
     signalScanStart.disabled=true;signalScanStop.disabled=false;
     const rows=[];
