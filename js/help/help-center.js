@@ -15,7 +15,7 @@ export async function initHelpCenter(){
  const persist=async()=>{try{await writeHelpState(state);}catch(error){console.warn("Could not save help progress",error);}};
  const node=(tag,text)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;return el;};
  const action=(label,callback)=>{const b=node("button",label);b.type="button";b.addEventListener("click",callback);actions.append(b);return b;};
- const reset=(heading)=>{title.textContent=heading;body.replaceChildren();actions.replaceChildren();if(!dialog.open)dialog.showModal();};
+ const reset=(heading)=>{title.textContent=heading;body.replaceChildren();actions.replaceChildren();if(!dialog.open)dialog.show();};
  const engine=createTourEngine({
   onChange:detail=>{
    if(!detail){if(dialog.open)dialog.close();return;}
