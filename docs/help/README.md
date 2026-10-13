@@ -71,3 +71,7 @@ Each finding includes a severity cue and an **Inspect** button that opens and sc
 ## Illustrated help library
 
 The searchable Help index groups contextual topics into **Radio configuration**, **Signal analysis**, **Capture & decoding**, **Transmission & tools**, and **Secure chat**. Instead of repeated question-mark rows, each topic uses a compact, self-contained SVG category illustration, a title, a short preview and a disclosure chevron. Icons are decorative (hidden from screen readers); the entire tile remains a keyboard-accessible button. No external icon library or network asset is required. Search filters the grouped topics and their descriptions.
+
+## Radio panel contextual-help layout
+
+Radio field explanations are accessed using compact help buttons aligned to the right of the corresponding field labels. Checkbox settings (CRC, data whitening, RSSI/LQI status and lowball/raw OOK receive) display the checkbox, its label and contextual-help button together in a bordered row. This layout is CSS-only: it does not change the configuration values or hardware behavior. Verify the alignment at wide and narrow workspace sizes and after resizing the Radio panel. The Help Center's illustrated topic cards are separate from these inline field help buttons.
