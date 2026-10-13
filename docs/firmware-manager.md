@@ -1,0 +1,42 @@
+# Browser firmware manager
+
+The Firmware Manager lives in **Tools** and uses **Web Serial** in desktop Chromium over HTTPS or localhost. End users do not need Python or a local service. Normal RFCat operation remains on **WebUSB**.
+
+## Verified upstream protocol
+
+Sources: [RFCat bootloader utility](https://github.com/atlas0fd00m/rfcat/blob/master/CC-Bootloader/rfcat_bootloader), [CC-Bootloader firmware](https://github.com/AdamLaurie/CC-Bootloader/blob/master/src/main.c), [USB descriptors](https://github.com/AdamLaurie/CC-Bootloader/blob/master/src/usb_descriptors.c), [protocol header](https://github.com/AdamLaurie/CC-Bootloader/blob/master/src/intel_hex.h), [memory map](https://github.com/AdamLaurie/CC-Bootloader/blob/master/src/main.h), and [RFCat firmware Makefile](https://github.com/atlas0fd00m/rfcat/blob/master/firmware/Makefile).
+
+The YARD Stick One bootloader is **USB CDC ACM**, VID:PID **1D50:605C**, interface 0 CDC control and interface 1 CDC data, bulk OUT endpoint 4, bulk IN endpoint 5, 64-byte packets. It exposes a serial interface. The host utility uses ASCII Intel HEX lines terminated by LF, with one ASCII status digit for write/erase/reset. The read command returns Intel HEX lines ending in an EOF line; some versions only support 16-byte reads. This implementation always reads 16-byte records.
+
+Custom Intel HEX record types: `22` reset erase-map, `23` erase all user pages, `24` erase one page, `25` read flash; standard `00` writes data and `01` runs the user application. Errors 0–5 match the upstream utility. **No speculative vendor USB commands are used.**
+
+CC1111 flash is **0x0000–0x7FFF**, 1 KiB pages, bootloader **0x0000–0x13FF**, application **0x1400–0x7FFF**. Only images entirely in the application range are accepted. Images must have valid HEX checksums, EOF, no conflicting overlaps, and supported address extensions. Writes are packed in 16-byte records grouped by flash page. The bootloader automatically erases a page on first write, so record ordering matters.
+
+## Usage
+
+1. Stop RX/TX and disconnect the normal RFCat WebUSB session.
+2. Put the YARD Stick One in bootloader mode (on hardware supporting it, short P1 pins 7 and 9 during power-up; consult the official YARD Stick One documentation).
+3. In Tools, open Firmware Manager and connect the bootloader using Chrome's serial chooser. Only the expected 1D50:605C USB identity is accepted.
+4. Obtain **YARD Stick One bootloader-compatible application HEX**, such as `RfCatYS1CCBootloader.hex`, from a trusted upstream build. Do **not** upload `CCBootloader-rfcat-ys1.hex` (the bootloader itself) or the non-bootloader-offset `RfCatYS1.hex`. [Upstream releases](https://github.com/atlas0fd00m/rfcat/releases) are linked, but the UI does not claim a vetted release manifest or automatically trust unverified downloads.
+5. Select the local HEX, review address and size validation, check the explicit compatibility acknowledgment, then confirm the destructive erase/write/verify operation.
+6. Only after full programmed-record readback verification succeeds can you choose **Run verified firmware**. Reconnect to normal WebUSB to confirm the application responds.
+
+## Safety and limitations
+
+- **Physical hardware flashing is unverified.** The USB descriptors, protocol and memory layout were inspected in upstream source; browser implementation has not been exercised on a YARD Stick One.
+- USB VID/PID identifies the expected bootloader but cannot cryptographically authenticate firmware, prove the attached board revision, or detect a malicious USB emulator. Validate firmware provenance yourself.
+- Firmware version is not exposed by the bootloader protocol. This UI does not invent one.
+- The application deliberately does not automatically enter bootloader mode: doing so requires coordinating shutdown of all normal WebUSB readers and verifying the mode-switch command against physical hardware. Enter bootloader manually.
+- The browser cannot install or recover a missing/damaged bootloader; use a CC1111 hardware debugger.
+- A failure or USB disconnect during erase/write leaves the application potentially unusable. If bootloader enumerates, reconnect and retry the entire flash; if it does not, use a hardware debugger.
+- The bootloader's one-byte write acknowledgment does **not** prove flash contents. Only the full readback comparison marks the flash verified.
+- The bootloader can silently protect its own pages; client validation independently rejects writes below 0x1400.
+- On platforms where the OS claims the CDC interface, WebUSB may be blocked. Web Serial is the supported path.
+- This initial implementation does not automatically fetch and pin official release assets or verify signed upstream release hashes. Select a trusted local file.
+- Avoid concurrent tabs, other serial clients, or unplugging during flashing.
+
+## Tests
+
+Run `npm run verify` locally. `tests/firmware-manager.test.js` exercises HEX validation, bounds, command encoding, simulated erase/write/readback and failure injection. Mock results do not establish real USB timing, serial-driver interoperability, or RF behavior.
+
+Hardware acceptance still needed: identify bootloader with Chrome on Windows/macOS/Linux, confirm serial permission/reconnect behavior, read known firmware without erasing, flash a known-good `RfCatYS1CCBootloader.hex` with recovery equipment available, verify all programmed records, run, and reconnect normal RFCat. Test disconnection mid-write, read timeout, and recovery using a sacrificial device.
