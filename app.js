@@ -3,7 +3,7 @@ import { encodePlaintextChat, decodePlaintextChat } from "./js/chat/momentum-pla
 // RFCat Web UI/event wiring. Hardware/protocol logic lives under js/.
 import { C } from "./js/rfcat/constants.js";
 import { createCapturePipeline } from "./js/rx/capture-pipeline.js";
-import { encodeMorse,decodeMorseRuns,packOokRuns,runsFromRawBytes } from "./js/cw/morse.js";
+import { encodeMorse,decodeMorseRuns,packOokRuns,runsFromRawBytes,parseFlipperRawMorse } from "./js/cw/morse.js";
 import { planBench,compareBenchPacket,executeBench,waitBench } from "./js/test-bench/bench-core.js";
 import { scanReceiverPresets } from "./js/rx/signal-scan.js";
 import { R } from "./js/radio/registers.js";
@@ -480,6 +480,18 @@ $("cw-rx-decode").onclick=()=>{
   cwDecodeBytes(Uint8Array.from(compact.match(/../g),v=>parseInt(v,16)));
  }catch(error){$("cw-rx-output").textContent="CW decode: "+error.message;}
 };
+$("cw-sub-file").addEventListener("change",async event=>{
+ const file=event.target.files?.[0];
+ if(!file)return;
+ try{
+  if(file.size>2_000_000)throw Error("Flipper RAW file exceeds 2 MB");
+  const runs=parseFlipperRawMorse(await file.text());
+  const speed=$("cw-rx-speed").value;
+  const result=decodeMorseRuns(runs,{wpm:speed==="auto"?null:Number(speed)});
+  $("cw-rx-output").textContent=`Flipper RAW decoded: ${result.text}\nMorse: ${result.code}\nEstimated speed: ${result.wpm} WPM · confidence: ${Math.round(result.confidence*100)}% · pulses: ${runs.length}`;
+ }catch(error){$("cw-rx-output").textContent="Flipper RAW import: "+error.message;}
+ finally{event.target.value="";}
+});
 $("cw-rx-start").onclick=()=>{
  cwLive=!cwLive;cwRawBuffer=new Uint8Array();
  $("cw-rx-start").textContent=cwLive?"Disable live Morse decode":"Enable live Morse decode";
