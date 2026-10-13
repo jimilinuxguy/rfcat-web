@@ -19,4 +19,5 @@ test("replay rejects malformed or oversized captures",()=>{
 test("replay accepts Uint8Array and hexadecimal exports",()=>{
  assert.equal(prepareReplay([{bytes:new Uint8Array([0xab,0xcd])}])[0].hex,"ABCD");
  assert.equal(prepareReplay([{bytes:"AB CD EF"}])[0].hex,"ABCDEF");
+ assert.equal(prepareReplay([{hex:"AA BB"}])[0].hex,"AABB");
 });
