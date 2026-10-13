@@ -29,3 +29,23 @@ export function exportApplicationHex(bytes){
  lines.push(encodeRecord(1,0));
  return lines.join("\n")+"\n";
 }
+
+export async function verifyImageAgainstDevice(protocol,image,onProgress=()=>{}){
+ if(!image?.memory||image.min<USER_START||image.max>=FLASH_END)throw Error("HEX image outside application flash");
+ let checked=0;
+ // After erase-all, absent addresses in Intel HEX represent erased (0xFF) flash.
+ // Compare every byte, including omitted addresses, to detect unexpected device data.
+ for(let address=USER_START;address<FLASH_END;address+=READ_SIZE){
+  const memory=await protocol.read(address,READ_SIZE);
+  for(let i=0;i<READ_SIZE;i++){
+   const at=address+i;
+   const actual=memory.get(at);
+   if(!Number.isInteger(actual)||actual<0||actual>255)throw Error("Incomplete readback at 0x"+at.toString(16));
+   const expected=image.memory.get(at)??255;
+   if(actual!==expected)throw Error("Firmware mismatch at 0x"+at.toString(16).padStart(4,"0")+" (expected "+expected.toString(16).padStart(2,"0")+", got "+actual.toString(16).padStart(2,"0")+")");
+   checked++;
+  }
+  onProgress(checked/BACKUP_BYTES);
+ }
+ return checked;
+}
