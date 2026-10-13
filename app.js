@@ -1,3 +1,4 @@
+import {buildReplayReport,replayReportCSV,replayReportJSON} from "./js/rx/replay-report.js";
 import {replayDelays,compareReplaySessions} from "./js/rx/replay-analysis.js";
 import {prepareReplay,replaySummary,replayAt} from "./js/rx/session-replay.js";
 import { MomentumCrypto, momentumKeyFromPassword, momentumKeyFromHex } from "./js/chat/momentum-crypto.js";
@@ -1374,7 +1375,7 @@ replayHost.id="session-replay";
 replayHost.setAttribute("aria-label","Offline capture replay");
 replayHost.innerHTML='<h3>Offline capture replay</h3><p>Inspect saved or imported captures without transmitting RF.</p><button type="button" id="replay-load">Prepare replay</button> <button type="button" id="replay-prev" disabled>Previous</button> <button type="button" id="replay-next" disabled>Next</button> <button type="button" id="replay-play" disabled>Play</button> <button type="button" id="replay-pause" disabled>Pause</button> <label>Speed <select id="replay-speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label><output id="replay-summary" aria-live="polite">No replay prepared.</output><pre id="replay-frame"></pre><div id="replay-timeline" aria-label="Capture timeline"></div><div><label>Compare with session <select id="replay-compare-session"></select></label> <button type="button" id="replay-compare">Compare sessions</button></div><pre id="replay-comparison"></pre>';
 $("session-save").parentElement?.append(replayHost);
-let replayFrames=[],replayIndex=0,replayTimer=null;
+let replayFrames=[],replayIndex=0,replayTimer=null,replayComparison=null;
 function pauseReplay(){clearTimeout(replayTimer);replayTimer=null;$("replay-pause").disabled=true;$("replay-play").disabled=!replayFrames.length||replayIndex>=replayFrames.length-1;}
 function showReplay(){
  const frame=replayAt(replayFrames,replayIndex);
@@ -1389,13 +1390,28 @@ function resetReplay(){
  $("replay-summary").textContent="No replay prepared.";
  $("replay-timeline").replaceChildren();
  $("replay-comparison").textContent="";
+ replayComparison=null;
  showReplay();
 }
 $("replay-load").onclick=()=>{
  try{
   pauseReplay();
-  replayFrames=prepareReplay(rxCaptures);replayIndex=0;
-  void refreshReplayComparisonOptions();
+  replayFrames=prepareReplay(rxCaptures);replayIndex=0;replayComparison=null;$("replay-comparison").textContent="";
+  const replayExportControls=document.createElement("div");
+replayExportControls.innerHTML='<button type="button" id="replay-export-json">Export replay JSON</button> <button type="button" id="replay-export-csv">Export replay CSV</button>';
+replayHost.append(replayExportControls);
+function downloadReplayReport(format){
+ if(!replayFrames.length){$("replay-summary").textContent="Prepare a non-empty replay before exporting.";return;}
+ const report=buildReplayReport(replayFrames,replaySummary(replayFrames),replayComparison);
+ const csv=format==="csv";
+ const blob=new Blob([csv?replayReportCSV(report):replayReportJSON(report)],{type:csv?"text/csv;charset=utf-8":"application/json"});
+ const url=URL.createObjectURL(blob),a=document.createElement("a");
+ a.href=url;a.download="rfcat-replay-report."+format;a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+$("replay-export-json").onclick=()=>downloadReplayReport("json");
+$("replay-export-csv").onclick=()=>downloadReplayReport("csv");
+void refreshReplayComparisonOptions();
   const stats=replaySummary(replayFrames);
   $("replay-summary").textContent=`${stats.count} captures · ${stats.uniquePayloads} unique payloads · ${stats.duplicates} repeated · ${stats.totalBytes} total bytes`;
   const timeline=$("replay-timeline");timeline.replaceChildren();
@@ -1430,8 +1446,9 @@ $("replay-compare").onclick=async()=>{
   if(!session)throw new Error("Session not found");
   const other=prepareReplay(session.captures??[]);
   const diff=compareReplaySessions(replayFrames,other);
+  replayComparison={sessionId:session.id,sessionName:session.name,rows:diff};
   $("replay-comparison").textContent=diff.length?diff.slice(0,200).map(row=>`${row.hex}: current ${row.left} · selected ${row.right} · Δ ${row.delta>=0?"+":""}${row.delta}`).join("\n"):"No payloads to compare";
- }catch(error){$("replay-comparison").textContent=`Comparison error: ${error.message}`;}
+ }catch(error){replayComparison=null;$("replay-comparison").textContent=`Comparison error: ${error.message}`;}
 };
 void refreshReplayComparisonOptions();
 document.addEventListener("rfcat:replay-reset",resetReplay);
