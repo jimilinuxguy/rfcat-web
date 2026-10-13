@@ -10,8 +10,8 @@ export function isIdleOokFrame(bytes){
 }
 export function createCwStream({sampleRate=1000,wpm=20,onMessage=()=>{},onStatus=()=>{},maxBytes=4096,idleFramesToFlush=1}={}){
  if(!Number.isFinite(sampleRate)||sampleRate<=0)throw Error("Invalid CW sample rate");
- let pending=[],idleFrames=0,frames=0,activeFrames=0,lastFingerprint="";
- const status=()=>({frames,activeFrames,bufferedBytes:pending.length,idleFrames});
+ let pending=[],idleFrames=0,frames=0,activeFrames=0,lastFingerprint="",lastResult=null;
+ const status=()=>({frames,activeFrames,bufferedBytes:pending.length,idleFrames,lastResult});
  function flush(reason="idle"){
   if(!pending.length)return null;
   const bytes=Uint8Array.from(pending);pending=[];idleFrames=0;
@@ -23,7 +23,8 @@ export function createCwStream({sampleRate=1000,wpm=20,onMessage=()=>{},onStatus
   if(!runs.some(r=>r.level===1))return null;
   const result=decodeMorseRuns(runs,{wpm});
   const fingerprint=bytes.length+":"+result.code+":"+result.text;
-  if(result.marks>=2 && result.confidence>=0.65 && result.text.replace(/�/g,"").length>0){
+  lastResult={reason,bytes:bytes.length,marks:result.marks,text:result.text,code:result.code,confidence:result.confidence,wpm:result.wpm,runs:runs.slice(0,32).map(r=>`${r.level?"+":"-"}${Math.round(r.durationMs)}ms`).join(" ")};
+  if(result.marks>=1 && result.confidence>=0.65 && result.text.replace(/�/g,"").length>0){
    if(fingerprint!==lastFingerprint){
     lastFingerprint=fingerprint;
     onMessage({...result,reason,frames:activeFrames,bytes:bytes.length});
@@ -36,6 +37,8 @@ export function createCwStream({sampleRate=1000,wpm=20,onMessage=()=>{},onStatus
    if(!(bytes instanceof Uint8Array))throw new TypeError("Expected Uint8Array");
    frames++;
    if(isIdleOokFrame(bytes)){
+    // An idle frame still represents elapsed key-up time. Do not append its
+    // anomalous C0 prefix to a signal; flush the preceding complete burst.
     idleFrames++;
     if(idleFrames>=idleFramesToFlush)flush("idle-frame");
     onStatus({...status(),reason:"idle"});
@@ -49,7 +52,7 @@ export function createCwStream({sampleRate=1000,wpm=20,onMessage=()=>{},onStatus
    onStatus({...status(),reason:"active"});
   },
   flush,
-  reset(){pending=[];idleFrames=0;frames=0;activeFrames=0;lastFingerprint="";onStatus({...status(),reason:"reset"});},
+  reset(){pending=[];idleFrames=0;frames=0;activeFrames=0;lastFingerprint="";lastResult=null;onStatus({...status(),reason:"reset"});},
   status
  };
 }
