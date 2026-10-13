@@ -29,4 +29,4 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-Playwright launches a local Python HTTP server. Hardware/WebUSB integration and full tutorial walkthroughs still require manual verification; the browser smoke suite does not claim to validate RF behavior.
+Playwright launches a local Python HTTP server. The extended suite exercises every registered guided-tour step, verifies targets and workspace selection, checks tab and panel persistence across reloads, and fails on unexpected JavaScript exceptions or failed local requests. These are hardware-free browser checks; they do not simulate a YARD Stick One or validate over-the-air RF. Hardware/WebUSB integration and full tutorial walkthroughs still require manual verification; the browser smoke suite does not claim to validate RF behavior.
