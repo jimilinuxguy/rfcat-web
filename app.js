@@ -3,6 +3,7 @@ import { encodePlaintextChat, decodePlaintextChat } from "./js/chat/momentum-pla
 // RFCat Web UI/event wiring. Hardware/protocol logic lives under js/.
 import { C } from "./js/rfcat/constants.js";
 import { createCapturePipeline } from "./js/rx/capture-pipeline.js";
+import { encodeMorse,decodeMorseRuns,packOokRuns,runsFromRawBytes } from "./js/cw/morse.js";
 import { planBench,compareBenchPacket,executeBench,waitBench } from "./js/test-bench/bench-core.js";
 import { scanReceiverPresets } from "./js/rx/signal-scan.js";
 import { R } from "./js/radio/registers.js";
@@ -372,6 +373,119 @@ $("bench-export").onclick=()=>{
  const link=document.createElement("a");link.href=url;link.download="rfcat-test-bench.json";link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
 benchRefresh();
+let cwLive=false;
+let cwRawBuffer=new Uint8Array();
+let cwLastReport=null;
+let cwAudio=null;
+function cwPlan(){
+ const encoded=encodeMorse($("cw-message").value,Number($("cw-wpm").value));
+ const rate=Number($("cw-rate").value);
+ return {encoded,packed:packOokRuns(encoded.runs,{sampleRate:rate})};
+}
+function cwDraw(runs){
+ const canvas=$("cw-waveform"),ctx=canvas.getContext("2d");
+ const width=Math.max(280,Math.floor(canvas.getBoundingClientRect().width||640));
+ canvas.width=width;canvas.height=120;
+ ctx.clearRect(0,0,width,120);
+ const total=runs.reduce((s,r)=>s+r.durationMs,0)||1;
+ let x=0;ctx.strokeStyle="#24c2a1";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,100);
+ for(const run of runs){
+  const next=x+run.durationMs/total*width;
+  const y=run.level?20:100;
+  ctx.lineTo(x,y);ctx.lineTo(next,y);x=next;
+ }
+ ctx.lineTo(width,100);ctx.stroke();
+}
+function cwShowPreview(){
+ try{
+  const {encoded,packed}=cwPlan();
+  $("cw-preview-output").textContent=`Morse: ${encoded.code}\nWPM: ${encoded.wpm} · dot: ${encoded.unitMs} ms · duration: ${Math.round(encoded.durationMs)} ms\nOOK bitstream: ${packed.bytes.length} bytes at ${packed.sampleRate} symbols/s. Packet-mode RF timing requires hardware verification.`;
+  cwDraw(encoded.runs);return {encoded,packed};
+ }catch(error){$("cw-preview-output").textContent="Preview: "+error.message;return null;}
+}
+$("cw-preview").onclick=cwShowPreview;
+$("cw-audio").onclick=async()=>{
+ try{
+  const {encoded}=cwPlan();
+  if(cwAudio){await cwAudio.close();cwAudio=null;}
+  const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+  if(!AudioContextClass)throw Error("Web Audio not available");
+  const context=new AudioContextClass();cwAudio=context;await context.resume();
+  let t=context.currentTime+.03;
+  for(const run of encoded.runs){
+   const seconds=run.durationMs/1000;
+   if(run.level){
+    const oscillator=context.createOscillator(),gain=context.createGain();
+    oscillator.frequency.value=650;gain.gain.value=.06;
+    oscillator.connect(gain);gain.connect(context.destination);
+    oscillator.start(t);oscillator.stop(t+seconds);
+   }
+   t+=seconds;
+  }
+  $("cw-tx-status").textContent="Playing local 650 Hz sidetone only. No RF transmitted.";
+  setTimeout(()=>{if(cwAudio===context){cwAudio=null;context.close().catch(()=>{});}},Math.ceil(encoded.durationMs)+500);
+ }catch(error){$("cw-tx-status").textContent="Sidetone: "+error.message;}
+};
+$("cw-send").onclick=async()=>{
+ if(cwSending)return;
+ try{
+  const plan=cwPlan();
+  if(!$("cw-authorized").checked)throw Error("Confirm RF authorization first");
+  if(!d.device?.opened)throw Error("Connect YARD Stick One first");
+  if(listening||momentumChatActive||signalScanController||benchRunning)throw Error("Stop RX, chat, scanning and RF Test Bench first");
+  const frequency=Number($("cw-frequency").value);
+  if(!Number.isFinite(frequency)||!((frequency>=300&&frequency<=348)||(frequency>=387&&frequency<=464)||(frequency>=779&&frequency<=928)))throw Error("Frequency outside CC1111 supported bands");
+  if(!window.confirm(`Transmit ${plan.packed.bytes.length} raw OOK bytes at ${frequency.toFixed(3)} MHz? This changes radio configuration and emits real RF.`))return;
+  cwSending=true;$("cw-send").disabled=true;
+  $("cw-tx-status").textContent="Configuring OOK modem…";
+  await d.mode(C.RF_IDLE);
+  await d.setFrequency(frequency*1e6);
+  await d.setModulation(0x30);
+  await d.setDataRate(plan.packed.sampleRate);
+  await d.setSync(0,0);
+  await d.setManchester(false);
+  await d.setPacketConfig({lengthMode:"fixed",packetLength:plan.packed.bytes.length,crc:false,whitening:false,appendStatus:false,addressCheck:0,deviceAddress:0});
+  await d.setMaxPower();
+  await d.setAmpMode(true);
+  try{
+   const reply=await d.transmit(plan.packed.bytes);
+   if(reply?.[0]!==1)throw Error("Unexpected firmware TX response");
+   cwLastReport={schema:"rfcat-web.cw.v1",timestamp:new Date().toISOString(),message:plan.encoded.text,code:plan.encoded.code,wpm:plan.encoded.wpm,frequencyMHz:frequency,sampleRate:plan.packed.sampleRate,bytes:plan.packed.bytes.length,firmwareAcknowledged:true};
+   $("cw-tx-status").textContent="Firmware acknowledged OOK packet TX. Over-the-air keying accuracy and reception are NOT verified. Radio configuration remains changed.";
+  }finally{await d.setAmpMode(false);await d.mode(C.RF_IDLE);}
+ }catch(error){$("cw-tx-status").textContent="CW TX: "+error.message;}
+ finally{cwSending=false;$("cw-send").disabled=false;$("cw-authorized").checked=false;}
+};
+let cwSending=false;
+$("cw-export").onclick=()=>{
+ try{
+  const {encoded,packed}=cwPlan();
+  const report={schema:"rfcat-web.cw.v1",message:encoded.text,code:encoded.code,wpm:encoded.wpm,unitMs:encoded.unitMs,runs:encoded.runs,sampleRate:packed.sampleRate,rawHex:Array.from(packed.bytes,b=>b.toString(16).padStart(2,"0")).join(""),tx:cwLastReport};
+  const url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:"application/json"}));
+  const a=document.createElement("a");a.href=url;a.download="rfcat-cw.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ }catch(error){$("cw-preview-output").textContent="Export: "+error.message;}
+};
+function cwDecodeBytes(bytes){
+ const rate=Number($("cw-rx-rate").value);
+ if(!Number.isInteger(rate)||rate<500||rate>5000)throw Error("RX sample rate must be 500–5000 symbols/s");
+ const speed=$("cw-rx-speed").value;
+ const result=decodeMorseRuns(runsFromRawBytes(bytes,rate),{wpm:speed==="auto"?null:Number(speed)});
+ $("cw-rx-output").textContent=`Decoded: ${result.text}\nMorse: ${result.code}\nEstimated speed: ${result.wpm??"—"} WPM · confidence: ${Math.round(result.confidence*100)}%\nRaw bytes: ${bytes.length}. Packet boundaries and sample clock must match; verify timing in pulse analyzer.`;
+ return result;
+}
+$("cw-rx-decode").onclick=()=>{
+ try{
+  const compact=$("cw-rx-hex").value.replace(/[\\s:_-]/g,"");
+  if(!compact||compact.length%2||!/^[0-9a-f]+$/i.test(compact)||compact.length>8192)throw Error("Enter 1–4096 valid raw OOK hex bytes");
+  cwDecodeBytes(Uint8Array.from(compact.match(/../g),v=>parseInt(v,16)));
+ }catch(error){$("cw-rx-output").textContent="CW decode: "+error.message;}
+};
+$("cw-rx-start").onclick=()=>{
+ cwLive=!cwLive;cwRawBuffer=new Uint8Array();
+ $("cw-rx-start").textContent=cwLive?"Disable live Morse decode":"Enable live Morse decode";
+ $("cw-rx-output").textContent=cwLive?"Live decode enabled. Start main Receiver with raw OOK settings.":"Live decode stopped.";
+};
+$("cw-rx-clear").onclick=()=>{cwRawBuffer=new Uint8Array();$("cw-rx-output").textContent="Morse RX cleared.";};
 const rxBurstPipeline=createCapturePipeline({windowMs:300,maxEvents:1000});
 const burstSummary=$("rx-burst-summary");
 const burstList=$("rx-burst-list");
@@ -1853,6 +1967,14 @@ d.addEventListener("packet", async (e) => {
     const received = e.detail;
     const status = splitRxStatus(received, $("appendstatus").checked);
     const b = status.payload;
+    if(cwLive && b?.length){
+      try{
+        const combined=new Uint8Array(Math.min(4096,cwRawBuffer.length+b.length));
+        const incoming=new Uint8Array([...cwRawBuffer,...b].slice(-4096));
+        cwRawBuffer=incoming;
+        cwDecodeBytes(cwRawBuffer);
+      }catch(error){$("cw-rx-output").textContent="Live Morse: "+error.message;}
+    }
     if(burstEnabled.checked && b?.length){
         const windowMs=Number(burstWindow.value);
         if(Number.isInteger(windowMs)&&windowMs>=0&&windowMs<=60000){
