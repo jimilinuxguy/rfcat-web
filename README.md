@@ -91,6 +91,10 @@ Transmit only on equipment and frequencies you own or are authorized to use, and
 
 Import Flipper Sub-GHz RAW captures, inspect timing clusters and encoding hypotheses, compare candidate bits, and measure pulse timings with waveform cursors. Save analyses in IndexedDB. A connected YARD Stick One can sequentially scan ASK/OOK, 2-FSK and GFSK receiver presets and report packet evidence. Preset scanning is receive-only, interrupts other radio workflows, and does not prove modulation identity. See [signal analyzer guide](docs/signal-analyzer.md). Browser import, waveform cursor dragging, and local save/load/delete have been user-verified; basic YARD Stick One preset scanning has also been reported working. Packet-byte detection, cancellation, and exact configuration restoration are not independently confirmed. Hosted CI availability may be limited; run `npm test` locally.
 
-**Advanced interactive tutorials:** The Help Center includes guided capture comparison, field inference, preset validation, waveform timing, and encrypted chat practice. See [Guided help](docs/help/README.md).
+## Guided Help and RF diagnostics
 
-**Context-aware RF diagnostics:** Open **? Help → Troubleshoot receiver** for prioritized, read-only guidance based on current connection, RX and decoder status. See [Help documentation](docs/help/README.md).
+Use **? Help** to open the searchable, illustrated Help Center. Topics are grouped by radio configuration, signal analysis, capture/decoding, transmission/tools and secure chat; each has a compact SVG illustration and short explanation. Guided tutorials include interactive practice for capture comparison, field inference, preset validation, waveform timing and encrypted Momentum Chat. The welcome wizard is shown on first use and can be restarted from Help.
+
+Choose **Troubleshoot receiver** for prioritized, read-only checks of connection, frequency, receive state, packet counts, decoding, rejections, duplicates and filters. Each finding links to the relevant control via **Inspect**, with a manual **Refresh checks** option. Findings are UI-state hypotheses, not direct RF measurements; Help never starts reception, transmits or applies radio settings. In the Radio panel, contextual help icons align beside field labels, and checkboxes sit beside their corresponding labels in clearly separated rows.
+
+For complete walkthroughs, limitations and manual acceptance checks, see [Guided Help](docs/help/README.md). Run `npm test` locally; browser/hardware validation remains separate from unit tests.
