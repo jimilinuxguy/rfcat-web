@@ -86,3 +86,18 @@ To test, open **? Help → Restart welcome wizard**, select **Advanced Signal An
 ## Milestone 5: Protocol Reverse-Engineering wizard
 
 The welcome wizard offers **Protocol Reverse-Engineering Workbench**. The searchable Help Center includes a seven-step advanced tutorial covering RAW import, candidate decoding, selecting bit positions, naming fields, inference and JSON export. The tour is educational, read-only and never transmits. See [Protocol Workbench](../protocol-workbench.md).
+
+## Milestone 6: Intelligent Receiver & Burst Grouping wizard
+
+The welcome wizard now includes **Intelligent Receiver & Burst Grouping**, and the searchable Help Center includes an eight-step guided workflow under **Capture & decoding**. The tour covers connecting the YARD Stick One, matching authorized RF settings, enabling tracking, choosing the duplicate window, starting reception, interpreting burst counts and RSSI, and exporting JSON. It does not operate radio hardware or send test packets on your behalf.
+
+Contextual Help topics cover burst tracking, the duplicate window, and JSON export, all linking to the [Capture Pipeline guide](../capture-pipeline.md). Burst groups represent consecutive matching **CC1111 packet events**, not verified over-the-air frames. The original receiver and protocol-specific filtering remain independent.
+
+### Wizard acceptance
+
+1. Open **? Help → Restart welcome wizard**, choose **Intelligent Receiver & Burst Grouping**, and start the tutorial.
+2. Verify all eight steps highlight existing controls; Back, Next, Exit and Finish behave as expected.
+3. Set the window to 300 ms, receive repeated packets, and confirm the tutorial explains packet-level grouping without claiming RF frame identity.
+4. Search Help for `burst` and `duplicate`; confirm contextual topics open the Capture Pipeline guide.
+5. Confirm no tutorial action starts reception, changes the radio configuration, transmits, or exports without an explicit user action.
+6. Check narrow viewport, keyboard navigation, and `npm test`.
