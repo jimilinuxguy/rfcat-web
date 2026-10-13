@@ -343,12 +343,14 @@ burstWindow.addEventListener("change",()=>{
         return;
     }
     // A new window starts a fresh analysis to avoid mixed grouping semantics.
-    resetBurstGroups();
+    rxBurstPipeline.setWindowMs(ms);
+    burstLastTimestamp=0;
+    renderBurstGroups();
 });
 burstEnabled.addEventListener("change",renderBurstGroups);
 $("rx-burst-clear").addEventListener("click",resetBurstGroups);
 $("rx-burst-export").addEventListener("click",()=>{
-    const report={schema:"rfcat-web.rx-bursts.v1",generatedAt:new Date().toISOString(),windowMs:Number(burstWindow.value),...rxBurstPipeline.snapshot(),warning:"Packet-level consecutive duplicates only; not RF frame or protocol identity."};
+    const report={schema:"rfcat-web.rx-bursts.v1",generatedAt:new Date().toISOString(),...rxBurstPipeline.snapshot(),warning:"Packet-level consecutive duplicates only; not RF frame or protocol identity."};
     const url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:"application/json"}));
     const link=document.createElement("a");link.href=url;link.download="rfcat-rx-bursts.json";link.click();
     setTimeout(()=>URL.revokeObjectURL(url),1000);
