@@ -323,3 +323,9 @@ main[data-workspace-ready="true"]{display:block;max-width:1440px}
 
 /* Hidden workspace panels must override the draggable flex and collapsed details rules. */
 .workspace > .workspace-panel[hidden] { display: none !important; }
+
+/* Let expanded panels grow with content; keep manual horizontal resizing. */
+.workspace > .workspace-panel:not([hidden]){height:auto!important;overflow:visible;resize:horizontal}
+.workspace > details.workspace-panel:not([open]){overflow:hidden;resize:horizontal}
+/* Shared activity is always the last visible panel, regardless of saved drag order. */
+.workspace > .workspace-panel[data-workspace-panel="activity"]{order:9999!important;flex-basis:100%;width:100%}
