@@ -34,3 +34,13 @@ test("ambiguous OOK/FSK pulse timings cannot prove modulation",()=>{
   assert.deepEqual(a.candidates,b.candidates);
   assert.equal(comparePulseCaptures([normalizePulseCapture({durationsUs}),normalizePulseCapture({durationsUs})]).modulationVerified,false);
 });
+
+test("large capture clustering retains bounded aggregate counts",()=>{
+ const durationsUs=Array.from({length:10000},(_,i)=>i%2===0?500:-1000);
+ const analysis=analyzePulses(normalizePulseCapture({durationsUs}));
+ assert.equal(analysis.clusters.reduce((n,c)=>n+c.count,0),durationsUs.length);
+ assert.ok(analysis.clusters.length<=2);
+});
+test("rejects invalid direct analysis durations",()=>{
+ assert.throws(()=>analyzePulses({durationsUs:[NaN,-100]}),/Invalid/);
+});
