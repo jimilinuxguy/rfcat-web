@@ -43,7 +43,6 @@ test("unplug during a pending command cancels the waiter and reconnects",async({
  await page.goto("/");
  await page.locator("#connect").click();
  await expect(page.locator("body")).toHaveClass(/connected/);
- await page.evaluate(()=>window.__mockWebUSB.setDroppedPings(1));
  // Exercise an in-flight system command without emitting any RF transmission.
  const pending=page.evaluate(async()=>{
   const {RFCatUSB}=await import("./js/rfcat/device.js");
@@ -51,6 +50,7 @@ test("unplug during a pending command cancels the waiter and reconnects",async({
   const usb=new RFCatUSB();
   await usb.connect();
   window.__pendingTestDevice=usb;
+  window.__mockWebUSB.setDroppedPings(1);
   window.__pendingResult=usb.ping().then(()=> "resolved",e=>e.message);
  });
  await pending;
