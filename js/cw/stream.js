@@ -16,6 +16,14 @@ export function createCwStream({sampleRate=1000,wpm=20,onMessage=()=>{},onStatus
   if(!pending.length)return null;
   const bytes=Uint8Array.from(pending);pending=[];idleFrames=0;
   const runs=runsFromRawBytes(bytes,sampleRate);
+  // Reclassify sub-dot key-down glitches as silence, preserving elapsed time.
+  const dotMs=wpm==null?30:1200/wpm;
+  const glitchMs=Math.max(2,dotMs*0.25);
+  for(const run of runs)if(run.level===1&&run.durationMs<glitchMs)run.level=0;
+  for(let i=runs.length-1;i>0;i--)if(runs[i].level===runs[i-1].level){
+   runs[i-1].durationMs+=runs[i].durationMs;
+   runs.splice(i,1);
+  }
   // Remove leading and trailing silence. Long idle prefixes are not a
   // Morse character and must not bias automatic timing.
   while(runs.length&&runs[0].level===0)runs.shift();
