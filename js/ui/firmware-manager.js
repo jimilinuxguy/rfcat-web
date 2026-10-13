@@ -40,13 +40,13 @@ export function initFirmwareManager({radio}){
   }catch(error){status("Bootloader transition failed: "+error.message);}
   finally{busy=false;await refreshDevices();buttons();}
  };
- $("fw-refresh").onclick=refreshDevices;
- navigator.usb?.addEventListener?.("connect",refreshDevices);
- navigator.usb?.addEventListener?.("disconnect",refreshDevices);
- navigator.serial?.addEventListener?.("connect",refreshDevices);
- navigator.serial?.addEventListener?.("disconnect",refreshDevices);
- document.getElementById("connect")?.addEventListener("click",()=>setTimeout(refreshDevices,500));
- document.getElementById("disconnect")?.addEventListener("click",()=>setTimeout(refreshDevices,500));
+ $("fw-refresh").onclick=async()=>{await refreshDevices();buttons();};
+ navigator.usb?.addEventListener?.("connect",()=>{refreshDevices();buttons();});
+ navigator.usb?.addEventListener?.("disconnect",()=>{refreshDevices();buttons();});
+ navigator.serial?.addEventListener?.("connect",()=>{refreshDevices();buttons();});
+ navigator.serial?.addEventListener?.("disconnect",()=>{refreshDevices();buttons();});
+ document.getElementById("connect")?.addEventListener("click",()=>{setTimeout(refreshDevices,500);setTimeout(()=>{refreshDevices();buttons();},1800);});
+ document.getElementById("disconnect")?.addEventListener("click",()=>{setTimeout(refreshDevices,500);setTimeout(()=>{refreshDevices();buttons();},1800);});
  refreshDevices();
  const status=message=>{$("fw-status").textContent+=message+"\n";};
  function buttons(){$("fw-enter").disabled=busy||!!transport||!radio.device?.opened;$("fw-connect").disabled=busy||!!transport;$("fw-disconnect").disabled=busy||!transport;$("fw-flash").disabled=busy||!transport||!plan||!$("fw-confirm").checked;$("fw-run").disabled=busy||!transport||!verified;}
