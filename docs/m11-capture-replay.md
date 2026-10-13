@@ -21,3 +21,7 @@ Analysis export and richer graphical timeline remain future increments. Browser 
 ## Guided help
 
 Select **Offline capture replay & session comparison** from the welcome wizard or the searchable Help Center. The eight-step tutorial highlights the Capture Library controls, explains offline timing and payload-count comparison, and never starts playback or transmits automatically. Contextual Help topics for replay, speed and comparison link to this guide.
+
+## Automated browser acceptance
+
+`browser-tests/m11.spec.js` adds four Playwright acceptance tests using imported synthetic capture JSON: replay navigation and reset, timed playback with speed/pause, comparison against an IndexedDB-saved session, and all eight Help-tour targets plus exit. The tests run without USB hardware. Run `npm run test:browser` or `npx playwright test browser-tests/m11.spec.js`. The existing browser regression suite also iterates all registered tours. Results must be verified locally; adding tests does not imply they have passed.
