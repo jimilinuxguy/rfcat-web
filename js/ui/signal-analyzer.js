@@ -1,5 +1,5 @@
 import { parseFlipperRaw, analyzePulses } from "../rx/signal-fingerprint.js";
-import { decodeHypotheses } from "../rx/signal-decode.js";
+import { decodeHypotheses, findPreambleCandidates, alignBitstreams } from "../rx/signal-decode.js";
 import {saveSignalAnalysis,loadSignalAnalysis,listSignalAnalyses,deleteSignalAnalysis} from "../storage/signal-analysis-store.js";
 export function initSignalAnalyzer() {
   const input=document.getElementById("signal-sub-file");
@@ -54,9 +54,15 @@ export function initSignalAnalyzer() {
     result.replaceChildren();
     const pre=document.createElement("pre");
     let hypotheses=[];
+    let frameComparison=null;
     try { if(a.estimatedUnitUs) hypotheses=decodeHypotheses(a.frames[0]?.durationsUs??capture.durationsUs,a.estimatedUnitUs).candidates.map(({encoding,bits,confidence,errors,verified})=>({encoding,bitstreamPreview:bits.slice(0,256),bitLength:bits.length,confidence,errors,verified})); }
     catch(e){hypotheses=[{warning:e.message}];}
-    pre.textContent=JSON.stringify({source:capture.source,frequencyHz:capture.frequencyHz,configuredModulation:a.configuredModulation,verifiedModulation:a.verifiedModulation,estimatedUnitUs:a.estimatedUnitUs,timingConsistency:a.timingConsistency,clusters:a.clusters,gaps:a.gaps,frameCount:a.frames.length,candidates:a.candidates,decodedHypotheses:hypotheses,warnings:a.warnings},null,2);
+    try {
+      const frameBits=a.frames.slice(0,12).map(frame=>decodeHypotheses(frame.durationsUs,a.estimatedUnitUs).candidates.find(candidate=>candidate.encoding==="NRZ")?.bits).filter(Boolean);
+      if(frameBits.length>=2)frameComparison=alignBitstreams(frameBits);
+    }catch(e){frameComparison={warning:e.message};}
+    const preambleCandidates=hypotheses.find(h=>h.encoding==="NRZ")?.bitstreamPreview ? findPreambleCandidates(hypotheses.find(h=>h.encoding==="NRZ").bitstreamPreview) : null;
+    pre.textContent=JSON.stringify({source:capture.source,frequencyHz:capture.frequencyHz,configuredModulation:a.configuredModulation,verifiedModulation:a.verifiedModulation,estimatedUnitUs:a.estimatedUnitUs,timingConsistency:a.timingConsistency,clusters:a.clusters,gaps:a.gaps,frameCount:a.frames.length,candidates:a.candidates,decodedHypotheses:hypotheses,frameComparison,preambleCandidates,warnings:a.warnings},null,2);
     result.append(pre);updateCursors();
   }
   input.addEventListener("change",async()=>{
