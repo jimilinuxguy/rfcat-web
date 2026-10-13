@@ -10,11 +10,15 @@ A Flipper preset describes the receiver configuration, not independently confirm
 
 ## Current scope and outstanding work
 
-Implemented: offline RAW import (4 MiB file limit), source preservation, timing clustering, gap segmentation, heuristic candidate rankings, NRZ/Manchester/differential Manchester/PWM/PPM bitstream hypotheses, basic bit-position comparison API, interactive zoom/pan waveform, two numerical measurement cursors, and multiple-capture IndexedDB save/load/delete through a dedicated versioned signal-analyses store.
+Implemented: offline RAW import (4 MiB file limit), source preservation, timing clustering, gap segmentation, heuristic candidate rankings, NRZ/Manchester/differential Manchester/PWM/PPM bitstream hypotheses, basic bit-position comparison API, interactive zoom/pan waveform, two draggable waveform measurement cursors with numerical microsecond inputs, and multiple-capture IndexedDB save/load/delete through a dedicated versioned signal-analyses store.
 
-Implemented guided sequential RFCat receiver-preset scanning (ASK/OOK, 2-FSK and GFSK) with packet counts, packet hex, cancellation between dwell windows, and best-effort radio register restoration to IDLE. Scan evidence is packet-mode data, **not** raw pulse edges or independently verified modulation. Scan operation can interrupt existing receiver workflows. Not yet implemented: live RX pulse-edge capture normalization in the UI, drag-to-position waveform cursors, validated protocol bitstream reconstruction, verified repeated-frame decoding, reliable preamble/sync detection, and cross-linking with the receiver capture-session library. The existing RFCat packet receiver is not an IQ receiver. Scanning would necessarily be sequential and can miss brief or nonrepeating signals. Physical CC1111 configuration compatibility and over-the-air behavior still require testing on a connected YARD Stick One.
+Implemented guided sequential RFCat receiver-preset scanning (ASK/OOK, 2-FSK and GFSK) with packet counts, packet hex, cancellation between dwell windows, and best-effort radio register restoration to IDLE. Scan evidence is packet-mode data, **not** raw pulse edges or independently verified modulation. Scan operation can interrupt existing receiver workflows. Not yet implemented: live RX pulse-edge capture normalization in the UI, validated protocol bitstream reconstruction, verified repeated-frame decoding, reliable preamble/sync detection, and cross-linking with the receiver capture-session library. The existing RFCat packet receiver is not an IQ receiver. Scanning would necessarily be sequential and can miss brief or nonrepeating signals. Physical CC1111 configuration compatibility and over-the-air behavior still require testing on a connected YARD Stick One.
 
 Do not describe this initial implementation as verified modulation discovery.
+
+## Waveform cursors
+
+Click the waveform to move the nearest of Cursor A (amber) or Cursor B (red) to that absolute microsecond position; drag while holding the pointer to move it. The numeric inputs update continuously and remain editable for precise measurements. Δt shows their absolute separation. Zoom and Pan change the visible time window; cursor values remain absolute positions in the capture. A cursor outside the current window is hidden until it is visible again. Pointer positions are scaled to the canvas dimensions so responsive layouts and Retina displays work correctly.
 
 ## Guided hardware scan
 
