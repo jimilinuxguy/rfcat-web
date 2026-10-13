@@ -352,6 +352,18 @@
                     </div>
                 </div>
 
+                <details class="rx-burst-panel" open>
+                    <summary>Live burst grouping <span class="summary-note">Packet-level · diagnostic only</span></summary>
+                    <p class="hint">Groups consecutive identical receiver payloads on the same configured frequency. All captures continue through the existing decoder and capture list.</p>
+                    <div class="rx-burst-controls">
+                        <label>Duplicate window (ms) <input id="rx-burst-window" type="number" min="0" max="60000" step="50" value="300"></label>
+                        <label><input id="rx-burst-enabled" type="checkbox" checked> Track bursts</label>
+                        <button id="rx-burst-clear" type="button">Reset grouping</button>
+                        <button id="rx-burst-export" type="button">Export burst JSON</button>
+                    </div>
+                    <div id="rx-burst-summary" class="hint" role="status">Awaiting receiver packets.</div>
+                    <div id="rx-burst-list" class="rx-burst-list" aria-live="polite"></div>
+                </details>
                 <div class="pocsag-rx-preset">
                     <span>POCSAG Receiver</span>
                     <label>
