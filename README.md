@@ -124,6 +124,6 @@ The interface now groups existing tools into **Receive**, **Transmit**, **Analyz
 
 Workspace navigation preserves existing DOM controls and radio sessions when switching tabs; it does not yet extract protocol controllers into independent modules or add workspace-specific drag layouts. To configure the receiver, open **Tools** and return to **Receive**. No radio command is sent merely by changing tabs.
 
-### Firmware Manager (experimental)
+### Firmware Manager
 
-Tools includes a browser-only YARD Stick One firmware manager using Web Serial for the CC1111 CDC ACM bootloader. It validates Intel HEX boundaries, requires explicit erase confirmation, and checks flash readback before reporting verification. **Physical hardware flashing remains unverified.** See [Firmware Manager](docs/firmware-manager.md) for prerequisites, recovery and limitations.
+Tools includes a browser-only YARD Stick One firmware manager using Web Serial for the CC1111 CDC ACM bootloader. It validates Intel HEX boundaries, requires explicit erase confirmation, and checks flash readback before reporting verification. **A full backup → erase → program → programmed-record verify → run → WebUSB reconnect cycle has been validated on a real YARD Stick One.** Full-region post-flash verification is newly added and still requires hardware validation. See [Firmware Manager](docs/firmware-manager.md) for prerequisites, recovery and limitations.
