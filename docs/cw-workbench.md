@@ -9,7 +9,7 @@ This milestone is on `feature/cw-workbench-m8`. **No pull request has been opene
 - Offline Morse code, timing, waveform canvas and 650 Hz browser sidetone.
 - OOK waveform packing into raw sampled bytes, 500–5000 symbols/s, with a strict 255-byte packet cap.
 - YARD Stick One / CC1111 OOK TX: explicit frequency selection in supported bands, authorization checkbox, confirmation dialog, no active RX/chat/scanning/bench TX. Configures OOK, fixed-length, no sync/CRC/whitening/Manchester, then transmits the packed waveform. Radio settings remain changed after sending.
-- Live RX comparison of raw packet bytes as Morse, plus offline paste-and-decode for raw OOK sample bytes. Fixed WPM or simple automatic pulse-unit estimation.
+- Live RX comparison of raw packet bytes as Morse, plus offline paste-and-decode for raw OOK sample bytes and Flipper Zero RAW `.sub` pulse-file import. Fixed WPM or simple automatic pulse-unit estimation.
 - JSON export of waveform plan, raw bytes and most recent firmware acknowledgement.
 - Nine-step guided wizard and contextual Help.
 
@@ -24,7 +24,7 @@ RX expects a demodulated *raw OOK bitstream* at the specified symbol rate. Do no
 1. Open the CW panel **without hardware**. Preview `SOS` at 20 WPM, 1000 symbols/s; check dots/dashes, waveform and byte count.
 2. Play the sidetone; verify no radio activity. Check that unsupported characters, empty input, WPM outside 5–40, and overlong packets show validation errors.
 3. Export Morse JSON; verify `rfcat-web.cw.v1`, message, timing runs, raw hex and sample rate.
-4. Paste the exported `rawHex` into offline RX; set matching sample rate and WPM; verify `SOS`. Repeat with automatic WPM.
+4. Paste the exported `rawHex` into offline RX; set matching sample rate and WPM; verify `SOS`. Repeat with automatic WPM. Import a Flipper RAW `.sub` file with Morse pulse timings and check decoded text.
 5. Launch the CW wizard and walk all nine steps. Check Help and narrow-screen layout.
 6. With a disconnected radio, check TX refusal. With a connected radio, test unchecked authorization, confirmation cancellation, and active RX/chat/scanning safeguards.
 7. On an **authorized bench setup**, transmit a short Morse message. Capture the actual OOK envelope with a second independent receiver or Flipper RAW capture. Compare measured dot/dash durations with the preview. Do not assume the firmware TX ACK guarantees keying accuracy.
