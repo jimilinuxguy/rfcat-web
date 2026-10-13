@@ -1,6 +1,6 @@
 // Browser-only simulated CC1111 WebUSB transport. Never available in production.
-export async function installMockWebUSB(page,{permissionDenied=false,pingTimeout=false}={}){
- await page.addInitScript(({permissionDenied,pingTimeout})=>{
+export async function installMockWebUSB(page,{permissionDenied=false,pingTimeout=false,failWrites=0,dropPings=0}={}){
+ await page.addInitScript(({permissionDenied,pingTimeout,failWrites,dropPings})=>{
   const registers=new Uint8Array(65536);
   const base=0xdf00; // CC1111 radio register addresses
   const freq=Math.floor(433920000*(65536/24000000));
@@ -26,6 +26,7 @@ export async function installMockWebUSB(page,{permissionDenied=false,pingTimeout
     return device;
    }
   };
+  let remainingWriteFailures=failWrites,remainingDroppedPings=dropPings;
   let pending=[];
   let waiter=null;
   function enqueue(bytes){if(waiter){const next=waiter;waiter=null;next(bytes);}else pending.push(bytes);}
@@ -53,6 +54,8 @@ export async function installMockWebUSB(page,{permissionDenied=false,pingTimeout
     if(endpoint!==5)throw new Error("Wrong OUT endpoint");
     const b=new Uint8Array(chunk);
     const app=b[0],cmd=b[1],len=b[2]|(b[3]<<8),payload=b.slice(4,4+len);
+    if(remainingWriteFailures>0){remainingWriteFailures--;throw new DOMException("Simulated USB write failure","NetworkError");}
+    if(app===0xff&&cmd===0x82&&remainingDroppedPings>0){remainingDroppedPings--;return {status:"ok",bytesWritten:b.length};}
     if(app===0xff&&cmd===0x82&&pingTimeout)return {status:"ok",bytesWritten:b.length};
     if(app===0xff&&cmd===0x80){
      const count=payload[0]|(payload[1]<<8),addr=payload[2]|(payload[3]<<8);
@@ -67,7 +70,9 @@ export async function installMockWebUSB(page,{permissionDenied=false,pingTimeout
   Object.defineProperty(navigator,"usb",{configurable:true,value:usb});
   window.__mockWebUSB={
    disconnect(){for(const fn of listeners.get("disconnect")||[])fn({device});device.opened=false;if(waiter){const done=waiter;waiter=null;done(null);}},
+   setWriteFailures(n){remainingWriteFailures=n;},
+   setDroppedPings(n){remainingDroppedPings=n;},
    get opened(){return device.opened;}
   };
- },{permissionDenied,pingTimeout});
+ },{permissionDenied,pingTimeout,failWrites,dropPings});
 }
