@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {MORSE,normalizeMessage,morseTiming,encodeMorse,decodeMorseRuns,packOokRuns,runsFromRawBytes} from "../js/cw/morse.js";
+import {MORSE,normalizeMessage,morseTiming,encodeMorse,decodeMorseRuns,packOokRuns,runsFromRawBytes,parseFlipperRawMorse} from "../js/cw/morse.js";
 test("International Morse and strict input",()=>{
  assert.equal(MORSE.S,"...");assert.equal(MORSE.O,"---");
  assert.equal(normalizeMessage(" sos   sos "),"SOS SOS");
@@ -31,4 +31,13 @@ test("hardware length and invalid run guards",()=>{
  assert.throws(()=>packOokRuns([{level:1,durationMs:1}],{sampleRate:10}));
  assert.throws(()=>decodeMorseRuns([{level:2,durationMs:100}]));
  assert.equal(decodeMorseRuns([]).text,"");
+});
+
+test("Flipper RAW Morse pulse import and validation",()=>{
+ const encoded=encodeMorse("SOS",20);
+ const raw="Filetype: Flipper SubGhz RAW File\\nVersion: 1\\nFrequency: 433920000\\nRAW_Data: "+encoded.runs.map(r=>(r.level?1:-1)*Math.round(r.durationMs*1000)).join(" ");
+ const parsed=parseFlipperRawMorse(raw);
+ assert.equal(decodeMorseRuns(parsed,{wpm:20}).text,"SOS");
+ assert.throws(()=>parseFlipperRawMorse("RAW_Data: 1000 -1000"));
+ assert.throws(()=>parseFlipperRawMorse("Filetype: Flipper SubGhz RAW File\\nRAW_Data: invalid"));
 });
