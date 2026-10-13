@@ -1,6 +1,6 @@
 // M11 offline replay: deterministic capture inspection; never talks to USB or TX.
 function bytesOf(item){
- const raw=item?.bytes??item?.data;
+ const raw=item?.bytes??item?.data??item?.hex;
  if(raw instanceof Uint8Array)return [...raw];
  if(Array.isArray(raw)&&raw.every(n=>Number.isInteger(n)&&n>=0&&n<=255))return [...raw];
  if(typeof raw==="string"){
