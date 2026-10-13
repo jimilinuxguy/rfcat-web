@@ -11,7 +11,7 @@ export class BootloaderProtocol{
  constructor(transport){this.transport=transport;}
  async command(line,{read=false}={}){
   await this.transport.write(new TextEncoder().encode(line+"\n"));
-  if(read){let text="";for(let i=0;i<128;i++){const next=await this.transport.readLine();text+=next+"\n";if(next.trim().toUpperCase()===":00000001FF")return parseIntelHex(text).memory;}throw Error("Bootloader read exceeded response limit");}
+  if(read){let text="";for(let i=0;i<128;i++){const next=await this.transport.readLine();if(!next.trim())continue;text+=next+"\n";if(next.trim().toUpperCase()===":00000001FF")return parseIntelHex(text).memory;}throw Error("Bootloader read exceeded response limit");}
   const code=await this.transport.readByte();
   if(code<48||code>53)throw Error("Unexpected bootloader status");
   if(code!==48)throw Error("Bootloader: "+ERROR_CODES[code-48]);
