@@ -320,3 +320,6 @@ main[data-workspace-ready="true"]{display:block;max-width:1440px}
 #workspace-main[data-workspace="transmit"] .rx-tx-tools,#workspace-main[data-workspace="protocols"] .rx-tx-tools,#workspace-main[data-workspace="analyze"] .rx-tx-tools{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));align-items:start}
 #workspace-main .rx-tx-tools>.card{min-width:0}
 @media(max-width:650px){.workspace-nav{padding:0 14px}.workspace-nav-tabs{width:100%}.workspace-nav-tabs button{flex:1;padding:9px 6px}.workspace-nav-hint{display:none}}
+
+/* Hidden workspace panels must override the draggable flex and collapsed details rules. */
+.workspace > .workspace-panel[hidden] { display: none !important; }
