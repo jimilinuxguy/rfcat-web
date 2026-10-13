@@ -1,9 +1,10 @@
 import {parseIntelHex,validateFirmware} from "../firmware/intel-hex.js";
 import {BootloaderProtocol,BOOTLOADER_USB} from "../firmware/bootloader-protocol.js";
+import {readApplication,compareApplication,exportApplicationHex} from "../firmware/backup.js";
 import {SerialBootloaderTransport} from "../firmware/serial-transport.js";
 export function initFirmwareManager({radio}){
  const $=id=>document.getElementById(id),host=document.createElement("details");host.id="firmware-manager";host.className="section";
- host.innerHTML='<summary>Firmware Manager — YARD Stick One</summary><div class="section-body"><p>CC1111 bootloader uses USB CDC ACM (Web Serial), not normal RFCat WebUSB. Flashing requires a bootloader already installed. Use only YARD Stick One application firmware built for the 0x1400 bootloader offset.</p><p id="fw-device">Checking USB devices…</p><button type="button" id="fw-refresh">Refresh device detection</button> <button type="button" id="fw-enter">Enter bootloader from normal RFCat</button><button type="button" id="fw-connect">Connect bootloader (Web Serial)</button> <button type="button" id="fw-disconnect">Disconnect</button> <button type="button" id="fw-readback" disabled>Test readback (16 bytes, no writes)</button><p>Firmware source: <a href="https://github.com/atlas0fd00m/rfcat/releases" target="_blank" rel="noopener">Official RFCat releases</a>. Download a YARD Stick One bootloader-compatible Intel HEX file and select it below.</p><label>Firmware Intel HEX <input id="fw-file" type="file" accept=".hex,.ihx,.txt"></label><p id="fw-info">No firmware selected</p><label><input id="fw-confirm" type="checkbox"> I have confirmed this is a YARD Stick One with the CC bootloader and this firmware targets 0x1400–0x7FFF. I understand the user flash will be erased.</label><p><button type="button" id="fw-flash" disabled>Erase, flash and verify</button> <button type="button" id="fw-run" disabled>Run verified firmware</button></p><progress id="fw-progress" max="100" value="0"></progress><pre id="fw-status" aria-live="polite"></pre><p>If interrupted, reconnect in bootloader mode and retry a complete verified flash. If the bootloader itself is absent or corrupted, browser flashing cannot recover it; use a CC1111-compatible hardware debugger.</p></div>';
+ host.innerHTML='<summary>Firmware Manager — YARD Stick One</summary><div class="section-body"><p>CC1111 bootloader uses USB CDC ACM (Web Serial), not normal RFCat WebUSB. Flashing requires a bootloader already installed. Use only YARD Stick One application firmware built for the 0x1400 bootloader offset.</p><p id="fw-device">Checking USB devices…</p><button type="button" id="fw-refresh">Refresh device detection</button> <button type="button" id="fw-enter">Enter bootloader from normal RFCat</button><button type="button" id="fw-connect">Connect bootloader (Web Serial)</button> <button type="button" id="fw-disconnect">Disconnect</button> <button type="button" id="fw-readback" disabled>Test readback (16 bytes, no writes)</button> <button type="button" id="fw-backup" disabled>Backup and verify application flash (Intel HEX)</button><p>Firmware source: <a href="https://github.com/atlas0fd00m/rfcat/releases" target="_blank" rel="noopener">Official RFCat releases</a>. Download a YARD Stick One bootloader-compatible Intel HEX file and select it below.</p><label>Firmware Intel HEX <input id="fw-file" type="file" accept=".hex,.ihx,.txt"></label><p id="fw-info">No firmware selected</p><label><input id="fw-confirm" type="checkbox"> I have confirmed this is a YARD Stick One with the CC bootloader and this firmware targets 0x1400–0x7FFF. I understand the user flash will be erased.</label><p><button type="button" id="fw-flash" disabled>Erase, flash and verify</button> <button type="button" id="fw-run" disabled>Run verified firmware</button></p><progress id="fw-progress" max="100" value="0"></progress><pre id="fw-status" aria-live="polite"></pre><p>If interrupted, reconnect in bootloader mode and retry a complete verified flash. If the bootloader itself is absent or corrupted, browser flashing cannot recover it; use a CC1111-compatible hardware debugger.</p></div>';
  const toolsPanel=$("freq")?.closest("details.card")||document.querySelector("main");
  toolsPanel.append(host);
  let transport=null,plan=null,busy=false,verified=false;
@@ -49,7 +50,7 @@ export function initFirmwareManager({radio}){
  document.getElementById("disconnect")?.addEventListener("click",()=>{setTimeout(refreshDevices,500);setTimeout(()=>{refreshDevices();buttons();},1800);});
  refreshDevices();
  const status=message=>{$("fw-status").textContent+=message+"\n";};
- function buttons(){$("fw-readback").disabled=busy||!transport;$("fw-enter").disabled=busy||!!transport||!radio.device?.opened;$("fw-connect").disabled=busy||!!transport;$("fw-disconnect").disabled=busy||!transport;$("fw-flash").disabled=busy||!transport||!plan||!$("fw-confirm").checked;$("fw-run").disabled=busy||!transport||!verified;}
+ function buttons(){$("fw-backup").disabled=busy||!transport;$("fw-readback").disabled=busy||!transport;$("fw-enter").disabled=busy||!!transport||!radio.device?.opened;$("fw-connect").disabled=busy||!!transport;$("fw-disconnect").disabled=busy||!transport;$("fw-flash").disabled=busy||!transport||!plan||!$("fw-confirm").checked;$("fw-run").disabled=busy||!transport||!verified;}
  $("fw-confirm").onchange=buttons;
  $("fw-file").onchange=async()=>{
   plan=null;verified=false;$("fw-progress").value=0;
@@ -72,6 +73,28 @@ export function initFirmwareManager({radio}){
    status("Readback OK — 0x1400–0x140F: "+bytes.map(x=>x.toString(16).padStart(2,"0")).join(" ").toUpperCase());
    status("Read-only test passed. No erase, write, or run command sent.");
   }catch(e){status("Readback FAILED: "+e.message+" — no flash operation attempted.");}
+  finally{busy=false;buttons();}
+ };
+ $("fw-backup").onclick=async()=>{
+  if(busy||!transport)return;
+  busy=true;buttons();$("fw-progress").value=0;
+  try{
+   const protocol=new BootloaderProtocol(transport);
+   status("Reading full application flash (0x1400–0x7FFF); no write commands…");
+   const first=await readApplication(protocol,fraction=>{$("fw-progress").value=Math.round(fraction*50);});
+   status("First pass complete. Reading again to verify backup…");
+   const second=await readApplication(protocol,fraction=>{$("fw-progress").value=50+Math.round(fraction*50);});
+   compareApplication(first,second);
+   const hex=exportApplicationHex(first);
+   const blob=new Blob([hex],{type:"text/plain"});
+   const url=URL.createObjectURL(blob);
+   const a=document.createElement("a");
+   a.href=url;a.download="yard-stick-one-application-backup-"+new Date().toISOString().replace(/[:.]/g,"-")+".hex";
+   document.body.append(a);a.click();a.remove();
+   setTimeout(()=>URL.revokeObjectURL(url),60000);
+   status("Backup verified: two identical full reads of 0x1400–0x7FFF (27648 bytes). Intel HEX download started. Keep this file safe.");
+   status("To restore, select the saved HEX in Firmware Intel HEX, inspect its range and use the existing confirmed erase/flash/verify workflow.");
+  }catch(e){status("BACKUP FAILED — no file exported: "+e.message+". No flash write attempted.");}
   finally{busy=false;buttons();}
  };
  $("fw-flash").onclick=async()=>{
