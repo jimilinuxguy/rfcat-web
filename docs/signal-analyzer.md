@@ -26,4 +26,4 @@ The UI compares candidate NRZ bitstreams from up to twelve detected frames, alig
 
 ## Release validation
 
-GitHub Actions Node tests are currently failing. Do not merge until CI passes. The scanner and IndexedDB UI have not been validated on physical hardware and a browser respectively.
+GitHub Actions runs have not completed successfully; the user reports hosted-runner billing restrictions. Do not merge until CI passes. The scanner and IndexedDB UI have not been validated on physical hardware and a browser respectively. GitHub-hosted runners may be unavailable due to account billing; this is not evidence of a failed Node assertion. Run `npm test` locally and capture its output before marking the PR ready.
