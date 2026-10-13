@@ -1,6 +1,6 @@
 import {EXERCISES,checkExercise} from "./exercises.js";
 import {placeHelpCard} from "./tour-position.js";
-import {diagnoseReceiver} from "./diagnostics.js";
+import {analyzeRadioState,readRadioDiagnostics} from "./diagnostics.js";
 import {TOURS,HELP_TOPICS,findTour} from "./tours.js";
 import {readHelpState,writeHelpState} from "../storage/help-store.js";
 import {createTourEngine} from "./tour-engine.js";
@@ -70,6 +70,27 @@ export async function initHelpCenter(){
   const link=node("a","Read full guide ↗");link.href=topic.doc;link.target="_blank";link.rel="noopener noreferrer";body.append(link);
   action("All help",showHome);action("Close",()=>dialog.close());
  }
+ const topicCategory=topic=>{
+  const t=(topic.title+" "+topic.target).toLowerCase();
+  if(/waveform|cursor|pulse|zoom|pan|scan|signal|analysis/.test(t))return "Signal analysis";
+  if(/chat|secret|encrypt|security|message/.test(t))return "Secure chat";
+  if(/transmit|protocol|ipython|export/.test(t))return "Transmission & tools";
+  if(/receive|decoder|capture|filter|infer|preset|session|compare/.test(t))return "Capture & decoding";
+  return "Radio configuration";
+ };
+ const topicIcon=category=>{
+  const paths={
+   "Signal analysis":["M2 12h3l3-8 4 16 3-8h7"],
+   "Secure chat":["M5 11V8a7 7 0 0 1 14 0v3","M5 11h14v10H5z","M12 15v2"],
+   "Transmission & tools":["M3 11.5 21 3l-8.5 18-2.4-7.1L3 11.5z","M10.1 13.9 21 3"],
+   "Capture & decoding":["M4 5h16v14H4z","M8 9h8","M8 13h8","M8 17h5"],
+   "Radio configuration":["M2 8a15 15 0 0 1 20 0","M5 11a10 10 0 0 1 14 0","M8 14a5 5 0 0 1 8 0","M12 18v2"]
+  };
+  const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+  svg.setAttribute("viewBox","0 0 24 24");svg.setAttribute("fill","none");svg.setAttribute("stroke","currentColor");svg.setAttribute("stroke-width","1.8");svg.setAttribute("stroke-linecap","round");svg.setAttribute("stroke-linejoin","round");svg.setAttribute("aria-hidden","true");svg.classList.add("help-topic-icon");
+  for(const d of paths[category]){const path=document.createElementNS("http://www.w3.org/2000/svg","path");path.setAttribute("d",d);svg.append(path);}
+  return svg;
+ };
  function showHome(){
   tourTarget=null;dock();
   reset("Help & guided tutorials");
@@ -89,8 +110,19 @@ export async function initHelpCenter(){
     }
     list.append(section);
    }
-   for(const topic of HELP_TOPICS.filter(t=>(t.title+" "+t.text).toLowerCase().includes(query))){
-    const b=node("button","? "+topic.title);b.type="button";b.addEventListener("click",()=>showTopic(topic));list.append(b);
+   const topics=HELP_TOPICS.filter(t=>(t.title+" "+t.text).toLowerCase().includes(query));
+   for(const category of [...new Set(topics.map(topicCategory))]){
+    const section=node("section");section.className="help-topic-group";
+    section.append(node("h3",category));
+    for(const topic of topics.filter(t=>topicCategory(t)===category)){
+     const b=node("button");b.type="button";b.className="help-topic-tile";
+     const icon=node("span");icon.className="help-topic-icon-wrap";icon.append(topicIcon(category));
+     const content=node("span");content.className="help-topic-content";
+     content.append(node("strong",topic.title),node("small",topic.text));
+     const arrow=node("span","›");arrow.className="help-topic-arrow";arrow.setAttribute("aria-hidden","true");
+     b.append(icon,content,arrow);b.addEventListener("click",()=>showTopic(topic));section.append(b);
+    }
+    list.append(section);
    }
   };
   search.addEventListener("input",render);render();
@@ -98,13 +130,35 @@ export async function initHelpCenter(){
   action("Restart welcome wizard",()=>showWizard(0));action("Close",()=>dialog.close());
  }
  function showDiagnostics(){
-  tourTarget=null;dock();reset("Receiver troubleshooting");
-  const connected=document.body.classList.contains("connected");
-  const frequencyMHz=Number(document.getElementById("freq")?.value);
-  const receiving=/receiv|listening|rx active/i.test(document.getElementById("status")?.textContent??"");
-  body.append(node("p","Read-only guidance. No radio settings are changed."));
-  const ul=node("ul");for(const finding of diagnoseReceiver({connected,frequencyMHz,receiving}))ul.append(node("li",finding));body.append(ul);
-  action("Receive tutorial",()=>startTour("receive"));action("Back",showHome);
+  tourTarget=null;dock();reset("RF diagnostics");
+  const heading=node("p","Live, read-only checks based on the current page state. These are suggestions, not measurements of RF activity.");
+  const summary=node("div");summary.className="help-diagnostic-summary";
+  const findings=node("div");findings.className="help-diagnostic-list";
+  body.append(heading,summary,findings);
+  const render=()=>{
+   const snapshot=readRadioDiagnostics(document);
+   summary.textContent=(snapshot.connected?"Connected":"Disconnected")+" · "+(snapshot.receiving?"Receiving":"Not receiving")+" · "+snapshot.packets+" RX events · "+snapshot.decoded+" decoded";
+   findings.replaceChildren();
+   for(const issue of analyzeRadioState(snapshot)){
+    const card=node("section");card.className="help-diagnostic-card";card.dataset.severity=issue.severity;
+    const head=node("strong",issue.title),description=node("p",issue.detail);
+    const inspect=node("button",issue.action);inspect.type="button";
+    inspect.addEventListener("click",()=>{
+     const target=document.querySelector(issue.target);
+     if(!target)return;
+     const panel=target.closest("details");if(panel)panel.open=true;
+     dialog.close();target.scrollIntoView({block:"center",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
+     target.focus?.({preventScroll:true});
+     target.classList.add("help-target");
+     setTimeout(()=>target.classList.remove("help-target"),3500);
+    });
+    card.append(head,description,inspect);findings.append(card);
+   }
+  };
+  render();
+  action("Refresh checks",render);
+  action("Receive tutorial",()=>startTour("receive"));
+  action("Back",showHome);
  }
  function showWizard(step){
   tourTarget=null;dock();

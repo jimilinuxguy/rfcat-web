@@ -207,3 +207,38 @@ main[data-workspace-ready="true"]{display:block;max-width:1440px}
 #help-actions{border-top:1px solid #30445b;padding-top:14px}
 #help-actions button{flex:1;min-width:72px}
 @media(prefers-reduced-motion:reduce){.help-tour-tile:hover{transform:none}.help-progress>span{transition:none}}
+
+/* Milestone 3: actionable, read-only diagnostics */
+.help-diagnostic-summary{padding:12px 14px;border:1px solid #405773;border-radius:10px;background:#1a2c41;color:#d6e9f6;font-size:12px;font-variant-numeric:tabular-nums}
+.help-diagnostic-list{display:grid;gap:10px;margin-top:12px}
+.help-diagnostic-card{display:grid;gap:8px;padding:14px;border-radius:12px;background:#18283a;border:1px solid #40536b;border-left:4px solid #769dbd}
+.help-diagnostic-card[data-severity="error"]{border-left-color:#f08080}
+.help-diagnostic-card[data-severity="warning"]{border-left-color:#f2c071}
+.help-diagnostic-card[data-severity="ok"]{border-left-color:#69d7b2}
+.help-diagnostic-card strong{font-size:14px}.help-diagnostic-card p{margin:0;color:#c4d1e0;font-size:13px}
+.help-diagnostic-card button{justify-self:start;font-size:12px}
+
+/* Illustrated help topic library */
+.help-topic-group{display:grid;gap:8px;padding:8px 0}
+.help-topic-group>h3{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#9cb1cb;margin:12px 0 4px}
+.help-topic-tile{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 12px;border:1px solid #344a63;border-radius:12px;background:linear-gradient(120deg,#1a2a3f,#131f30);transition:background .15s,border-color .15s,transform .15s}
+.help-topic-tile:hover,.help-topic-tile:focus-visible{background:#253b54;border-color:#74b4dc;transform:translateY(-1px)}
+.help-topic-icon-wrap{width:40px;height:40px;flex:0 0 40px;display:grid;place-items:center;border-radius:11px;background:#26445b;color:#85d9e4}
+.help-topic-group:nth-of-type(3n+2) .help-topic-icon-wrap{background:#3a345a;color:#c2adff}
+.help-topic-group:nth-of-type(3n+3) .help-topic-icon-wrap{background:#27493f;color:#94dfbd}
+.help-topic-icon{width:23px;height:23px;display:block}
+.help-topic-content{min-width:0;display:grid;gap:3px;flex:1}
+.help-topic-content strong{color:#edf5ff;font-size:13px;font-weight:650}
+.help-topic-content small{color:#a1b4c9;font-size:11px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.help-topic-arrow{color:#91a9c1;font-size:22px;line-height:1}
+@media(prefers-reduced-motion:reduce){.help-topic-tile{transition:none}.help-topic-tile:hover{transform:none}}
+
+/* Keep contextual help beside labels, never as a separate form row. */
+.radio .grid>label{position:relative;min-width:0}
+.radio .grid>label:not(.check){padding-right:32px}
+.radio .grid>label:not(.check)>.help-question{position:absolute;right:0;top:0;margin:0;width:24px;height:24px}
+.radio .grid>label:not(.check)>input:not([type="checkbox"]),.radio .grid>label:not(.check)>select{width:calc(100% + 32px)}
+.radio .grid>label.check{display:grid;grid-template-columns:20px minmax(0,1fr) 26px;align-items:center;column-gap:10px;row-gap:0;min-height:46px;padding:8px 10px;border:1px solid #293a4d;border-radius:9px;background:#111d2b;cursor:pointer}
+.radio .grid>label.check>input[type="checkbox"]{grid-column:1;grid-row:1;width:17px;height:17px;margin:0;padding:0;accent-color:#6eb9e9;justify-self:center}
+.radio .grid>label.check>.help-question{grid-column:3;grid-row:1;margin:0;width:24px;height:24px;justify-self:end}
+.radio .grid>label.check:focus-within{border-color:#588eb8}
