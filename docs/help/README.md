@@ -31,3 +31,9 @@ Tour cards position next to their highlighted controls where viewport space allo
 The Help panel includes a **Troubleshoot receiver** action with read-only checks for WebUSB connection, supported frequency, and possible receive-state or framing issues. These are advisory checks, not definitive hardware diagnostics. Protocol-specific walkthroughs cover POCSAG, Momentum Sub-GHz Chat, and Retekess/LRS/JTECH.
 
 For existing users with a recognized saved workspace or capture session, the first launch offers a smaller introduction to the new Help system instead of requiring the full welcome wizard. Both flows are dismissible. Test the existing-user detection against a populated local browser profile before release.
+
+## Milestone 1: contextual help coverage
+
+The inline (?) help covers major radio controls (data rate, bandwidth, sync, packet length, address filtering, CRC, whitening, status bytes, lowball RX and radio actions), receiver capture/decoder workflows, transmission/protocol selection, Flipper RAW waveform and guided scanning, and Momentum chat security. Each topic links to an existing technical guide. Search in Help to find these topics without opening their associated panel.
+
+The selector-coverage test checks that every tour target and contextual help selector exists in `index.html`. This guards against UI refactors silently orphaning help controls; it does not replace browser accessibility and placement checks.
