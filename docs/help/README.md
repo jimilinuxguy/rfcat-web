@@ -37,3 +37,18 @@ For existing users with a recognized saved workspace or capture session, the fir
 The inline (?) help covers major radio controls (data rate, bandwidth, sync, packet length, address filtering, CRC, whitening, status bytes, lowball RX and radio actions), receiver capture/decoder workflows, transmission/protocol selection, Flipper RAW waveform and guided scanning, and Momentum chat security. Each topic links to an existing technical guide. Search in Help to find these topics without opening their associated panel.
 
 The selector-coverage test checks that every tour target and contextual help selector exists in `index.html`. This guards against UI refactors silently orphaning help controls; it does not replace browser accessibility and placement checks.
+
+## Milestone 2: advanced interactive tutorials
+
+Open **? Help** to find the **Advanced analysis** and **Secure interoperability** groups. The new tutorials cover **Compare RF captures**, **Infer unknown protocol fields**, **Build and validate a preset**, **Waveform timing lab**, and **Encrypted Momentum Chat lab**. Each walks through real UI controls and includes an optional, deterministic practice question using clearly labeled synthetic examples. The answer explains why the result is plausible and where additional validation is required.
+
+The Help interface now includes grouped tutorial tiles, a step-progress indicator, example bytes/timing chips, selectable practice answers, and accessible feedback. Practice is read-only: it never sends RF, writes presets, changes encryption settings, or modifies saved captures. Users must deliberately operate the actual application controls. A tutorial can be completed even without answering a practice question; completion indicates the tour was visited, **not** that the user passed a competency test.
+
+### Browser acceptance checks
+
+1. Open Help and verify the two advanced categories and five new tutorials appear and can be found by search.
+2. Start **Compare RF captures**; verify the compare panel is highlighted, the practice answer explains the changed byte, and Back/Next work.
+3. Complete **Waveform timing lab** offline with a Flipper RAW import; confirm cursor and hypothesis steps highlight correctly.
+4. Open the encrypted chat lab without a radio; confirm that nothing is transmitted and no secrets are displayed by the tutorial.
+5. Test the tutorial UI at narrow widths, zoomed browser text, keyboard-only input, and reduced-motion settings.
+6. Run `npm test` to check definitions, exercises and DOM selectors.
