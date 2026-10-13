@@ -18,7 +18,7 @@ export function createCapturePipeline({windowMs=300,maxEvents=1000}={}){
   const previous=events.at(-1);
   if(previous&&timestampMs<previous.timestampMs)throw Error("Events must be timestamp ordered");
   const last=groups.at(-1);
-  const same=last&&last.hex===hex&&last.frequencyHz===frequencyHz&&timestampMs-last.lastSeenMs<=activeWindowMs;
+  const same=Boolean(last&&last.hex===hex&&last.frequencyHz===frequencyHz&&timestampMs-last.lastSeenMs<=activeWindowMs);
   const group=same?last:{id:nextId++,hex,frequencyHz,count:0,firstSeenMs:timestampMs,lastSeenMs:timestampMs,rssiMin:null,rssiMax:null};
   if(!same)groups.push(group);
   group.count++;group.lastSeenMs=timestampMs;
