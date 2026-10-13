@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {encodeRecord,parseIntelHex,validateFirmware} from "../js/firmware/intel-hex.js";
 import {BootloaderProtocol,COMMANDS,readCommand,pageEraseCommand} from "../js/firmware/bootloader-protocol.js";
-import {readApplication,compareApplication,exportApplicationHex,BACKUP_BYTES} from "../js/firmware/backup.js";
+import {readApplication,compareApplication,exportApplicationHex,BACKUP_BYTES,verifyImageAgainstDevice} from "../js/firmware/backup.js";
 import {MockBootloaderTransport} from "../js/firmware/mock-transport.js";
 const sample=encodeRecord(0,0x1400,Array.from({length:16},(_,i)=>i))+ "\n"+encodeRecord(1,0);
 test("Intel HEX parses valid records, checksum and EOF",()=>{
@@ -63,4 +63,25 @@ test("failed backup read never returns a complete image",async()=>{
  const mock=new MockBootloaderTransport();
  mock.fail=true;
  await assert.rejects(readApplication(new BootloaderProtocol(mock)),/Injected/);
+});
+
+test("device verification compares full flash to uploaded HEX without writes",async()=>{
+ const mock=new MockBootloaderTransport();
+ mock.flash[0x1400]=0x02;mock.flash[0x1401]=0x14;mock.flash[0x7fff]=0x55;
+ const before=mock.flash.slice();
+ const image=parseIntelHex(exportApplicationHex(await readApplication(new BootloaderProtocol(mock))));
+ const progress=[];
+ assert.equal(await verifyImageAgainstDevice(new BootloaderProtocol(mock),image,p=>progress.push(p)),BACKUP_BYTES);
+ assert.equal(progress.at(-1),1);
+ assert.deepEqual(mock.flash,before);
+ mock.flash[0x1401]^=1;
+ await assert.rejects(verifyImageAgainstDevice(new BootloaderProtocol(mock),image),/mismatch at 0x1401/);
+});
+test("sparse HEX verification requires omitted flash bytes to be erased",async()=>{
+ const mock=new MockBootloaderTransport();
+ mock.flash[0x1400]=0x02;
+ const image=parseIntelHex(encodeRecord(0,0x1400,[0x02,...Array(15).fill(255)])+"\n"+encodeRecord(1,0));
+ assert.equal(await verifyImageAgainstDevice(new BootloaderProtocol(mock),image),BACKUP_BYTES);
+ mock.flash[0x140f]=0x00;
+ await assert.rejects(verifyImageAgainstDevice(new BootloaderProtocol(mock),image),/mismatch at 0x140f/);
 });
