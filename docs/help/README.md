@@ -23,3 +23,11 @@ The wizard completion flag and completed-tour identifiers are stored in the brow
 ## Limitations
 
 Tutorial targets depend on current DOM selectors. Missing or unavailable controls are skipped manually using Next; no workflow is executed automatically. Guided steps are educational, not a substitute for correct RF configuration, authorized spectrum use, or hardware verification. Automated tests cover tour definitions and storage schema declarations; browser interaction must be checked manually.
+
+## Enhanced guided experience
+
+Tour cards position next to their highlighted controls where viewport space allows, falling back within the viewport edges. Scrolling, resizing and responsive layouts reposition the card. Connection steps can advance when the application enters its connected state; the RAW import step advances on file selection. All other steps remain manual and never initiate transmission, radio configuration, or receive operations.
+
+The Help panel includes a **Troubleshoot receiver** action with read-only checks for WebUSB connection, supported frequency, and possible receive-state or framing issues. These are advisory checks, not definitive hardware diagnostics. Protocol-specific walkthroughs cover POCSAG, Momentum Sub-GHz Chat, and Retekess/LRS/JTECH.
+
+For existing users with a recognized saved workspace or capture session, the first launch offers a smaller introduction to the new Help system instead of requiring the full welcome wizard. Both flows are dismissible. Test the existing-user detection against a populated local browser profile before release.
