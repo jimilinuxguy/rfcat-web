@@ -40,3 +40,26 @@ test("tutorial and diagnostic code use the same workspace reveal helper",()=>{
  }
  assert.equal(panelWorkspace("activity"),"shared");
 });
+
+test("every connection-led tutorial declares its starting workspace",async()=>{
+ const {TOURS}=await import("../js/help/tours.js");
+ const allowed=new Set(WORKSPACES);
+ for(const tour of TOURS){
+  const first=tour.steps[0];
+  if(first.target==="#connect"){
+   assert.ok(allowed.has(first.workspace),tour.id+" must activate a workspace before connection");
+  }
+ }
+});
+test("tour target selectors exist in the page markup",async()=>{
+ const {TOURS}=await import("../js/help/tours.js");
+ const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
+ for(const tour of TOURS)for(const step of tour.steps){
+  if(step.target.startsWith("#"))assert.ok(html.includes('id="'+step.target.slice(1)+'"'),tour.id+": "+step.target);
+  else if(step.target.startsWith("."))assert.ok(html.includes(step.target.slice(1)),tour.id+": "+step.target);
+ }
+});
+test("Momentum tutorial targets its chat panel rather than transmitter protocol selector",async()=>{
+ const {TOURS}=await import("../js/help/tours.js");
+ assert.ok(TOURS.find(t=>t.id==="momentum").steps.some(step=>step.target===".momentum-chat-card"));
+});
