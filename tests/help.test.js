@@ -22,7 +22,7 @@ test("help topics have documentation and persistent store version",()=>{
 
 test("every contextual help and tutorial selector exists in index.html",()=>{
  const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
- const dynamic=readFileSync(new URL("../app.js",import.meta.url),"utf8");
+ const dynamic=readFileSync(new URL("../js/ui/replay-controller.js",import.meta.url),"utf8");
  const selectors=[...HELP_TOPICS.map(t=>t.target),...TOURS.flatMap(t=>t.steps.map(s=>s.target))];
  for(const selector of selectors){
   const name=selector.slice(1);
