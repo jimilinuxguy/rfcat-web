@@ -56,3 +56,9 @@ The backup covers **application flash only**, not the protected bootloader, conf
 ## Verify device against a selected HEX (read-only)
 
 With the bootloader connected, select a valid application HEX file (including a backup exported by Firmware Manager) and click **Verify device against HEX (read-only)**. The operation reads all 27,648 application flash bytes via command 0x25 and compares them against the selected HEX image, treating addresses omitted from sparse HEX images as erased (0xFF). It reports the first mismatching address with expected and actual values and never erases, writes, or executes firmware. The button does not require the destructive-flash confirmation checkbox. A successful comparison is evidence that the currently installed application flash matches the file, not proof of image provenance or suitability for the board.
+
+## Mandatory backup gate before flashing
+
+**Erase, flash and verify** remains disabled until all of the following are true in the **current bootloader connection**: a complete two-pass application flash backup has succeeded and its Intel HEX download has been initiated, a structurally valid firmware HEX is selected, and the destructive-flash confirmation checkbox is checked. Disconnecting or reconnecting the bootloader resets the backup gate. A failed backup also clears it. The final confirmation dialog reminds you to ensure the downloaded backup is safely saved before proceeding.
+
+**Important:** The browser cannot confirm that the operating system actually saved the downloaded file. Check your Downloads folder and preserve the backup independently before approving erase. The backup covers application flash only (0x1400–0x7FFF), **not the protected bootloader**. Do not flash until you have a recoverable copy and have confirmed the target firmware is appropriate. The destructive erase/flash/run path still requires hardware validation.
