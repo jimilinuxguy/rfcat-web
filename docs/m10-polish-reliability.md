@@ -35,3 +35,8 @@ Playwright launches a local Python HTTP server. The extended suite exercises eve
 ## Mock WebUSB browser coverage
 
 `browser-tests/helpers/mock-webusb.js` installs a test-only WebUSB device before application scripts load. `browser-tests/m10-webusb.spec.js` exercises successful CC1111 handshake/configuration readback/disconnect, cancelled device selection, and unexpected device removal. The simulator responds to RFCat system ping/peek/poke commands and keeps a local register array; it does not transmit RF or establish real-device compatibility. Run with `npm run test:browser`. Hardware acceptance testing remains separate.
+
+
+## USB failure and recovery tests
+
+`browser-tests/m10-webusb-recovery.spec.js` injects a dropped ping, repeated USB write errors, a full handshake timeout, and disconnection with an in-flight command. Production transport cleanup now runs on failed connection attempts; unexpected unplug rejects pending USB waiters. These tests do not establish real-device or RF compatibility.
