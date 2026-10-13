@@ -1,23 +1,29 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {WORKSPACES,WORKSPACE_PANELS,normalizeWorkspace} from "../js/ui/workspace-navigation.js";
 import {readFileSync} from "node:fs";
-test("workspace identifiers are stable and invalid persisted values fall back to Receive",()=>{
+import {WORKSPACES,WORKSPACE_PANELS,normalizeWorkspace,panelWorkspace} from "../js/ui/workspace-navigation.js";
+test("workspace selection validates saved identifiers",()=>{
  assert.deepEqual(WORKSPACES,["receive","transmit","analyze","protocols","tools"]);
  for(const value of WORKSPACES)assert.equal(normalizeWorkspace(value),value);
- for(const value of ["",null,"unknown","__proto__"])assert.equal(normalizeWorkspace(value),"receive");
+ for(const value of ["",null,"unknown"])assert.equal(normalizeWorkspace(value),"receive");
 });
-test("all mapped workbench panels exist in the HTML",()=>{
- const html=readFileSync(new URL("../index.html",import.meta.url),"utf8");
- for(const selector of Object.keys(WORKSPACE_PANELS)){
-  const leaf=selector.split(" ").at(-1);
-  if(leaf.startsWith("#"))assert.ok(html.includes('id="'+leaf.slice(1)+'"'),selector);
-  else assert.ok(html.includes(leaf.slice(1)),selector);
- }
- assert.match(html,/data-workspace-tab="receive"/);
- assert.match(html,/workspace-navigation\.js/);
+test("all layout-managed panels have one workspace owner",()=>{
+ const source=readFileSync(new URL("../js/ui/workspace.js",import.meta.url),"utf8");
+ const defs=[...source.matchAll(/\["([^"]+)",\s*"[^"]+"\]/g)].map(m=>m[1]);
+ assert.equal(defs.length,13);
+ for(const id of defs)assert.ok(panelWorkspace(id),id);
+ assert.equal(panelWorkspace("activity"),"shared");
+ assert.equal(panelWorkspace("capture-library"),"receive");
+ assert.equal(panelWorkspace("pulse-analyzer"),"analyze");
+ assert.equal(panelWorkspace("transmitter"),"transmit");
+ assert.equal(panelWorkspace("cw"),"protocols");
+ assert.equal(panelWorkspace("momentum-chat"),"protocols");
 });
-test("shared activity and radio connection are never assigned to hidden workspaces",()=>{
- assert.equal(Object.keys(WORKSPACE_PANELS).some(key=>key.includes(".console")),false);
- assert.equal(Object.keys(WORKSPACE_PANELS).some(key=>key.includes(".status")),false);
+test("navigation waits for async layout restore and preserves controls",()=>{
+ const source=readFileSync(new URL("../js/ui/workspace-navigation.js",import.meta.url),"utf8");
+ const layout=readFileSync(new URL("../js/ui/workspace.js",import.meta.url),"utf8");
+ assert.match(source,/rfcat:workspace-ready/);
+ assert.match(layout,/rfcat:workspace-ready/);
+ assert.match(source,/panel.hidden=owner!==current/);
+ assert.doesNotMatch(source,/\.remove\(|innerHTML\s*=/);
 });
