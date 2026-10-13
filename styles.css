@@ -232,3 +232,13 @@ main[data-workspace-ready="true"]{display:block;max-width:1440px}
 .help-topic-content small{color:#a1b4c9;font-size:11px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .help-topic-arrow{color:#91a9c1;font-size:22px;line-height:1}
 @media(prefers-reduced-motion:reduce){.help-topic-tile{transition:none}.help-topic-tile:hover{transform:none}}
+
+/* Keep contextual help beside labels, never as a separate form row. */
+.radio .grid>label{position:relative;min-width:0}
+.radio .grid>label:not(.check){padding-right:32px}
+.radio .grid>label:not(.check)>.help-question{position:absolute;right:0;top:0;margin:0;width:24px;height:24px}
+.radio .grid>label:not(.check)>input:not([type="checkbox"]),.radio .grid>label:not(.check)>select{width:calc(100% + 32px)}
+.radio .grid>label.check{display:grid;grid-template-columns:20px minmax(0,1fr) 26px;align-items:center;column-gap:10px;row-gap:0;min-height:46px;padding:8px 10px;border:1px solid #293a4d;border-radius:9px;background:#111d2b;cursor:pointer}
+.radio .grid>label.check>input[type="checkbox"]{grid-column:1;grid-row:1;width:17px;height:17px;margin:0;padding:0;accent-color:#6eb9e9;justify-self:center}
+.radio .grid>label.check>.help-question{grid-column:3;grid-row:1;margin:0;width:24px;height:24px;justify-self:end}
+.radio .grid>label.check:focus-within{border-color:#588eb8}
