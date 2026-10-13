@@ -55,7 +55,7 @@ Not all implementations have the same hardware-validation status. Protocol detai
 
 **Momentum Enhanced Sub-GHz Chat** is a separate interoperability panel (not a registry protocol). It supports plaintext and AES-256-GCM encrypted chat with compatible Flipper Zero firmware. See the [Momentum Chat guide](docs/momentum-subghz-chat.md) for setup, payload limits, and validation notes.
 
-See [M11 offline capture replay](docs/m11-capture-replay.md) for the initial read-only replay controls and limitations.
+See [M11 offline capture replay](docs/m11-capture-replay.md) for playback controls, timeline, saved-session comparison, limitations and the Help/welcome-wizard walkthrough.
 
 ## Capture and protocol-development workflow
 
