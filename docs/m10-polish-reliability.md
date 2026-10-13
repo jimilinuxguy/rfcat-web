@@ -21,4 +21,12 @@ Browser acceptance checklist (Chrome/Edge):
 5. Start each Help tutorial and confirm the correct tab is selected and tabs remain clickable.
 6. Narrow the viewport; confirm the status strip wraps without obscuring workspace tabs.
 
-Browser/WebUSB integration tests are not included in the Node-only suite; the checklist requires manual browser and hardware verification.
+Hardware-free browser smoke tests use Playwright:
+
+```bash
+npm install
+npx playwright install chromium
+npm run test:browser
+```
+
+Playwright launches a local Python HTTP server. Hardware/WebUSB integration and full tutorial walkthroughs still require manual verification; the browser smoke suite does not claim to validate RF behavior.
