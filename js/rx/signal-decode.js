@@ -98,22 +98,24 @@ export function alignBitstreams(bitstreams, { maxShift = 128 } = {}) {
 }
 
 export function findPreambleCandidates(bitstream,{minAlternating=8,minRepeats=3}={}){
- if(typeof bitstream!=="string"||!/^[01]*$/.test(bitstream))throw Error("Expected binary bitstream");
- const alternating=[];
- let start=0;
- for(let i=1;i<=bitstream.length;i++){
-  if(i<bitstream.length&&bitstream[i]!==bitstream[i-1])continue;
-  if(i-start>=minAlternating)alternating.push({start,length:i-start,pattern:bitstream.slice(start,Math.min(i,start+16))});
-  start=i;
- }
- const syncCandidates=[];
- for(const width of [8,16,24,32]){
-  const counts=new Map();
-  for(const hit of alternating){
-   const value=bitstream.slice(hit.start+hit.length,hit.start+hit.length+width);
-   if(value.length===width)counts.set(value,(counts.get(value)??0)+1);
+  if(typeof bitstream!=="string"||!/^[01]*$/.test(bitstream))throw Error("Expected binary bitstream");
+  if(!Number.isInteger(minAlternating)||minAlternating<2||!Number.isInteger(minRepeats)||minRepeats<2)throw Error("Invalid preamble search settings");
+  const alternating=[];
+  let start=0;
+  for(let i=1;i<=bitstream.length;i++){
+    if(i<bitstream.length&&bitstream[i]!==bitstream[i-1])continue;
+    const length=i-start;
+    if(length>=minAlternating)alternating.push({start,length,pattern:bitstream.slice(start,Math.min(i,start+16))});
+    start=i;
   }
-  for(const [bits,count] of counts)if(count>=minRepeats)syncCandidates.push({bits,width,count,verified:false});
- }
- return {alternating,syncCandidates,verified:false};
+  const syncCandidates=[];
+  for(const width of [8,16,24,32]){
+    const counts=new Map();
+    for(const hit of alternating){
+      const value=bitstream.slice(hit.start+hit.length,hit.start+hit.length+width);
+      if(value.length===width)counts.set(value,(counts.get(value)??0)+1);
+    }
+    for(const [bits,count] of counts)if(count>=minRepeats)syncCandidates.push({bits,width,count,verified:false});
+  }
+  return {alternating,syncCandidates,verified:false};
 }
