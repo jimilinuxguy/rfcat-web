@@ -4,6 +4,7 @@ import { encodePlaintextChat, decodePlaintextChat } from "./js/chat/momentum-pla
 import { C } from "./js/rfcat/constants.js";
 import { createCapturePipeline } from "./js/rx/capture-pipeline.js";
 import { encodeMorse,decodeMorseRuns,packOokRuns,runsFromRawBytes,parseFlipperRawMorse } from "./js/cw/morse.js";
+import { createCwStream } from "./js/cw/stream.js";
 import { planBench,compareBenchPacket,executeBench,waitBench } from "./js/test-bench/bench-core.js";
 import { scanReceiverPresets } from "./js/rx/signal-scan.js";
 import { R } from "./js/radio/registers.js";
@@ -374,7 +375,23 @@ $("bench-export").onclick=()=>{
 };
 benchRefresh();
 let cwLive=false;
-let cwRawBuffer=new Uint8Array();
+let cwStream=null;
+let cwHistory=[];
+function cwRenderStatus(status){
+ const recent=cwHistory.slice(-8).map(x=>`[${x.time}] ${x.text} · ${x.wpm} WPM · confidence ${Math.round(x.confidence*100)}% · ${x.bytes} bytes`).join("\n");
+ $("cw-rx-output").textContent=`Live CW: ${cwLive?"enabled":"disabled"} · RX frames: ${status.frames} · signal frames: ${status.activeFrames} · buffered bytes: ${status.bufferedBytes}\nState: ${status.reason||"waiting"}${status.candidate?" · candidate: "+status.candidate:""}\n\nCompleted messages:\n${recent||"(none yet)"}`;
+}
+function cwNewStream(){
+ const rate=Number($("cw-rx-rate").value),speed=$("cw-rx-speed").value;
+ if(!Number.isInteger(rate)||rate<500||rate>5000)throw Error("RX sample rate must be 500–5000 symbols/s");
+ cwStream=createCwStream({sampleRate:rate,wpm:speed==="auto"?null:Number(speed),
+  onMessage:result=>{
+   cwHistory.push({...result,time:new Date().toLocaleTimeString()});
+   if(cwHistory.length>50)cwHistory.shift();
+   cwRenderStatus({...cwStream.status(),reason:"decoded"});
+  },onStatus:cwRenderStatus});
+}
+
 let cwLastReport=null;
 let cwAudio=null;
 function cwPlan(){
@@ -495,11 +512,15 @@ $("cw-sub-file").addEventListener("change",async event=>{
  finally{event.target.value="";}
 });
 $("cw-rx-start").onclick=()=>{
- cwLive=!cwLive;cwRawBuffer=new Uint8Array();
+ cwLive=!cwLive;
+ if(cwLive){try{cwNewStream();}catch(error){cwLive=false;$("cw-rx-output").textContent=error.message;return;}}
+ else{cwStream?.flush("stopped");cwStream=null;}
  $("cw-rx-start").textContent=cwLive?"Disable live Morse decode":"Enable live Morse decode";
  $("cw-rx-output").textContent=cwLive?"Live decode enabled. Start main Receiver with raw OOK settings.":"Live decode stopped.";
 };
-$("cw-rx-clear").onclick=()=>{cwRawBuffer=new Uint8Array();$("cw-rx-output").textContent="Morse RX cleared.";};
+$("cw-rx-clear").onclick=()=>{cwHistory=[];cwStream?.reset();$("cw-rx-output").textContent="Morse RX cleared.";};
+$("cw-rx-rate").addEventListener("change",()=>{if(cwLive)try{cwNewStream();}catch(error){$("cw-rx-output").textContent=error.message;}});
+$("cw-rx-speed").addEventListener("change",()=>{if(cwLive)try{cwNewStream();}catch(error){$("cw-rx-output").textContent=error.message;}});
 const rxBurstPipeline=createCapturePipeline({windowMs:300,maxEvents:1000});
 const burstSummary=$("rx-burst-summary");
 const burstList=$("rx-burst-list");
@@ -1982,11 +2003,8 @@ d.addEventListener("packet", async (e) => {
     const status = splitRxStatus(received, $("appendstatus").checked);
     const b = status.payload;
     if(cwLive && b?.length){
-      try{
-        const incoming=new Uint8Array([...cwRawBuffer,...b].slice(-4096));
-        cwRawBuffer=incoming;
-        cwDecodeBytes(cwRawBuffer);
-      }catch(error){$("cw-rx-output").textContent="Live Morse: "+error.message;}
+      try{cwStream?.push(b);}
+      catch(error){$("cw-rx-output").textContent="Live Morse: "+error.message;}
     }
     if(burstEnabled.checked && b?.length){
         const windowMs=Number(burstWindow.value);
