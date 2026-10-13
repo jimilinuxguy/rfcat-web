@@ -9,6 +9,7 @@ RFCat Web uses WebUSB to configure radios, transmit test frames, capture and dec
 - **Configure and transmit:** Set frequency, modulation, data rate, bandwidth, power, and packet settings; transmit using protocol-specific encoders or direct RF test modes.
 - **Receive and decode:** Inspect raw captures, select decoders, and review decoded fields. Auto mode attempts applicable decoders without discarding unknown traffic.
 - **Analyze captures offline:** Import/export JSON, save capture sessions in IndexedDB, compare captures, infer changing fields, and validate declarative protocol presets against positive and negative examples.
+- **Investigate unknown RF timing:** Import Flipper Zero RAW `.sub` captures in the RF Signal Analyzer panel, inspect waveforms, and review conservative encoding hypotheses. See [RF Signal Analyzer](docs/signal-analyzer.md) for current scope and limitations.
 - **Inspect signal timing:** Preview symbol timing and waveform quantization; analyze received OOK pulse distributions.
 - **Customize your workspace:** Drag, resize, and collapse panels. Layout preferences persist locally in IndexedDB.
 - **Interoperate with other devices:** Use specialized workflows such as Momentum Enhanced Sub-GHz Chat with a Flipper Zero.
@@ -84,3 +85,7 @@ For development details, hardware behavior, known-good setups, and limitations, 
 ## Safety
 
 Transmit only on equipment and frequencies you own or are authorized to use, and comply with local radio regulations. RF test modes should be used for short, controlled bench tests to avoid interference.
+
+### RF Signal Analyzer
+
+Import Flipper Sub-GHz RAW captures, inspect timing clusters and encoding hypotheses, compare candidate bits, and measure pulse timings with waveform cursors. Save analyses in IndexedDB. A connected YARD Stick One can sequentially scan ASK/OOK, 2-FSK and GFSK receiver presets and report packet evidence. Preset scanning is receive-only, interrupts other radio workflows, and does not prove modulation identity. See [signal analyzer guide](docs/signal-analyzer.md). Browser import, waveform cursor dragging, and local save/load/delete have been user-verified; basic YARD Stick One preset scanning has also been reported working. Packet-byte detection, cancellation, and exact configuration restoration are not independently confirmed. Hosted CI availability may be limited; run `npm test` locally.

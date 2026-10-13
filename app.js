@@ -2,6 +2,7 @@ import { MomentumCrypto, momentumKeyFromPassword, momentumKeyFromHex } from "./j
 import { encodePlaintextChat, decodePlaintextChat } from "./js/chat/momentum-plaintext.js";
 // RFCat Web UI/event wiring. Hardware/protocol logic lives under js/.
 import { C } from "./js/rfcat/constants.js";
+import { scanReceiverPresets } from "./js/rx/signal-scan.js";
 import { R } from "./js/radio/registers.js";
 import { RFCatUSB } from "./js/rfcat/device.js";
 import { hex } from "./js/core/bytes.js";
@@ -22,6 +23,32 @@ import {
 } from "./js/ui/protocols.js";
 
 const d = new RFCatUSB();
+let signalScanController=null;
+const signalScanStart=document.getElementById("signal-scan-start");
+const signalScanStop=document.getElementById("signal-scan-stop");
+const signalScanResults=document.getElementById("signal-scan-results");
+if(signalScanStart&&signalScanStop&&signalScanResults){
+  signalScanStart.addEventListener("click",async()=>{
+    if(signalScanController)return;
+    if(!d.device?.opened){signalScanResults.textContent="Connect YARD Stick One first.";return;}
+    if(listening||momentumChatActive){signalScanResults.textContent="Stop active receiver monitoring or Momentum chat before scanning.";return;}
+    signalScanController=new AbortController();
+    signalScanStart.disabled=true;signalScanStop.disabled=false;
+    const rows=[];
+    try{
+      const result=await scanReceiverPresets(d,{
+        frequencyHz:Number(document.getElementById("signal-scan-frequency").value)*1e6,
+        dwellMs:Number(document.getElementById("signal-scan-dwell").value),
+        signal:signalScanController.signal,
+        onStep:row=>{rows.push(row);signalScanResults.textContent=JSON.stringify(rows,null,2);}
+      });
+      signalScanResults.textContent=JSON.stringify(result,null,2);
+    }catch(error){signalScanResults.textContent="Scan error: "+error.message+"\n"+JSON.stringify(rows,null,2);}
+    finally{signalScanController=null;signalScanStart.disabled=false;signalScanStop.disabled=true;}
+  });
+  signalScanStop.addEventListener("click",()=>signalScanController?.abort());
+}
+
 
 let momentumChatActive = false;
 const momentumCrypto = new MomentumCrypto();
