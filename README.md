@@ -103,3 +103,6 @@ For complete walkthroughs, limitations and manual acceptance checks, see [Guided
 
 
 **Milestone 5 — Protocol Reverse-Engineering Workbench:** Inspect candidate bits, name non-overlapping fields, view bit-order-aware hex/decimal values, identify variable regions across equal-length repeated frames, check simple sum8/xor8 hypotheses, and export a versioned protocol JSON definition. All findings are unverified and offline; definitions are not executable decoders. See [Protocol Workbench](docs/protocol-workbench.md).
+
+
+**Milestone 6 (in progress) — Intelligent Receiver & Capture Pipeline:** The Receiver panel now offers bounded packet-level burst grouping, timestamps, duplicate-window controls, RSSI ranges, pause/reset and JSON export without altering the existing RX decoder or packet list. See [Capture Pipeline](docs/capture-pipeline.md). Browser and hardware validation are pending.
