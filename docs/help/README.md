@@ -81,3 +81,8 @@ Radio field explanations are accessed using compact help buttons aligned to the 
 The welcome wizard now offers **Advanced Signal Analysis workbench** as a dedicated offline goal alongside the original **Analyze a Flipper RAW capture** workflow. The existing analyzer tour has been expanded to cover timing histogram selection, decode hypotheses, repeated-frame comparison, JSON export and saving. A separate seven-step advanced tour covers high/low pulse selection, clickable histogram bins, display-only bit inversion, frame stability and export. All steps target actual controls, require explicit user interaction, and do not operate radio hardware.
 
 To test, open **? Help → Restart welcome wizard**, select **Advanced Signal Analysis workbench**, and follow the highlighted controls after importing a RAW `.sub` file. Verify Back/Next/Exit, collapsed-panel expansion, and that the tour remains available from the searchable Help library. Browser interaction must be verified separately from the selector tests.
+
+
+## Milestone 5: Protocol Reverse-Engineering wizard
+
+The welcome wizard offers **Protocol Reverse-Engineering Workbench**. The searchable Help Center includes a seven-step advanced tutorial covering RAW import, candidate decoding, selecting bit positions, naming fields, inference and JSON export. The tour is educational, read-only and never transmits. See [Protocol Workbench](../protocol-workbench.md).
