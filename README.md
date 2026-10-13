@@ -38,7 +38,7 @@ npm run test:browser
 npm run verify
 ```
 
-The Playwright suite includes the original 15 M10 hardware-free regression tests covering workspace navigation, persistence, Help, mock WebUSB handshake/readback, permission cancellation, disconnects, retries, write failures, and timeouts. See [M10 polish and reliability](docs/m10-polish-reliability.md). M11 adds four hardware-free Playwright acceptance tests for replay navigation, playback, saved-session comparison, and Help. Mocked USB tests do not validate RF hardware or over-the-air behavior.
+The Playwright suite includes the original 15 hardware-free regression tests covering workspace navigation, persistence, Help, mock WebUSB handshake/readback, permission cancellation, disconnects, retries, write failures, and timeouts. See [UI polish and reliability](docs/polish-reliability.md). Replay adds four hardware-free Playwright acceptance tests for replay navigation, playback, saved-session comparison, and Help. Mocked USB tests do not validate RF hardware or over-the-air behavior.
 
 GitHub Actions also runs the Node test workflow. **Check the actual workflow result:** the presence of tests or a merged PR does not imply CI is passing.
 
@@ -57,7 +57,7 @@ Not all implementations have the same hardware-validation status. Protocol detai
 
 **Momentum Enhanced Sub-GHz Chat** is a separate interoperability panel (not a registry protocol). It supports plaintext and AES-256-GCM encrypted chat with compatible Flipper Zero firmware. See the [Momentum Chat guide](docs/momentum-subghz-chat.md) for setup, payload limits, and validation notes.
 
-See [M11 offline capture replay](docs/m11-capture-replay.md) for playback controls, timeline, saved-session comparison, limitations and the Help/welcome-wizard walkthrough.
+See [Offline capture replay](docs/capture-replay.md) for playback controls, timeline, saved-session comparison, limitations and the Help/welcome-wizard walkthrough.
 
 ## Capture and protocol-development workflow
 
@@ -120,6 +120,6 @@ For complete walkthroughs, limitations and manual acceptance checks, see [Guided
 
 ### Workspace navigation (M9)
 
-The interface now groups existing tools into **Receive**, **Transmit**, **Analyze**, **Protocols**, and **Tools** tabs. Receive shows packet capture and the capture library; Transmit shows the raw transmitter, sequence bench, and waveform preview; Analyze shows the signal analyzer and OOK pulse tools; Protocols contains Morse/CW and Momentum Chat; Tools contains the shared CC1111 radio configuration. The Activity log remains available across workspaces. The active tab is remembered locally under `rfcat.workspace.active.v1`. M10 adds a read-only status summary of the radio form (frequency, modulation, baud rate, and connection state) on every tab; click it to open Tools. These are form values, not independently verified radio register readings.
+The interface now groups existing tools into **Receive**, **Transmit**, **Analyze**, **Protocols**, and **Tools** tabs. Receive shows packet capture and the capture library; Transmit shows the raw transmitter, sequence bench, and waveform preview; Analyze shows the signal analyzer and OOK pulse tools; Protocols contains Morse/CW and Momentum Chat; Tools contains the shared CC1111 radio configuration. The Activity log remains available across workspaces. The active tab is remembered locally under `rfcat.workspace.active.v1`. The interface includes a read-only status summary of the radio form (frequency, modulation, baud rate, and connection state) on every tab; click it to open Tools. These are form values, not independently verified radio register readings.
 
 Workspace navigation preserves existing DOM controls and radio sessions when switching tabs; it does not yet extract protocol controllers into independent modules or add workspace-specific drag layouts. To configure the receiver, open **Tools** and return to **Receive**. No radio command is sent merely by changing tabs.
