@@ -207,3 +207,13 @@ main[data-workspace-ready="true"]{display:block;max-width:1440px}
 #help-actions{border-top:1px solid #30445b;padding-top:14px}
 #help-actions button{flex:1;min-width:72px}
 @media(prefers-reduced-motion:reduce){.help-tour-tile:hover{transform:none}.help-progress>span{transition:none}}
+
+/* Milestone 3: actionable, read-only diagnostics */
+.help-diagnostic-summary{padding:12px 14px;border:1px solid #405773;border-radius:10px;background:#1a2c41;color:#d6e9f6;font-size:12px;font-variant-numeric:tabular-nums}
+.help-diagnostic-list{display:grid;gap:10px;margin-top:12px}
+.help-diagnostic-card{display:grid;gap:8px;padding:14px;border-radius:12px;background:#18283a;border:1px solid #40536b;border-left:4px solid #769dbd}
+.help-diagnostic-card[data-severity="error"]{border-left-color:#f08080}
+.help-diagnostic-card[data-severity="warning"]{border-left-color:#f2c071}
+.help-diagnostic-card[data-severity="ok"]{border-left-color:#69d7b2}
+.help-diagnostic-card strong{font-size:14px}.help-diagnostic-card p{margin:0;color:#c4d1e0;font-size:13px}
+.help-diagnostic-card button{justify-self:start;font-size:12px}
