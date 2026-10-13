@@ -286,3 +286,11 @@ main[data-workspace-ready="true"]{display:block;max-width:1440px}
 .rx-burst-controls input[type=number]{display:block;width:120px;margin-top:4px}
 .rx-burst-list{max-height:220px;overflow:auto;display:grid;gap:5px;margin-top:8px}
 .rx-burst-item{padding:7px 9px;border-radius:6px;border:1px solid #30465c;background:#17283a;color:#c6dbe8;font-family:monospace;font-size:12px;overflow-wrap:anywhere}
+
+/* Milestone 7: RF Test Bench */
+.test-bench-card .bench-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:12px 0}
+.test-bench-card textarea{width:100%;min-height:80px;font-family:ui-monospace,monospace}
+.test-bench-card .bench-fields input{width:100%}
+.test-bench-card .bench-confirm{display:flex;align-items:flex-start;gap:10px;margin:14px 0;line-height:1.4}
+.test-bench-card .bench-confirm input{width:auto;flex-shrink:0;margin-top:3px}
+.test-bench-card .bench-output{white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto;padding:12px;border-radius:8px;background:rgba(127,127,127,.08)}
