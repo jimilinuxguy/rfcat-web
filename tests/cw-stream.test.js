@@ -40,7 +40,7 @@ test("single dot E is a valid completed CW message",()=>{
  assert.equal(messages.length,1);
  assert.equal(messages[0].text,"E");
  assert.equal(stream.status().lastResult.marks,1);
- assert.match(stream.status().lastResult.runs,/\\+60ms/);
+ assert.equal(stream.status().lastResult.runs,"+60ms");
 });
 test("rejected signal exposes timing diagnostics instead of silently disappearing",()=>{
  const stream=createCwStream({sampleRate:1000,wpm:20});
@@ -50,5 +50,5 @@ test("rejected signal exposes timing diagnostics instead of silently disappearin
  assert.equal(result.marks,1);
  assert.equal(result.bytes,3);
  assert.ok(result.confidence<0.65);
- assert.match(result.runs,/\\+24ms/);
+ assert.equal(result.runs,"+24ms");
 });
