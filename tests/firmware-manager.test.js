@@ -28,3 +28,12 @@ test("transport failures never yield verified state",async()=>{
  const mock=new MockBootloaderTransport(),protocol=new BootloaderProtocol(mock);
  mock.fail=true;await assert.rejects(protocol.flash(validateFirmware(parseIntelHex(sample))),/Injected/);
 });
+
+test("read-only bootloader probe returns application bytes without mutation",async()=>{
+ const mock=new MockBootloaderTransport();
+ mock.flash.set([0x12,0x34,0x56,0x78],0x1400);
+ const before=mock.flash.slice();
+ const data=await new BootloaderProtocol(mock).read(0x1400,16);
+ assert.deepEqual(Array.from({length:4},(_,i)=>data.get(0x1400+i)),[0x12,0x34,0x56,0x78]);
+ assert.deepEqual(mock.flash,before);
+});
