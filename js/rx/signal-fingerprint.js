@@ -49,13 +49,14 @@ export function analyzePulses(capture) {
   if (!Array.isArray(pulses) || !pulses.length) throw new Error("Empty capture");
   if(pulses.length>250000||pulses.some(v=>!Number.isSafeInteger(v)||v===0))throw Error("Invalid capture durations");
   const abs = pulses.map(Math.abs);
-  const baseUs = median(abs.filter(v => v <= median(abs))) ?? median(abs);
+  const sortedAbs=[...abs].sort((a,b)=>a-b);
+  const baseUs=median(sortedAbs.slice(0,Math.ceil(sortedAbs.length/2))) ?? median(sortedAbs);
   const tolerance = Math.max(10, baseUs * 0.22);
   const clusters = [];
   // A bounded clustering pass avoids retaining a second copy of every pulse.
   // Sorted values can be grouped in a single pass; medians are approximated
   // by the current running mean for classification, not symbol verification.
-  for (const value of [...abs].sort((a,b)=>a-b)) {
+  for (const value of sortedAbs) {
     const group=clusters[clusters.length-1];
     if(group && Math.abs(group.center-value)<=tolerance){
       group.count++;
