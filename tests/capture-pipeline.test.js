@@ -50,3 +50,31 @@ test("rejects invalid pipeline options and malformed metadata",()=>{
  assert.throws(()=>p.ingest({bytes:[1],timestampMs:1,frequencyHz:0}),/frequency/);
  assert.throws(()=>p.ingest({bytes:[1],timestampMs:1,rssi:NaN}),/RSSI/);
 });
+
+test("changing duplicate window changes behavior and resets existing groups",()=>{
+ const p=createCapturePipeline({windowMs:300});
+ p.ingest({bytes:[1],timestampMs:0});
+ p.ingest({bytes:[1],timestampMs:200});
+ assert.equal(p.snapshot().groups.length,1);
+ p.setWindowMs(50);
+ assert.equal(p.snapshot().windowMs,50);
+ assert.equal(p.snapshot().groups.length,0);
+ p.ingest({bytes:[1],timestampMs:300});
+ p.ingest({bytes:[1],timestampMs:400});
+ assert.equal(p.snapshot().groups.length,2);
+ assert.throws(()=>p.setWindowMs(-1),/window/);
+ assert.equal(p.snapshot().windowMs,50);
+});
+test("retention trims visible burst count and RSSI ranges",()=>{
+ const p=createCapturePipeline({maxEvents:2});
+ p.ingest({bytes:[1],timestampMs:1,rssi:-90});
+ p.ingest({bytes:[1],timestampMs:2,rssi:-70});
+ p.ingest({bytes:[1],timestampMs:3,rssi:-50});
+ const s=p.snapshot();
+ assert.equal(s.groups.length,1);
+ assert.equal(s.groups[0].count,2);
+ assert.equal(s.groups[0].firstSeenMs,2);
+ assert.equal(s.groups[0].rssiMin,-70);
+ assert.equal(s.groups[0].rssiMax,-50);
+ assert.equal(s.groups[0].truncated,true);
+});
