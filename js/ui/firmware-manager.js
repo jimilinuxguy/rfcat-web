@@ -110,11 +110,11 @@ export function initFirmwareManager({radio}){
   finally{busy=false;buttons();}
  };
  $("fw-flash").onclick=async()=>{
-  if(busy||!transport||!plan||!backupVerified||!$("fw-confirm").checked)return;
+  if(busy||!transport||!plan||!image||!backupVerified||!$("fw-confirm").checked)return;
   if(radio.device?.opened)return status("Disconnect RFCat WebUSB first.");
   if(!confirm("A verified backup was downloaded during this connection. Confirm it is safely saved before continuing. The bootloader is NOT included. ERASE ALL USER FLASH on the connected YARD Stick One, then program and verify every written byte?"))return;
   busy=true;verified=false;buttons();
-  try{const protocol=new BootloaderProtocol(transport);status("Erasing user flash…");await protocol.flash(plan,({phase,fraction})=>{$("fw-progress").value=Math.round(fraction*100);if(phase==="erased"||phase==="verified")status(phase);});verified=true;status("Readback verified for all programmed records. Firmware not yet rebooted.");}
+  try{const protocol=new BootloaderProtocol(transport);status("Erasing user flash…");await protocol.flash(plan,({phase,fraction})=>{$("fw-progress").value=Math.round(fraction*80);if(phase==="erased")status(phase);});status("Programmed records verified. Comparing entire application flash against selected HEX…");const count=await verifyImageAgainstDevice(protocol,image,fraction=>{$("fw-progress").value=80+Math.round(fraction*20);});verified=true;status("Full-flash verified: "+count+" application bytes match selected HEX, including erased regions. Firmware not yet rebooted.");}
   catch(e){verified=false;status("FLASH FAILED / NOT VERIFIED: "+e.message+" — reconnect bootloader and retry full image.");}
   finally{busy=false;buttons();}
  };
