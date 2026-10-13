@@ -66,7 +66,7 @@ Capture sessions and workspace layout are stored locally in the browser's Indexe
 
 The [Intelligent Receiver & Capture Pipeline](docs/capture-pipeline.md) adds live burst grouping without suppressing the existing capture list. It tracks packet events rather than guaranteed complete RF frames. The receiver remains packet-engine based. Physical asynchronous OOK remotes may require pulse-oriented sampling, and raw receive boundaries are not always protocol-frame boundaries. See [Receiver and Protocol Decoders](docs/receiver-decoders.md).
 
-The experimental [Morse Code / CW Workbench](docs/cw-workbench.md) adds text-to-Morse, adjustable WPM, offline timing/waveform and sidetone preview, CC1111 OOK packet transmission and raw-sample Morse decoding. It is not an HF audio CW receiver; hardware TX/RX validation remains necessary.\n\nSee [RF Test Bench](docs/rf-test-bench.md) for repeat limits, authorization safeguards, and validation steps. This experimental Milestone 7 work is on a feature branch and has not been merged.
+The experimental [Morse Code / CW Workbench](docs/cw-workbench.md) adds text-to-Morse, adjustable WPM, offline timing/waveform and sidetone preview, CC1111 OOK packet transmission, raw-sample Morse decoding and Flipper RAW `.sub` pulse import. It is not an HF audio CW receiver; hardware TX/RX validation remains necessary.\n\nSee [RF Test Bench](docs/rf-test-bench.md) for repeat limits, authorization safeguards, and validation steps. This experimental Milestone 7 work is on a feature branch and has not been merged.
 
 ## Architecture
 
