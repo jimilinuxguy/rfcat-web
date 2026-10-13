@@ -29,7 +29,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-Playwright launches a local Python HTTP server. The extended suite exercises every registered guided-tour step, verifies targets and workspace selection, checks tab and panel persistence across reloads, and fails on unexpected JavaScript exceptions or failed local requests. These are hardware-free browser checks; they do not simulate a YARD Stick One or validate over-the-air RF. Hardware/WebUSB integration and full tutorial walkthroughs still require manual verification; the browser smoke suite does not claim to validate RF behavior.
+Playwright launches a local Python HTTP server. The extended suite exercises every registered guided-tour step, verifies targets and workspace selection, checks tab and panel persistence across reloads, and fails on unexpected JavaScript exceptions or failed local requests. The 15 Playwright tests include browser UI checks and a simulated YARD Stick One WebUSB command transport. The mock is not physical hardware and does not validate RF transmission, reception, or over-the-air interoperability. Physical WebUSB integration and full hardware tutorial walkthroughs still require manual verification.
 
 
 ## Mock WebUSB browser coverage
@@ -39,4 +39,6 @@ Playwright launches a local Python HTTP server. The extended suite exercises eve
 
 ## USB failure and recovery tests
 
-`browser-tests/m10-webusb-recovery.spec.js` injects a dropped ping, repeated USB write errors, a full handshake timeout, and disconnection with an in-flight command. Production transport cleanup now runs on failed connection attempts; unexpected unplug rejects pending USB waiters. These tests do not establish real-device or RF compatibility.
+`browser-tests/m10-webusb-recovery.spec.js` injects a dropped ping, repeated USB write errors, a full handshake timeout, and disconnection with an in-flight command. Production transport cleanup now runs on failed connection attempts; unexpected unplug rejects pending USB waiters. The write-failure test exhausts three handshake attempts and then reconnects; the interrupted-command test uses an isolated RFCatUSB instance to avoid competing USB readers. The permanent-timeout test verifies cleanup, not successful reconnect while the fault remains active. These tests do not establish real-device or RF compatibility.
+
+**Reported validation:** The developer ran the full browser suite after the final fixes and reported **15/15 passing**. This is a local report, not an assertion about the current GitHub Actions result.
