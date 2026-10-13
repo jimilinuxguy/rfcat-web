@@ -30,3 +30,25 @@ test("low-confidence and incomplete fragments are not displayed as valid message
  stream.reset();
  assert.equal(stream.status().frames,0);
 });
+
+test("single dot E is a valid completed CW message",()=>{
+ const messages=[];
+ const stream=createCwStream({sampleRate:1000,wpm:20,onMessage:x=>messages.push(x)});
+ const dot=packOokRuns(encodeMorse("E",20).runs,{sampleRate:1000}).bytes;
+ stream.push(dot);
+ stream.push(Uint8Array.from([0xc0,0,0]));
+ assert.equal(messages.length,1);
+ assert.equal(messages[0].text,"E");
+ assert.equal(stream.status().lastResult.marks,1);
+ assert.match(stream.status().lastResult.runs,/\\+60ms/);
+});
+test("rejected signal exposes timing diagnostics instead of silently disappearing",()=>{
+ const stream=createCwStream({sampleRate:1000,wpm:20});
+ stream.push(Uint8Array.from([0xff,0xff,0xff]));
+ stream.push(Uint8Array.from([0xc0,0,0]));
+ const result=stream.status().lastResult;
+ assert.equal(result.marks,1);
+ assert.equal(result.bytes,3);
+ assert.ok(result.confidence<0.65);
+ assert.match(result.runs,/\\+24ms/);
+});
