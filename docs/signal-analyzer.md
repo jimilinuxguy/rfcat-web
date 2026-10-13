@@ -12,10 +12,18 @@ A Flipper preset describes the receiver configuration, not independently confirm
 
 Implemented: offline RAW import (4 MiB file limit), source preservation, timing clustering, gap segmentation, heuristic candidate rankings, NRZ/Manchester/differential Manchester/PWM/PPM bitstream hypotheses, basic bit-position comparison API, interactive zoom/pan waveform, two numerical measurement cursors, and multiple-capture IndexedDB save/load/delete through a dedicated versioned signal-analyses store.
 
-Implemented guided sequential RFCat receiver-preset scanning (ASK/OOK, 2-FSK and GFSK) with packet counts, packet hex, cancellation between dwell windows, and best-effort radio register restoration to IDLE. Scan evidence is packet-mode data, **not** raw pulse edges or independently verified modulation. Scan operation can interrupt existing receiver workflows. Not yet implemented: live RX pulse-edge capture normalization in the UI, drag-to-position waveform cursors, validated protocol bitstream reconstruction, repeated-frame alignment, reliable preamble/sync detection, and cross-linking with the receiver capture-session library. The existing RFCat packet receiver is not an IQ receiver. Scanning would necessarily be sequential and can miss brief or nonrepeating signals. Physical CC1111 configuration compatibility and over-the-air behavior still require testing on a connected YARD Stick One.
+Implemented guided sequential RFCat receiver-preset scanning (ASK/OOK, 2-FSK and GFSK) with packet counts, packet hex, cancellation between dwell windows, and best-effort radio register restoration to IDLE. Scan evidence is packet-mode data, **not** raw pulse edges or independently verified modulation. Scan operation can interrupt existing receiver workflows. Not yet implemented: live RX pulse-edge capture normalization in the UI, drag-to-position waveform cursors, validated protocol bitstream reconstruction, verified repeated-frame decoding, reliable preamble/sync detection, and cross-linking with the receiver capture-session library. The existing RFCat packet receiver is not an IQ receiver. Scanning would necessarily be sequential and can miss brief or nonrepeating signals. Physical CC1111 configuration compatibility and over-the-air behavior still require testing on a connected YARD Stick One.
 
 Do not describe this initial implementation as verified modulation discovery.
 
 ## Guided hardware scan
 
 Connect a YARD Stick One, enter a supported CC1111 frequency and dwell duration, and choose **Scan receiver presets**. The scanner sequentially configures five receive profiles, reports packet counts and hex data for each, and restores radio configuration on completion or failure, leaving the radio in IDLE. Cancel stops after the active dwell period. Use only on frequencies you are authorized to monitor. The scanner does not transmit. A packet count of zero does not establish absence of RF activity, and nonzero counts do not prove modulation identity. Hardware behavior remains unverified until tested on a physical device.
+
+## Frame and sync hypotheses
+
+The UI compares candidate NRZ bitstreams from up to twelve detected frames, aligning offsets and marking varying bit positions. Alternating preamble and repeated sync candidates are heuristic; their presence does not confirm a protocol. Frame boundaries depend on long negative gaps and may be inaccurate.
+
+## Release validation
+
+GitHub Actions Node tests are currently failing. Do not merge until CI passes. The scanner and IndexedDB UI have not been validated on physical hardware and a browser respectively.
