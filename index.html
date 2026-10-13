@@ -660,8 +660,9 @@
                 </div>
             </details>
 
-            <details class="card">
-                <summary>Momentum Sub-GHz Chat</summary>
+            <details class="card collapsible momentum-chat-card">
+                <summary class="section-summary"><span>Momentum Sub-GHz Chat</span><span class="summary-note">Flipper-compatible plaintext and encrypted messaging</span></summary>
+                <div class="section-body">
                 <div class="field"><label for="momentum-chat-frequency">Frequency (MHz, match Flipper)</label>
                     <input id="momentum-chat-frequency" type="number" value="433.920" step="0.001"></div>
                 <p>Enhanced Sub-GHz Chat via YARD Stick One. Select the same encryption mode and key on the Flipper.</p>
@@ -674,6 +675,7 @@
                 <div class="field"><label for="momentum-chat-message">Message</label>
                     <input id="momentum-chat-message" type="text" maxlength="48" placeholder="Hello Flipper"></div>
                 <button id="momentum-chat-send">Send via YARD Stick One</button>
+                </div>
             </details>
 
             <dialog id="ipython-export-dialog" class="export-dialog">
