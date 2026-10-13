@@ -17,3 +17,7 @@ Preparing replay renders up to 300 numbered timeline markers for direct navigati
 ## Planned expansion
 
 Analysis export and richer graphical timeline remain future increments. Browser acceptance of the new controls has not yet been reported.
+
+## Guided help
+
+Select **Offline capture replay & session comparison** from the welcome wizard or the searchable Help Center. The eight-step tutorial highlights the Capture Library controls, explains offline timing and payload-count comparison, and never starts playback or transmits automatically. Contextual Help topics for replay, speed and comparison link to this guide.
