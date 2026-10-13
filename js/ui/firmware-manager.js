@@ -3,10 +3,32 @@ import {BootloaderProtocol,BOOTLOADER_USB} from "../firmware/bootloader-protocol
 import {SerialBootloaderTransport} from "../firmware/serial-transport.js";
 export function initFirmwareManager({radio}){
  const $=id=>document.getElementById(id),host=document.createElement("details");host.id="firmware-manager";host.className="section";
- host.innerHTML='<summary>Firmware Manager — YARD Stick One</summary><div class="section-body"><p>CC1111 bootloader uses USB CDC ACM (Web Serial), not normal RFCat WebUSB. Flashing requires a bootloader already installed. Use only YARD Stick One application firmware built for the 0x1400 bootloader offset.</p><p id="fw-device">Bootloader: disconnected</p><button type="button" id="fw-connect">Connect bootloader (Web Serial)</button> <button type="button" id="fw-disconnect">Disconnect</button><p>Firmware source: <a href="https://github.com/atlas0fd00m/rfcat/releases" target="_blank" rel="noopener">Official RFCat releases</a>. Download a YARD Stick One bootloader-compatible Intel HEX file and select it below.</p><label>Firmware Intel HEX <input id="fw-file" type="file" accept=".hex,.ihx,.txt"></label><p id="fw-info">No firmware selected</p><label><input id="fw-confirm" type="checkbox"> I have confirmed this is a YARD Stick One with the CC bootloader and this firmware targets 0x1400–0x7FFF. I understand the user flash will be erased.</label><p><button type="button" id="fw-flash" disabled>Erase, flash and verify</button> <button type="button" id="fw-run" disabled>Run verified firmware</button></p><progress id="fw-progress" max="100" value="0"></progress><pre id="fw-status" aria-live="polite"></pre><p>If interrupted, reconnect in bootloader mode and retry a complete verified flash. If the bootloader itself is absent or corrupted, browser flashing cannot recover it; use a CC1111-compatible hardware debugger.</p></div>';
+ host.innerHTML='<summary>Firmware Manager — YARD Stick One</summary><div class="section-body"><p>CC1111 bootloader uses USB CDC ACM (Web Serial), not normal RFCat WebUSB. Flashing requires a bootloader already installed. Use only YARD Stick One application firmware built for the 0x1400 bootloader offset.</p><p id="fw-device">Checking USB devices…</p><button type="button" id="fw-refresh">Refresh device detection</button><button type="button" id="fw-connect">Connect bootloader (Web Serial)</button> <button type="button" id="fw-disconnect">Disconnect</button><p>Firmware source: <a href="https://github.com/atlas0fd00m/rfcat/releases" target="_blank" rel="noopener">Official RFCat releases</a>. Download a YARD Stick One bootloader-compatible Intel HEX file and select it below.</p><label>Firmware Intel HEX <input id="fw-file" type="file" accept=".hex,.ihx,.txt"></label><p id="fw-info">No firmware selected</p><label><input id="fw-confirm" type="checkbox"> I have confirmed this is a YARD Stick One with the CC bootloader and this firmware targets 0x1400–0x7FFF. I understand the user flash will be erased.</label><p><button type="button" id="fw-flash" disabled>Erase, flash and verify</button> <button type="button" id="fw-run" disabled>Run verified firmware</button></p><progress id="fw-progress" max="100" value="0"></progress><pre id="fw-status" aria-live="polite"></pre><p>If interrupted, reconnect in bootloader mode and retry a complete verified flash. If the bootloader itself is absent or corrupted, browser flashing cannot recover it; use a CC1111-compatible hardware debugger.</p></div>';
  const toolsPanel=$("freq")?.closest("details.card")||document.querySelector("main");
  toolsPanel.append(host);
  let transport=null,plan=null,busy=false,verified=false;
+ async function refreshDevices(){
+  const found=[];
+  if(radio.device?.opened)found.push("Normal RFCat connected via WebUSB ("+radio.device.vendorId.toString(16)+":"+radio.device.productId.toString(16)+")");
+  try{
+   const devices=await navigator.usb?.getDevices?.()||[];
+   for(const device of devices)if(device.vendorId===0x1d50&&[0x605b,0x605c].includes(device.productId)&&!found.some(x=>x.includes("("+device.vendorId.toString(16)+":"+device.productId.toString(16)+")")))found.push(device.productId===0x605c?"Bootloader visible via WebUSB (use Web Serial to connect)":"Normal YARD Stick One visible via WebUSB");
+  }catch{}
+  try{
+   const ports=await navigator.serial?.getPorts?.()||[];
+   for(const port of ports){const info=port.getInfo();if(info.usbVendorId===0x1d50&&info.usbProductId===0x605c)found.push("Bootloader serial port authorized (1D50:605C)");}
+  }catch{}
+  if(transport)found.push("Bootloader connected through Web Serial");
+  $("fw-device").textContent=found.join(" · ")||"No authorized YARD Stick One detected. Connect normally via WebUSB, or enter bootloader mode and select its serial port.";
+ }
+ $("fw-refresh").onclick=refreshDevices;
+ navigator.usb?.addEventListener?.("connect",refreshDevices);
+ navigator.usb?.addEventListener?.("disconnect",refreshDevices);
+ navigator.serial?.addEventListener?.("connect",refreshDevices);
+ navigator.serial?.addEventListener?.("disconnect",refreshDevices);
+ document.getElementById("connect")?.addEventListener("click",()=>setTimeout(refreshDevices,500));
+ document.getElementById("disconnect")?.addEventListener("click",()=>setTimeout(refreshDevices,500));
+ refreshDevices();
  const status=message=>{$("fw-status").textContent+=message+"\n";};
  function buttons(){$("fw-connect").disabled=busy||!!transport;$("fw-disconnect").disabled=busy||!transport;$("fw-flash").disabled=busy||!transport||!plan||!$("fw-confirm").checked;$("fw-run").disabled=busy||!transport||!verified;}
  $("fw-confirm").onchange=buttons;
@@ -14,8 +36,8 @@ export function initFirmwareManager({radio}){
   plan=null;verified=false;$("fw-progress").value=0;
   try{const file=$("fw-file").files[0];if(!file)return; if(file.size>512*1024)throw Error("HEX file too large");const image=parseIntelHex(await file.text());plan=validateFirmware(image);$("fw-info").textContent=`${file.name}: ${plan.bytes} bytes, ${plan.records.length} records, ${plan.pages} pages, addresses 0x${plan.min.toString(16)}–0x${plan.max.toString(16)}. File contents cannot prove board identity or firmware authenticity.`;status("Firmware validated structurally. Verify its provenance and target manually.");}catch(e){$("fw-info").textContent="Rejected: "+e.message;}buttons();
  };
- $("fw-connect").onclick=async()=>{try{if(radio.device?.opened)throw Error("Disconnect normal RFCat WebUSB before connecting the bootloader");transport=new SerialBootloaderTransport();await transport.connect();$("fw-device").textContent="Bootloader: connected (USB 1D50:605C, CDC ACM). Firmware version not exposed by this bootloader.";status("Bootloader connected. No writes performed.");}catch(e){await transport?.close();transport=null;status("Connection failed: "+e.message);}buttons();};
- $("fw-disconnect").onclick=async()=>{await transport?.close();transport=null;verified=false;$("fw-device").textContent="Bootloader: disconnected";buttons();};
+ $("fw-connect").onclick=async()=>{try{if(radio.device?.opened)throw Error("Disconnect normal RFCat WebUSB before connecting the bootloader");transport=new SerialBootloaderTransport();await transport.connect();await refreshDevices();status("Bootloader connected. No writes performed.");}catch(e){await transport?.close();transport=null;status("Connection failed: "+e.message);}buttons();};
+ $("fw-disconnect").onclick=async()=>{await transport?.close();transport=null;verified=false;await refreshDevices();buttons();};
  $("fw-flash").onclick=async()=>{
   if(busy||!transport||!plan||!$("fw-confirm").checked)return;
   if(radio.device?.opened)return status("Disconnect RFCat WebUSB first.");
