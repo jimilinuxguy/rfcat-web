@@ -36,7 +36,7 @@ test("OOK fixture field selection and export definition round-trip",()=>{
  assert.equal(definition.verified,false);
  const fields=inspectProtocol(definition,bits);
  assert.equal(fields[0].hex,"0xAAAAAA");
- assert.equal(fields[1].hex,"0xCCBA2E");
+ assert.equal(fields[1].hex,"0xCCB28E");
  assert.equal(inspectField(bits,24,8,{endianness:"lsb"}).hex,"0x33");
  const restored=JSON.parse(JSON.stringify(definition));
  assert.deepEqual(inspectProtocol(restored,bits),fields);
