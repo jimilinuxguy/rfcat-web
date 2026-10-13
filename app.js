@@ -340,7 +340,7 @@ $("bench-send").onclick=async()=>{
   plan=benchPlan();
   if(!$("bench-authorized").checked)throw Error("Authorization confirmation required");
   if(!d.device?.opened)throw Error("Connect YARD Stick One first");
-  if(listening||momentumChatActive||signalScanController)throw Error("Stop RX, chat and scanning before bench TX");
+  if(listening||momentumChatActive||signalScanController||cwSending)throw Error("Stop RX, chat, scanning and Morse TX before bench TX");
   if(!window.confirm(`Transmit ${plan.repeat} packet(s) on the CURRENT radio configuration? This sends real RF.`))return;
   benchRunning=true;benchAbort=new AbortController();benchRefresh();
   benchExpectedHex=plan.hex;benchComparisons=[];
@@ -349,7 +349,7 @@ $("bench-send").onclick=async()=>{
   const execution=await executeBench(plan,{
    signal:benchAbort.signal,wait:waitBench,
    transmit:async bytes=>{
-    if(listening||momentumChatActive||signalScanController)throw Error("Another RF workflow started; sequence stopped");
+    if(listening||momentumChatActive||signalScanController||cwSending)throw Error("Another RF workflow started; sequence stopped");
     if(!d.device?.opened)throw Error("Device disconnected");
     await d.mode(C.RF_IDLE);
     await d.setMaxPower();
@@ -475,7 +475,7 @@ function cwDecodeBytes(bytes){
 }
 $("cw-rx-decode").onclick=()=>{
  try{
-  const compact=$("cw-rx-hex").value.replace(/[\\s:_-]/g,"");
+  const compact=$("cw-rx-hex").value.replace(/[\s:_-]/g,"");
   if(!compact||compact.length%2||!/^[0-9a-f]+$/i.test(compact)||compact.length>8192)throw Error("Enter 1–4096 valid raw OOK hex bytes");
   cwDecodeBytes(Uint8Array.from(compact.match(/../g),v=>parseInt(v,16)));
  }catch(error){$("cw-rx-output").textContent="CW decode: "+error.message;}
@@ -1969,7 +1969,6 @@ d.addEventListener("packet", async (e) => {
     const b = status.payload;
     if(cwLive && b?.length){
       try{
-        const combined=new Uint8Array(Math.min(4096,cwRawBuffer.length+b.length));
         const incoming=new Uint8Array([...cwRawBuffer,...b].slice(-4096));
         cwRawBuffer=incoming;
         cwDecodeBytes(cwRawBuffer);
