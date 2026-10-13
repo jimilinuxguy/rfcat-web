@@ -13,6 +13,10 @@ const PANEL_DEFINITIONS = [
     ["transmitter", ".transmitter-card"],
     ["waveform", ".waveform-card"],
     ["activity", ".console"],
+    ["signal-analyzer", "#signal-analyzer-panel"],
+    ["test-bench", ".test-bench-card"],
+    ["cw", ".cw-card"],
+    ["momentum-chat", ".momentum-chat-card"],
 ];
 
 function panelId(panel) {
@@ -158,4 +162,5 @@ export async function initWorkspace() {
     const layout = await loadWorkspaceLayout().catch(() => null);
     applyLayout(workspace, layout);
     restoring = false;
+    document.dispatchEvent(new CustomEvent("rfcat:workspace-ready", {detail:{workspace}}));
 }
