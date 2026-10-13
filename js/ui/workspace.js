@@ -31,10 +31,10 @@ function captureLayout(workspace) {
             .map((panel, order) => ({
                 id: panelId(panel),
                 order,
-                width: Math.round(panel.getBoundingClientRect().width),
+                width: panel.hidden ? (parseInt(panel.style.width, 10) || 520) : Math.round(panel.getBoundingClientRect().width),
                 height: panel.tagName === "DETAILS" && !panel.open
                     ? 58
-                    : Math.round(panel.getBoundingClientRect().height),
+                    : panel.hidden ? (parseInt(panel.style.height, 10) || 120) : Math.round(panel.getBoundingClientRect().height),
                 open: panel.tagName === "DETAILS" ? panel.open : null,
             })),
     };
