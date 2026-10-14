@@ -2,7 +2,7 @@ import {analyzeProtocolTimeline} from "../rx/protocol-timeline.js";
 import {getCaptureSession,listCaptureSessions} from "../storage/capture-session-store.js";
 export function initProtocolTimeline(panel,{getDefinition,setStatus}){
  const section=document.createElement("section");section.id="pd-timeline";
- section.innerHTML=`<h4>Protocol Timeline Analysis (M18)</h4><p>Track decoded fields in capture order. Counter and state labels are hypotheses, not proof. Missing timestamps retain capture order.</p>
+ section.innerHTML=`<h4>Protocol Timeline Analysis</h4><p>Track decoded fields in capture order. Counter and state labels are hypotheses, not proof. Missing timestamps retain capture order.</p>
  <div class="actions"><label>Capture session <select id="pd-tl-session"></select></label><button type="button" id="pd-tl-refresh">Refresh sessions</button><button type="button" id="pd-tl-run">Analyze timeline</button><button type="button" id="pd-tl-export">Export timeline JSON</button></div>
  <p id="pd-tl-summary" role="status"></p><div id="pd-tl-results" style="overflow-x:auto"></div>`;
  const guide=document.createElement("button");guide.type="button";guide.textContent="Guided walkthrough";guide.className="pd-guide";guide.addEventListener("click",()=>document.dispatchEvent(new CustomEvent("rfcat:start-help-tour",{detail:"protocol-timeline"})));section.querySelector("h4").after(guide);
