@@ -351,3 +351,26 @@ body.connected #radio-status-connection{color:#73d5b4}
 .help-tour-tile:hover,.help-tour-tile:focus-visible{box-shadow:0 5px 18px #0003}
 .help-tour-tile:focus-visible{outline:2px solid #85d9e4;outline-offset:2px}
 @media(prefers-reduced-motion:reduce){.help-tour-tile{transition:none}.help-tour-tile:hover{transform:none}}
+
+
+/* Investigation workflow: primary steps are prominent, specialist tools opt-in. */
+#pd-investigation .pd-workflow-nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:14px 0}
+#pd-investigation .pd-workflow-nav button{min-height:44px;border:1px solid var(--border,#52616f);border-radius:10px;padding:10px 6px;background:var(--surface,#202b36);color:inherit;font-weight:600;cursor:pointer}
+#pd-investigation .pd-workflow-nav button[aria-current=step]{border-color:#65c8db;background:color-mix(in srgb,#65c8db 16%,transparent);box-shadow:inset 0 0 0 1px #65c8db}
+#pd-inv-advanced{margin:8px 0 14px}
+#pd-inv-advanced summary{cursor:pointer;font-size:.92rem}
+#pd-investigation-tools{margin:18px 0;padding:16px;border:1px solid var(--border,#52616f);border-radius:14px}
+#pd-investigation-tools .pd-tool-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+#pd-investigation-tools .pd-tool-tabs button{padding:9px 13px;border-radius:9px;cursor:pointer}
+#pd-investigation-tools .pd-tool-tabs button[aria-pressed=true]{border-color:#65c8db;background:color-mix(in srgb,#65c8db 16%,transparent)}
+#pd-investigation-tools .pd-tool-panel[hidden]{display:none!important}
+#pd-investigation-tools .pd-packet-heatmap{overflow-x:auto;max-width:100%;padding:10px 0}
+#pd-investigation-tools .pd-packet-row{display:flex;align-items:center;gap:4px;margin:4px 0;min-width:max-content}
+#pd-investigation-tools .pd-packet-row>span:first-child{min-width:88px;font-size:.8rem}
+#pd-investigation-tools .pd-packet-byte{display:inline-flex;align-items:center;justify-content:center;min-width:33px;min-height:31px;border-radius:5px;background:color-mix(in srgb,currentColor 9%,transparent);font-family:monospace;font-size:.8rem}
+#pd-investigation-tools .pd-packet-byte.changed{background:color-mix(in srgb,#e9aa5e 28%,transparent);outline:1px solid #e9aa5e}
+#pd-investigation-tools .pd-finding{padding:10px 12px;border:1px solid var(--border,#52616f);border-radius:9px;margin:8px 0}
+#pd-investigation-tools .pd-finding p{margin:5px 0 0;font-size:.9rem}
+#pd-investigation-tools #pd-tools-report{max-height:300px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:560px){#pd-investigation .pd-workflow-nav{grid-template-columns:repeat(2,minmax(0,1fr))}#pd-investigation-tools{padding:10px}}
+@media(prefers-reduced-motion:reduce){#pd-investigation .pd-workflow-nav button{transition:none}}
