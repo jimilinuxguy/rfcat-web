@@ -44,3 +44,11 @@ No YARD Stick One is needed. Open the browser console on the application origin 
 In **Analyze → Signal Intelligence**, click **Refresh sessions**, select **RF Intelligence Demo**, and click **Analyze packets**. Expect four valid captures, three unique payloads, a four-byte cohort, and variable byte offset 2. Use **Attach report to session** to save the analysis, or **Export JSON** to download it. This sample is synthetic and does not establish protocol identity.
 
 The Signal Intelligence panel is independent of the collapsible RF Signal Analyzer. It should remain visible when the analyzer is closed. The Help Center's **Offline signal fingerprinting** walkthrough is also available as a first-run wizard goal.
+
+## Candidate field inference (experimental)
+
+For each frame-length cohort with at least two packets, the report now includes `fields[].candidates` for variable byte offsets. The browser shows zero-based byte positions, heuristic labels, confidence, scores and caveats. A **candidate counter** requires mostly unit-step transitions across at least four distinct first-seen payloads; a **candidate command/flag** describes a small value domain across at least four unique payloads. Otherwise the byte remains **variable byte** with insufficient evidence. Duplicates are removed for this heuristic, and ordering is not a reliable substitute for a controlled transmission sequence.
+
+These labels are hypotheses, **not** verified device IDs, counters, commands or checksums. No device-ID or checksum detection is claimed. The exported and attached report uses schema version 2 and includes the candidate evidence. Older stored reports remain as previously saved until reanalysis.
+
+Use the **Offline signal fingerprinting** wizard's **Interpret field candidates** step to inspect the new evidence. For a counter-like synthetic test, save `AA00FF`, `AA01FF`, `AA02FF`, `AA03FF`, `AA04FF` in a session, then analyze. Byte offset 1 should be a moderate-confidence candidate counter. For a real device, compare repeated, deliberately controlled transmissions before assigning any field meaning.
