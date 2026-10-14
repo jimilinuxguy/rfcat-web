@@ -1,6 +1,6 @@
 export const RFCAT_DB_NAME = "rfcat-web";
-export const RFCAT_DB_VERSION = 6;
-export const RFCAT_DB_STORES = Object.freeze(["workspace", "capture-sessions", "signal-analyses", "help", "protocol-definitions", "protocol-regressions"]);
+export const RFCAT_DB_VERSION = 7;
+export const RFCAT_DB_STORES = Object.freeze(["workspace", "capture-sessions", "signal-analyses", "help", "protocol-definitions", "protocol-regressions", "protocol-investigations"]);
 
 export function openDatabase({
     name = RFCAT_DB_NAME,
