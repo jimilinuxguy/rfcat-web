@@ -25,7 +25,7 @@ test("every contextual help and tutorial selector exists in index.html",()=>{
  const dynamic=readFileSync(new URL("../js/ui/replay-controller.js",import.meta.url),"utf8");
  const spectrum=readFileSync(new URL("../js/ui/spectrum-explorer.js",import.meta.url),"utf8");
  const intelligence=readFileSync(new URL("../js/ui/signal-intelligence.js",import.meta.url),"utf8");
- const protocolUi=["protocol-definition-builder.js","protocol-decoder-workbench.js","protocol-timeline.js","protocol-state-machine.js","visual-field-editor.js"].map(file=>readFileSync(new URL("../js/ui/"+file,import.meta.url),"utf8")).join("\n");
+ const protocolUi=["protocol-definition-builder.js","protocol-decoder-workbench.js","protocol-timeline.js","protocol-state-machine.js","protocol-investigation.js","visual-field-editor.js"].map(file=>readFileSync(new URL("../js/ui/"+file,import.meta.url),"utf8")).join("\n");
  const selectors=[...HELP_TOPICS.map(t=>t.target),...TOURS.flatMap(t=>t.steps.map(s=>s.target))];
  for(const selector of selectors){
   const name=selector.slice(1);
@@ -39,4 +39,9 @@ test("every contextual help and tutorial selector exists in index.html",()=>{
 test("M13–M19 guided workflows cover protocol builder, evidence, regression, decoder, timeline and state inference",()=>{
  for(const id of ["protocol-builder","protocol-evidence","protocol-regression","protocol-decoder","protocol-timeline","protocol-state-machine"]){const tour=findTour(id);assert.ok(tour,id);assert.equal(tour.category,"Protocol analysis");assert.ok(tour.steps.length>=4);assert.ok(tour.steps.every(step=>step.workspace==="analyze"));}
  assert.ok(HELP_TOPICS.some(topic=>topic.target==="#pd-sm-run"));
+});
+
+test("M21 and M22 tours cover the investigation lifecycle and visualization guides",()=>{
+ for(const id of ["investigation-workflow","investigation-resume","investigation-field-diagram","investigation-timeline-chart","investigation-state-graph"]){const tour=findTour(id);assert.ok(tour,id);assert.equal(tour.category,"Protocol analysis");assert.ok(tour.steps.length>=4);assert.ok(tour.steps.every(step=>step.workspace==="analyze"));assert.ok(ONBOARDING_GOALS.includes(id));}
+ for(const target of ["#pd-inv-stages","#pd-inv-save","#pd-inv-visual"])assert.ok(HELP_TOPICS.some(topic=>topic.target===target));
 });
