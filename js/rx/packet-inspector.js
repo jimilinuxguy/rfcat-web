@@ -23,6 +23,22 @@ export function inspectSelection(bytes,start,length=1) {
  const slice=bytes.slice(start,start+length);
  return {start,length,hex:hex(slice),ascii:inspectRows(slice,8).map(r=>r.ascii).join(""),binary:inspectBits(slice)};
 }
+// Absolute bit offsets count from the first byte, MSB (bit 7) first.
+// Display order is independent of these canonical offsets.
+export function inspectBitRange(bytes,startBit,bitLength=1) {
+ if(!Number.isInteger(startBit)||!Number.isInteger(bitLength)||startBit<0||bitLength<1||startBit+bitLength>bytes.length*8)throw Error("Bit range exceeds packet");
+ const bits=Array.from({length:bitLength},(_,i)=>{
+  const absolute=startBit+i;
+  return (bytes[Math.floor(absolute/8)]>>(7-absolute%8))&1;
+ });
+ const binary=bits.join("");
+ const value=bits.reduce((n,bit)=>(n<<1n)|BigInt(bit),0n);
+ return {startBit,bitLength,startByte:Math.floor(startBit/8),endByte:Math.floor((startBit+bitLength-1)/8),binary,hex:"0x"+value.toString(16).toUpperCase()};
+}
+export function overlappingFields(fields,startBit,bitLength) {
+ if(!Number.isInteger(startBit)||!Number.isInteger(bitLength)||startBit<0||bitLength<1)throw Error("Invalid field selection");
+ return fields.filter(field=>field.startBit<startBit+bitLength&&startBit<field.startBit+field.widthBits);
+}
 export function inspectFields(bytes,definition) {
  const protocol=validateProtocolDefinition(definition),result=decodeProtocolPacket(protocol,hex(bytes).replace(/ /g,""));
  if(!result.matched)return {matched:false,reason:result.reason,fields:[]};
