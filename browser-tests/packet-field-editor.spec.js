@@ -14,6 +14,7 @@ test("annotate, compare, persist and restore packet field hypotheses offline",as
  await page.locator("#intelligence-session").selectOption("field-editor-fixture");
  await page.locator("#intelligence-analyze").click();
  await expect(page.locator("#packet-field-editor")).toBeVisible();
+ await page.locator("#field-cohort").selectOption("3");
  await expect(page.locator("#field-packet-grid table tr")).toHaveCount(5);
  await page.getByRole("button",{name:"Capture 0 byte 1: 00"}).click();
  await expect(page.locator("#field-start")).toHaveValue("1");
