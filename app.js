@@ -1,6 +1,6 @@
 import {initSpectrumExplorer} from "./js/ui/spectrum-explorer.js";
 import {initSignalIntelligence} from "./js/ui/signal-intelligence.js";
-import {initProtocolDefinitionBuilder} from "./js/ui/protocol-definition-builder.js";
+import {initProtocolDefinitionBuilder,decodeCustomLiveCapture} from "./js/ui/protocol-definition-builder.js";
 import {createInvestigationEvidence} from "./js/rx/investigation-evidence.js";
 import {initFirmwareManager} from "./js/ui/firmware-manager.js";
 import {initReplayController} from "./js/ui/replay-controller.js";
@@ -1804,6 +1804,8 @@ $("rx-compare-close").onclick = () => { $("rx-compare-panel").hidden = true;
     $("rx-infer-panel").hidden = true; };
 
 function renderRxCapture(capture) {
+    // Passive custom-definition matching: never changes the built-in decoder or radio state.
+    const customMatches=decodeCustomLiveCapture(capture.bytes);
     const captureIndex = rxCaptures.push(capture) - 1;
     if (activeSessionId) $("session-status").textContent = "Modified";
     $("packetList").querySelector(".empty")?.remove();
@@ -1834,6 +1836,11 @@ function renderRxCapture(capture) {
         (capture.imported ? " · imported" : "") +
         (capture.rssi != null ? ` · ${Number(capture.rssi).toFixed(1)} dBm · LQI ${capture.lqi ?? "—"}${capture.crcOk ? " · CRC OK" : ""}` : "");
     el.append(meta);
+    if(customMatches.length){
+        const custom=document.createElement("div");custom.className="decoded";
+        custom.textContent="Custom protocol hypothesis: "+customMatches.map(match=>match.protocolName+" · "+match.fields.map(field=>field.name+"="+(field.label??field.value)+(field.valid===false?" (checksum invalid)":"")).join(", ")).join(" | ");
+        el.append(custom);
+    }
 
     if (capture.error) {
         const error = document.createElement("div");
