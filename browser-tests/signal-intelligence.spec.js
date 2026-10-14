@@ -49,6 +49,7 @@ test("candidate counter appears in UI and persists",async({page})=>{
  await expect(page.locator("#intelligence-results")).toContainText("Byte 1");
  await expect(page.locator("#intelligence-results")).toContainText("candidate counter");
  await page.locator("#intelligence-save").click();
+ await expect(page.locator("#intelligence-status")).toContainText("attached");
  const saved=await page.evaluate(async()=>{
   const {getCaptureSession}=await import("./js/storage/capture-session-store.js");
   return (await getCaptureSession("counter-fixture")).intelligence;
