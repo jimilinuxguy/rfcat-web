@@ -165,3 +165,7 @@ The tours describe when to choose saved capture sessions, load a protocol, move 
 ## M23–M24: Evidence workbench and Decoder SDK
 
 Under **Analyze → Protocol Definition Builder → Investigation Workspace → Evidence**, create field hypotheses with notes and confidence, attach capture indices, save and reload them with an investigation, and validate across independent sessions. The same workspace includes the trusted **Decoder SDK test bench**. Use the **Hypothesis wizard**, **Evidence validation wizard**, or **Decoder SDK wizard** launch buttons; the Help Center and onboarding offer these tours too. See [Investigation Evidence](../investigation-evidence.md) and [Decoder SDK](../protocol-decoder-sdk.md) for detailed steps and limitations.
+
+## M25/M26 — Candidate discovery and correlation
+
+Open **Analyze → Protocol Definition Builder → Investigation Workspace → Discovery** to compare saved capture sessions, infer unverified byte-aligned packet candidates, inspect session-specific differences and promote a reviewed candidate into an editable protocol draft. **Candidate discovery wizard** and **Session correlation wizard** are available from the workspace, Help Center and onboarding. See [M25/M26 guide](protocol-discovery-correlation.md) for limitations and tests.

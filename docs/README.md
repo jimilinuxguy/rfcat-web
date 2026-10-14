@@ -90,3 +90,5 @@ Operate only on authorized frequencies and equipment. Prefer controlled, short b
 
 
 | [Firmware Manager](firmware-manager.md) | Experimental browser Web Serial bootloader flashing, Intel HEX validation, readback verification, and recovery guidance |
+
+- [M25/M26 Protocol Candidate Discovery and Session Correlation](protocol-discovery-correlation.md) — candidate ranking, comparison, persistence, promotion and guided workflows.

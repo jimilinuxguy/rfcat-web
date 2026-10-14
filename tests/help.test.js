@@ -25,7 +25,7 @@ test("every contextual help and tutorial selector exists in index.html",()=>{
  const dynamic=readFileSync(new URL("../js/ui/replay-controller.js",import.meta.url),"utf8");
  const spectrum=readFileSync(new URL("../js/ui/spectrum-explorer.js",import.meta.url),"utf8");
  const intelligence=readFileSync(new URL("../js/ui/signal-intelligence.js",import.meta.url),"utf8");
- const protocolUi=["protocol-definition-builder.js","protocol-decoder-workbench.js","protocol-timeline.js","protocol-state-machine.js","protocol-investigation.js","protocol-evidence-workbench.js","visual-field-editor.js"].map(file=>readFileSync(new URL("../js/ui/"+file,import.meta.url),"utf8")).join("\n");
+ const protocolUi=["protocol-definition-builder.js","protocol-decoder-workbench.js","protocol-timeline.js","protocol-state-machine.js","protocol-investigation.js","protocol-evidence-workbench.js","protocol-discovery-workbench.js","visual-field-editor.js"].map(file=>readFileSync(new URL("../js/ui/"+file,import.meta.url),"utf8")).join("\n");
  const selectors=[...HELP_TOPICS.map(t=>t.target),...TOURS.flatMap(t=>t.steps.map(s=>s.target))];
  for(const selector of selectors){
   const name=selector.slice(1);
@@ -47,3 +47,5 @@ test("M21 and M22 tours cover the investigation lifecycle and visualization guid
 });
 
 test("M23/M24 guided help includes all new analysis workflows",()=>{for(const id of ["investigation-hypothesis","investigation-hypothesis-validation","protocol-decoder-sdk"]){const tour=findTour(id);assert.ok(tour);assert.equal(tour.category,"Protocol analysis");assert.ok(tour.steps.length>=4);assert.ok(ONBOARDING_GOALS.includes(id));}assert.ok(HELP_TOPICS.some(t=>t.doc==="docs/investigation-evidence.md"));assert.ok(HELP_TOPICS.some(t=>t.doc==="docs/protocol-decoder-sdk.md"));});
+
+test("M25/M26 wizard topics and onboarding are registered",()=>{for(const id of ["protocol-candidate-discovery","protocol-session-correlation"]){const tour=findTour(id);assert.ok(tour);assert.ok(tour.steps.length>=4);assert.ok(ONBOARDING_GOALS.includes(id));}assert.ok(HELP_TOPICS.some(t=>t.doc==="docs/protocol-discovery-correlation.md"));});
