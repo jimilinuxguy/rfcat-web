@@ -16,3 +16,13 @@ test("sweep samples and restores registers even when cancelled",async()=>{
  assert.equal(result.samples.length,1);assert.equal(result.samples[0].rssiDbm,-102);assert.equal(result.restored,true);
  assert.ok(calls.some(x=>x[0]==="poke"));
 });
+
+test("repeated sweeps collect multiple passes and stop on abort",async()=>{
+ const raw=Array.from({length:0x30},()=>0),controller=new AbortController(),seen=[];
+ const device={device:{opened:true},config:async()=>({raw}),mode:async()=>{},setFrequency:async()=>{},peek:async()=>Uint8Array.of(200),poke:async()=>{}};
+ const result=await sweepSpectrum(device,{startMHz:433.92,stopMHz:433.92,stepKHz:50,dwellMs:20,passes:20,signal:controller.signal,onSample:sample=>{seen.push(sample);if(seen.length===2)controller.abort();}});
+ assert.equal(result.samples.length,2);
+ assert.equal(result.cancelled,true);
+ assert.equal(result.restored,true);
+ assert.throws(()=>scanFrequencies(433.92,433.92,9),/Invalid/);
+});
