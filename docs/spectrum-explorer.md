@@ -31,3 +31,7 @@ Read-only RF operation (no transmission). The scan saves CC1111 modem configurat
 ## Verification
 
 `npm run verify` includes grid/RSSI/register restoration unit tests and a hardware-free Playwright UI smoke test. **Actual RSSI values and restoration behavior still require YARD Stick One hardware validation.**
+
+## Investigate a detected frequency
+
+After completing a scan, hover over a frequency to choose that bin, then select **Investigate strongest signal**. Without a hover selection, the strongest frequency is chosen. The investigation snapshots the spectrum evidence and exposes actions to prepare a receiver preset scan, open Receiver with the selected frequency, save the investigation with captures received after it was selected, or export spectrum JSON. Hardware configuration and receiving remain manual. See [RF signal discovery](rf-signal-discovery.md).
