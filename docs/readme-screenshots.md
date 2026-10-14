@@ -21,3 +21,8 @@ Output files:
 The first three are embedded in the main README. The Firmware Manager and Signal Intelligence images can be embedded once their generated PNG files have been reviewed and committed. The Signal Intelligence example uses synthetic packets, not real RF observations. Generated screenshots should be reviewed for welcome dialogs, clipped panels, stale UI text, and sensitive content before committing. This script does not fake connected-device status or RF captures. A locally occupied port 8765 will prevent the server from starting cleanly; stop the conflicting service and rerun.
 
 **Automated regression:** `browser-tests/readme-screenshots.spec.js` runs under `npm run test:browser` and `npm run verify`. It visits the three workspace tabs, opens Firmware Manager, checks for JavaScript errors, and captures screenshots **in memory** to verify the browser can render them. It does not modify tracked PNG files. Actual documentation image regeneration remains an explicit `npm run screenshots:readme` command; images are not updated automatically by GitHub Actions.
+
+
+## Signal Intelligence screenshot
+
+The generator also creates `docs/images/signal-intelligence.png` from five synthetic packets (`AA00FF` through `AA04FF`) in an offline Capture Library session. It opens Analyze → Signal Intelligence and waits for the candidate counter to render before capturing the panel. The image does not demonstrate hardware reception. Run `npm run screenshots:readme` and review the generated PNG before committing binary image changes.
