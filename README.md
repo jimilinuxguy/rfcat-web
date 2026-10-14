@@ -34,8 +34,6 @@ The screenshots below illustrate the browser workspace without requiring RF hard
 
 ![Radio configuration in Tools](docs/images/radio-configuration.png)
 
-![Synthetic offline Signal Intelligence field inference](docs/images/signal-intelligence.png)
-
 Regenerate these images (plus a Firmware Manager screenshot and the synthetic Signal Intelligence example) with `npm run screenshots:readme` after `npm install` and `npx playwright install chromium`. The Playwright browser suite checks the screenshot views and in-memory capture without modifying PNGs; run `npm run verify` to include that regression. Review generated images before committing them; they reflect the UI at capture time, not a connected device or verified RF activity. See [Screenshot automation](docs/readme-screenshots.md).
 
 ## Quick start
