@@ -1,0 +1,26 @@
+name: M31-M34 screenshots
+on:
+  push:
+    paths:
+      - 'js/rx/protocol-*.js'
+      - 'js/ui/protocol-intelligence-workbench.js'
+      - 'tools/intelligence-screenshots.mjs'
+      - '.github/workflows/intelligence-screenshots.yml'
+  workflow_dispatch:
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run screenshots:intelligence
+      - uses: actions/upload-artifact@v4
+        with:
+          name: m31-m34-screenshots
+          path: docs/images/protocol-intelligence-*.png
+          if-no-files-found: error

@@ -338,3 +338,16 @@ body.connected #radio-status-connection{color:#73d5b4}
 #radio-status-details{overflow-wrap:anywhere}
 .radio-status-action{color:#9ac7ff;white-space:nowrap}
 @media(max-width:720px){.workspace-nav{flex-wrap:wrap}.radio-status-shortcut{margin-left:0;width:100%;justify-content:space-between}}
+
+
+/* Guided walkthrough cards use the same icon language as contextual Help topics. */
+.help-tour-tile{width:100%;align-items:center;flex-direction:row;gap:12px;min-height:66px;padding:11px 12px;text-align:left;transition:background .16s,border-color .16s,transform .16s,box-shadow .16s}
+.help-tour-tile .help-tour-icon-wrap{background:#26445b;color:#85d9e4}
+.help-tour-group:nth-of-type(3n+2) .help-tour-icon-wrap{background:#3a345a;color:#c2adff}
+.help-tour-group:nth-of-type(3n+3) .help-tour-icon-wrap{background:#27493f;color:#94dfbd}
+.help-tour-tile .help-topic-content{min-width:0;flex:1}
+.help-tour-tile .help-topic-content strong{font-size:13px;line-height:1.35}
+.help-tour-tile .help-topic-content small{font-size:11px;line-height:1.4}
+.help-tour-tile:hover,.help-tour-tile:focus-visible{box-shadow:0 5px 18px #0003}
+.help-tour-tile:focus-visible{outline:2px solid #85d9e4;outline-offset:2px}
+@media(prefers-reduced-motion:reduce){.help-tour-tile{transition:none}.help-tour-tile:hover{transform:none}}

@@ -173,3 +173,7 @@ Open **Analyze → Protocol Definition Builder → Investigation Workspace → D
 ## M27–M30 Offline Protocol Lab
 
 Use **Analyze → Protocol Definition Builder → Investigation Workspace → Simulation / Synthetic / Differential / Dashboard** to replay saved packets, generate deterministic test data, compare decoder interpretations and summarize investigation evidence. The **Simulation**, **Synthetic packets**, **Differential analysis**, and **Evidence dashboard** wizards are available in contextual Help and onboarding. All workflows are offline and have Node/Playwright coverage. See [Offline Protocol Lab](protocol-offline-lab.md) for usage and limitations.
+
+## M31–M34 Investigation Intelligence
+
+Use **Analyze → Protocol Definition Builder → Investigation Workspace → Pipeline / Bits / CRC / Clusters** to investigate saved capture sessions without hardware. The workbench includes a unified pipeline, bit-level variability and Hamming analysis, checksum/CRC preset discovery, and threshold-based packet clustering. Contextual **Investigation pipeline**, **Bit analysis**, **CRC discovery**, and **Clustering** wizards are available in Help and onboarding. Generate four reproducible screenshots using `npm run screenshots:intelligence`. See [M31–M34 guide](protocol-intelligence.md).

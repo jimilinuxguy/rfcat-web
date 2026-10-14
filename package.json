@@ -6,7 +6,8 @@
     "test": "node --test",
     "test:browser": "playwright test",
     "verify": "npm test && npm run test:browser",
-    "screenshots:readme": "node tools/readme-screenshots.mjs"
+    "screenshots:readme": "node tools/readme-screenshots.mjs",
+    "screenshots:intelligence": "node tools/intelligence-screenshots.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.0"

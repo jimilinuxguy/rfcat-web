@@ -1,0 +1,11 @@
+// Reproducible M31-M34 screenshots from synthetic captures, no radio.
+import {chromium} from "@playwright/test";import {spawn} from "node:child_process";import {mkdir} from "node:fs/promises";
+const server=spawn("python3",["-m","http.server","8766","--bind","127.0.0.1"],{stdio:"ignore"});const sleep=ms=>new Promise(r=>setTimeout(r,ms));let browser;
+try{let ready=false;for(let i=0;i<40;i++){try{if((await fetch("http://127.0.0.1:8766")).ok){ready=true;break;}}catch{}await sleep(250);}if(!ready)throw Error("Screenshot server unavailable");
+ await mkdir("docs/images",{recursive:true});browser=await chromium.launch({headless:true});const page=await browser.newPage({viewport:{width:1440,height:1100},deviceScaleFactor:1,reducedMotion:"reduce"});await page.goto("http://127.0.0.1:8766");
+ await page.evaluate(()=>{for(const id of ["#welcome-dialog","#onboarding-dialog"]){const dialog=document.querySelector(id);if(dialog?.open)dialog.close();}});
+ await page.evaluate(async()=>{const {saveCaptureSession}=await import("./js/storage/capture-session-store.js");for(const [id,v] of [["screenshot-intelligence-a",1],["screenshot-intelligence-b",2]])await saveCaptureSession({id,name:id,captures:[0,1,2,3,4].map(n=>({hex:[0xAA,v,n,0xAA^v^n].map(x=>x.toString(16).padStart(2,"0")).join("")}))});});
+ await page.locator('[data-workspace-tab="analyze"]').click();const details=page.locator("#protocol-definition-builder");if(!(await details.getAttribute("open")))await details.locator("summary").click();
+ await page.locator("#pd-int-refresh").click();for(const id of ["screenshot-intelligence-a","screenshot-intelligence-b"])await page.locator('#pd-int-sessions input[value="'+id+'"]').check();
+ for(const [button,file] of [["pd-int-pipeline","protocol-intelligence-pipeline.png"],["pd-int-bits","protocol-intelligence-bits.png"],["pd-int-crc","protocol-intelligence-crc.png"],["pd-int-cluster","protocol-intelligence-clusters.png"]]){await page.locator("#"+button).click();await page.locator("#pd-int-results").waitFor({state:"visible"});await page.locator("#pd-intelligence").screenshot({path:"docs/images/"+file,animations:"disabled"});console.log("Wrote docs/images/"+file);}
+}finally{await browser?.close();server.kill();}

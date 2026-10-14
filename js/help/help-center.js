@@ -93,6 +93,19 @@ export async function initHelpCenter(){
   for(const d of paths[category]){const path=document.createElementNS("http://www.w3.org/2000/svg","path");path.setAttribute("d",d);svg.append(path);}
   return svg;
  };
+ const tourIcon=tour=>{
+  const id=tour.id??"",paths=
+   /pipeline|investigation-workflow/.test(id)?["M4 7h6l3 5h7","M4 17h6l3-5h7","M18 5l3 2-3 2","M18 15l3 2-3 2"]:
+   /crc|checksum|regression|validation/.test(id)?["M9 12l2 2 4-4","M12 3l8 4v5c0 5-3 8-8 9-5-1-8-4-8-9V7z"]:
+   /bits|field|candidate|infer/.test(id)?["M4 7h3v10H4z","M10 7h3v10h-3z","M16 7h4v10h-4z"]:
+   /cluster|correlation|state/.test(id)?["M5 6a2 2 0 1 0 0 4a2 2 0 0 0 0-4","M19 6a2 2 0 1 0 0 4a2 2 0 0 0 0-4","M12 16a2 2 0 1 0 0 4a2 2 0 0 0 0-4","M7 10l4 6","M17 10l-4 6"]:
+   /synthetic|simulation|replay/.test(id)?["M8 5v14l11-7z"]:
+   /differential|compare|decoder/.test(id)?["M4 5h7v14H4z","M13 5h7v14h-7z","M8 9h0","M16 14h0"]:
+   /dashboard|timeline|evidence/.test(id)?["M4 19V9","M10 19V5","M16 19v-7","M22 19V3"]:
+   ["M12 3v3","M12 18v3","M3 12h3","M18 12h3","M7 7l2 2","M15 15l2 2","M17 7l-2 2","M9 15l-2 2"];
+  const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("viewBox","0 0 24 24");svg.setAttribute("fill","none");svg.setAttribute("stroke","currentColor");svg.setAttribute("stroke-width","1.8");svg.setAttribute("stroke-linecap","round");svg.setAttribute("stroke-linejoin","round");svg.setAttribute("aria-hidden","true");svg.classList.add("help-topic-icon");
+  for(const d of paths){const path=document.createElementNS("http://www.w3.org/2000/svg","path");path.setAttribute("d",d);svg.append(path);}return svg;
+ };
  function showHome(){
   tourTarget=null;dock();
   reset("Help & guided tutorials");
@@ -108,7 +121,7 @@ export async function initHelpCenter(){
     for(const tour of matches.filter(t=>(t.category??"Getting started")===category)){
      const b=node("button");b.type="button";b.className="help-tour-tile";
      const heading=node("strong",tour.title),meta=node("small",tour.steps.length+" steps"+(state.completed.includes(tour.id)?" · Completed":""));
-     b.append(heading,meta);b.addEventListener("click",()=>startTour(tour.id));section.append(b);
+     const icon=node("span");icon.className="help-topic-icon-wrap help-tour-icon-wrap";icon.append(tourIcon(tour));const content=node("span");content.className="help-topic-content";content.append(heading,meta);const arrow=node("span","›");arrow.className="help-topic-arrow";arrow.setAttribute("aria-hidden","true");b.append(icon,content,arrow);b.addEventListener("click",()=>startTour(tour.id));section.append(b);
     }
     list.append(section);
    }
