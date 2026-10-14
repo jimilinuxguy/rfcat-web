@@ -15,6 +15,10 @@ RFCat Web uses WebUSB to configure radios, transmit test frames, capture and dec
 - **Customize your workspace:** Drag, resize, and collapse panels. Layout preferences persist locally in IndexedDB.
 - **Interoperate with other devices:** Use specialized workflows such as Momentum Enhanced Sub-GHz Chat with a Flipper Zero.
 
+## Sub-GHz Spectrum Explorer
+
+The [Spectrum Explorer](docs/spectrum-explorer.md) provides stepped-frequency RSSI surveys with peak thresholds, click-to-select frequency and CSV export. It is a receive-only CC1111 scanner, not a wideband SDR or calibrated power meter. Hardware validation remains pending.
+
 ## Screenshots
 
 The screenshots below illustrate the browser workspace without requiring RF hardware. The screenshot generator uses a fixed desktop viewport; disconnected device state is intentional.
