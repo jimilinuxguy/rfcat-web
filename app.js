@@ -1300,6 +1300,23 @@ async function refreshSessionList(selectId = activeSessionId) {
     $("session-status").textContent = activeSessionId ? "Saved" : "Unsaved";
 }
 
+let investigationCaptureStart=0;
+document.addEventListener("rfcat:investigation-start",()=>{investigationCaptureStart=rxCaptures.length;});
+document.addEventListener("rfcat:investigation-save",async event=>{
+ const detail=event.detail;
+ const finish=result=>document.dispatchEvent(new CustomEvent("rfcat:investigation-saved",{detail:result}));
+ try{
+  if(!detail||!Number.isFinite(detail.frequencyHz))throw Error("No selected investigation");
+  const name="RF investigation "+(detail.frequencyHz/1e6).toFixed(3)+" MHz";
+  const snapshot=currentSessionSnapshot(name,crypto.randomUUID());
+  snapshot.captures=sessionCaptureData().slice(investigationCaptureStart);
+  snapshot.investigation={schemaVersion:1,type:"rfcat-spectrum-investigation",...detail};
+  snapshot.notes="Spectrum investigation at "+(detail.frequencyHz/1e6).toFixed(3)+" MHz; "+snapshot.captures.length+" receiver captures after investigation started. Radio preset findings are not modulation proof.";
+  await saveCaptureSession(snapshot);
+  await refreshSessionList(snapshot.id);
+  finish({captureCount:snapshot.captures.length,id:snapshot.id});
+ }catch(error){finish({error:error.message});}
+});
 async function saveSession() {
     const existing = activeSessionId ? await getSession(activeSessionId) : null;
     const name = existing?.name ?? prompt("Session name", "Capture session");
