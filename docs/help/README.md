@@ -121,3 +121,7 @@ If a tutorial step is missing, ensure the feature is present in the current buil
 The welcome wizard offers **Offline capture replay & session comparison**. The Help Center provides an eight-step guided tour for opening a saved session, preparing replay, reviewing summary statistics, using timeline markers, choosing speed, playing/pausing, selecting another session and comparing payload counts. Contextual topics link to the [capture replay guide](../capture-replay.md). Tours only highlight controls; they do not operate the replay or transmit RF. Prepare replay after opening a session to populate its controls. The first 300 timeline markers are shown, while Previous/Next can inspect all prepared captures.
 
 To validate, restart the welcome wizard, select the replay workflow, check that each step highlights its control in Receive, then use Help search for `replay` and `compare`. Verify that no hardware is required. Run `npm test` and `npm run test:browser`.
+
+## Spectrum Explorer guided walkthrough
+
+Open **? Help → Advanced analysis → Spectrum Explorer walkthrough**. The tour navigates to the dynamically created Analyze panel and explains baseline capture, a transmitter-on scan, automatic versus fixed RSSI chart scaling, chart crosshair readings, waterfall interpretation, and CSV export. Tour steps do not start scans, retune the radio, or transmit. The selector-coverage test includes dynamically rendered Spectrum Explorer controls.
