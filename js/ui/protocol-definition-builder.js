@@ -3,6 +3,7 @@ import {listProtocolDefinitions,getProtocolDefinition,saveProtocolDefinition,del
 import {listCaptureSessions,getCaptureSession} from "../storage/capture-session-store.js";
 import {initVisualFieldEditor,parseFieldDraft} from "./visual-field-editor.js";
 import {evaluateProtocolEvidence} from "../rx/protocol-evidence.js";
+import {initProtocolDecoderWorkbench} from "./protocol-decoder-workbench.js";
 import {normalizeRegressionSuite,runProtocolRegression,appendRegressionFixture} from "../rx/protocol-regression.js";
 import {getProtocolRegressionSuite,saveProtocolRegressionSuite,importProtocolRegressionSuite} from "../storage/protocol-regression-store.js";
 let liveDefinitions=[];
@@ -24,6 +25,7 @@ export function initProtocolDefinitionBuilder(){
  <pre id="pd-output" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre><p id="pd-status" role="status"></p></div>`;
  host.after(panel);
  const el=id=>panel.querySelector("#"+id);let pending=null,evidenceReport=null;
+ const workbench=initProtocolDecoderWorkbench(panel,{getDefinition:()=>form(),setStatus:message=>setStatus(message)});
  const visual=initVisualFieldEditor(panel,{readFields:()=>parseFieldDraft(el("pd-fields").value),writeFields:fields=>{el("pd-fields").value=JSON.stringify(fields,null,2);},readPacketLength:()=>Number(el("pd-length").value),setStatus:message=>setStatus(message)});
  function setStatus(message){el("pd-status").textContent=message;}
  function form(){return validateProtocolDefinition({schemaVersion:1,id:el("pd-id").value,name:el("pd-name").value,packetLength:Number(el("pd-length").value),sync:el("pd-sync").value.replace(/\s+/g,""),frequencyHz:el("pd-frequency").value?Number(el("pd-frequency").value):null,modulation:el("pd-modulation").value,fields:JSON.parse(el("pd-fields").value)});}
@@ -32,7 +34,7 @@ export function initProtocolDefinitionBuilder(){
  async function refresh(){const selected=el("pd-library").value;const definitions=await listProtocolDefinitions();liveDefinitions=definitions;el("pd-library").replaceChildren(new Option("New definition",""),...definitions.map(d=>new Option(d.name+" ("+d.id+")",d.id)));if(definitions.some(d=>d.id===selected))el("pd-library").value=selected;}
  async function sessions(){const previous=el("pd-session").value;const selected=new Set([...el("pd-evidence-sessions").querySelectorAll("input:checked")].map(input=>input.value));const items=await listCaptureSessions();const choices=items.map(session=>{const label=document.createElement("label"),checkbox=document.createElement("input");checkbox.type="checkbox";checkbox.value=session.id;checkbox.checked=selected.has(session.id);label.append(checkbox,document.createTextNode(" "+session.name+" ("+session.captures.length+" packets) "));return label;});el("pd-evidence-sessions").replaceChildren(...choices);el("pd-session").replaceChildren(new Option("Select capture session",""),...items.map(s=>new Option(s.name,s.id)));if(items.some(s=>s.id===previous))el("pd-session").value=previous;await updateCohorts();}
  async function updateCohorts(){pending=null;el("pd-confirm").disabled=true;el("pd-preview").textContent="";const session=await getCaptureSession(el("pd-session").value);const lengths=Object.keys(session?.fieldAnnotations||{}).filter(k=>Number.isInteger(Number(k))&&Number(k)>0).sort((a,b)=>Number(a)-Number(b));el("pd-cohort").replaceChildren(...lengths.map(n=>new Option(n+" bytes",n)));}
- el("pd-refresh").addEventListener("click",()=>Promise.all([refresh(),sessions()]).catch(e=>setStatus(e.message)));
+ el("pd-refresh").addEventListener("click",()=>Promise.all([refresh(),sessions(),workbench.refresh()]).catch(e=>setStatus(e.message)));
  el("pd-session").addEventListener("change",()=>updateCohorts().catch(e=>setStatus(e.message)));
  el("pd-cohort").addEventListener("change",()=>{pending=null;el("pd-confirm").disabled=true;el("pd-preview").textContent="";});
  el("pd-load").addEventListener("click",async()=>{try{const def=await getProtocolDefinition(el("pd-library").value);if(!def)throw Error("Select a saved definition");show(def);await loadSuite();setStatus("Definition and regression fixtures loaded.");}catch(e){setStatus(e.message);}});
