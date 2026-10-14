@@ -23,3 +23,15 @@ test("Spectrum dashboard has waterfall, metrics and switchable delta view",async
  await page.locator("#spectrum-baseline").click();
  await expect(page.locator("#spectrum-status")).toContainText("Connect YARD Stick One");
 });
+
+test("RF dashboard shows target marker control, legend and hover hint",async({page})=>{
+ await page.goto("/");await page.locator('[data-workspace-tab="analyze"]').click();
+ const panel=page.locator("#spectrum-explorer");await panel.locator("summary").click();
+ await expect(page.locator("#spectrum-target")).toHaveValue("433.920");
+ await expect(page.locator("#spectrum-hover")).toContainText("Hover over a cell");
+ await expect(panel).toContainText("−105 to −90");
+ await expect(page.locator("#spectrum-metrics > div")).toHaveCount(6);
+ const plot=page.locator("#spectrum-plot"),delta=page.locator("#spectrum-view-delta");
+ const a=await plot.boundingBox(),d=await delta.boundingBox();
+ expect(d.y).toBeLessThan(a.y);
+});
