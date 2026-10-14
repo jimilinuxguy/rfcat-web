@@ -17,7 +17,7 @@ RFCat Web uses WebUSB to configure radios, transmit test frames, capture and dec
 
 ## Sub-GHz Spectrum Explorer
 
-The [Spectrum Explorer](docs/spectrum-explorer.md) provides stepped-frequency RSSI surveys with peak thresholds, click-to-select frequency and CSV export. It is a receive-only CC1111 scanner, not a wideband SDR or calibrated power meter. Hardware validation remains pending.
+The [Spectrum Explorer](docs/spectrum-explorer.md) provides stepped-frequency RSSI surveys with baseline comparison, average/peak traces, auto/fixed dBm scaling, frequency-chart hover inspection, target markers, a sweep-by-sweep waterfall, detection indicators, and CSV export. A guided **Spectrum Explorer walkthrough** is available in Help. YARD Stick One testing has demonstrated baseline-relative RF activity near a Flipper Zero transmission at 433.920 MHz; the scanner is not a wideband SDR or calibrated power meter.
 
 ## Screenshots
 
