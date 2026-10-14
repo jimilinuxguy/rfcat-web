@@ -94,3 +94,5 @@ Operate only on authorized frequencies and equipment. Prefer controlled, short b
 - [M25/M26 Protocol Candidate Discovery and Session Correlation](protocol-discovery-correlation.md) — candidate ranking, comparison, persistence, promotion and guided workflows.
 
 - [M27–M30 Offline Protocol Lab](protocol-offline-lab.md) — replay/simulation, seeded packet generation, differential decoding, evidence summaries, wizards and tests.
+
+- [M31–M34 Investigation Intelligence](protocol-intelligence.md) — automated pipeline, bit analysis, CRC candidate search, packet clustering, screenshot generation, Help tours and tests.
