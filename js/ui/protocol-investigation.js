@@ -13,6 +13,13 @@ export function initProtocolInvestigation(panel,{getDefinition,showDefinition,se
  <div class="actions"><label>Name <input id="pd-inv-name" maxlength="120"></label><label>Capture session <select id="pd-inv-session"></select></label><label>Protocol <select id="pd-inv-protocol"></select></label><button type="button" id="pd-inv-refresh">Refresh</button><button type="button" id="pd-inv-save">Save investigation</button></div>
  <nav id="pd-inv-stages" class="actions" aria-label="Investigation stages"></nav><p id="pd-inv-status" role="status"></p><div id="pd-inv-detail"></div><div id="pd-inv-visual" style="overflow-x:auto"></div>
  <div class="actions"><button type="button" id="pd-inv-back">Previous</button><button type="button" id="pd-inv-next">Next stage</button><button type="button" id="pd-inv-export">Export investigation report</button></div>`;
+ const guides=document.createElement("div");guides.id="pd-inv-guides";guides.className="actions";
+ for(const [id,label] of [["investigation-workflow","Investigation walkthrough"],["investigation-resume","Save & resume guide"],["investigation-field-diagram","Field diagram guide"],["investigation-timeline-chart","Timeline chart guide"],["investigation-state-graph","State graph guide"]]){
+  const button=document.createElement("button");button.type="button";button.textContent=label;button.dataset.helpTour=id;
+  button.addEventListener("click",()=>document.dispatchEvent(new CustomEvent("rfcat:start-help-tour",{detail:id})));
+  guides.append(button);
+ }
+ section.querySelector("h4").after(guides);
  panel.querySelector(".section-body").prepend(section);
  const el=id=>section.querySelector("#"+id);let id=null,stage="captures";
  function status(message){el("pd-inv-status").textContent=message;setStatus(message);}
