@@ -58,3 +58,21 @@ test("switching sessions resets the editor and protects capture isolation",async
  await page.locator("#intelligence-analyze").click();
  await expect(page.locator("#field-annotations")).not.toContainText("sequence");
 });
+
+test("advanced inference shows evidence for counter and bit mask offline",async({page})=>{
+ await page.goto("/");
+ await page.evaluate(async()=>{
+  const {saveCaptureSession}=await import("./js/storage/capture-session-store.js");
+  await saveCaptureSession({id:"advanced-inference-fixture",name:"Advanced inference fixture",captures:[
+   {hex:"A0FE00F0"},{hex:"A0FF00F0"},{hex:"A00001F0"},{hex:"A00101F0"},{hex:"A00201F0"}
+  ]});
+ });
+ await page.locator('[data-workspace-tab="analyze"]').click();
+ await page.locator("#signal-intelligence summary").click();
+ await page.locator("#intelligence-refresh").click();
+ await page.locator("#intelligence-session").selectOption("advanced-inference-fixture");
+ await page.locator("#intelligence-analyze").click();
+ await expect(page.locator("#field-inference")).toContainText("little-endian hypothesis");
+ await expect(page.locator("#field-inference")).toContainText("bit-mask");
+ await expect(page.locator("#field-inference")).toContainText("counter");
+});
