@@ -90,14 +90,14 @@ export function initSpectrumExplorer({radio,isBusy=()=>false}){
  }
  const investigationStatus=get("spectrum-investigation-status");
  const openWorkspace=workspace=>document.dispatchEvent(new CustomEvent("rfcat:workspace-activate",{detail:{workspace}}));
- const investigationDetail=()=>investigation?{...investigation,scanSettings:{...lastSettings},baseline:baseline.map(r=>({...r})),samples:samples.map(r=>({...r})),summary:rows().map(r=>({...r}))}:null;
+ const investigationDetail=()=>investigation?structuredClone(investigation):null;
  get("spectrum-investigate").addEventListener("click",()=>{
   if(controller)return;
   const data=rows();if(!data.length)return;
   const selected=hoverFrequency===null?null:data.find(r=>r.frequencyHz===hoverFrequency);
   const strongest=[...data].sort((a,b)=>baseline.length?(b.deltaDb??-Infinity)-(a.deltaDb??-Infinity):b.peakDbm-a.peakDbm)[0];
   const point=selected||strongest;
-  investigation={frequencyHz:point.frequencyHz,selectedAt:new Date().toISOString(),averageDbm:point.averageDbm,peakDbm:point.peakDbm,baselineDbm:point.baselineDbm??null,deltaDb:point.deltaDb??null};
+  investigation={frequencyHz:point.frequencyHz,selectedAt:new Date().toISOString(),averageDbm:point.averageDbm,peakDbm:point.peakDbm,baselineDbm:point.baselineDbm??null,deltaDb:point.deltaDb??null,scanSettings:{...lastSettings},baseline:baseline.map(r=>({...r})),samples:samples.map(r=>({...r})),summary:data.map(r=>({...r}))};
   document.dispatchEvent(new CustomEvent("rfcat:investigation-start",{detail:{...investigation}}));
   get("spectrum-investigation").hidden=false;
   get("spectrum-investigation-summary").textContent=(point.frequencyHz/1e6).toFixed(3)+" MHz · avg "+point.averageDbm.toFixed(1)+" dBm · peak "+point.peakDbm.toFixed(1)+" dBm"+(point.deltaDb===null?"":" · baseline rise "+point.deltaDb.toFixed(1)+" dB");
