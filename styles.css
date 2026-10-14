@@ -374,3 +374,8 @@ body.connected #radio-status-connection{color:#73d5b4}
 #pd-investigation-tools #pd-tools-report{max-height:300px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:560px){#pd-investigation .pd-workflow-nav{grid-template-columns:repeat(2,minmax(0,1fr))}#pd-investigation-tools{padding:10px}}
 @media(prefers-reduced-motion:reduce){#pd-investigation .pd-workflow-nav button{transition:none}}
+
+/* Keep all advanced investigation stages accessible at narrow panel widths. */
+#pd-inv-stages{display:flex;flex-wrap:wrap;gap:8px;min-width:0;max-width:100%;overflow:visible}
+#pd-inv-stages>button{flex:0 0 auto;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+#pd-inv-advanced{min-width:0;max-width:100%}
