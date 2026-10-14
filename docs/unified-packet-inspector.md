@@ -9,3 +9,7 @@ A selected compatible protocol definition exposes decoded fields and their byte/
 **Export report** downloads versioned JSON with observed hex, available packet metadata and user annotations. Nothing is transmitted, flashed or persisted automatically. The inspector does not change saved captures.
 
 Limitations: entry is currently available from the Investigation Workspace's selected saved session. Live receiver and import entry points, full keyboard range selection, and dedicated browser regression coverage remain follow-up work. Run `node --test tests/packet-inspector.test.js` and `npm run verify` to validate.
+
+## Receiver integration
+
+Each live Receiver capture and imported RX JSON capture offers **Inspect packet**. This opens the Analyze workspace and reveals the inspector without changing the radio or the saved capture. Enter a canonical MSB-first bit offset and length to inspect ranges; field selection highlights the covered bytes. The initial limitations section above predates this integration; browser verification and full keyboard range navigation are still pending.
