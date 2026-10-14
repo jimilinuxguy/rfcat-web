@@ -4,6 +4,8 @@ Technical reference, protocol notes, and validation guidance for the [RFCat Web 
 
 ## Start here
 
+- [Sub-GHz Spectrum Explorer](spectrum-explorer.md) — stepped RSSI surveys, peak detection, CSV export, operating limits and validation.
+
 | Guide | Covers |
 | --- | --- |
 | [Offline capture replay](capture-replay.md) | Offline timed playback, timeline navigation, saved-session comparison, JSON/CSV report export, guided Help and Playwright acceptance |
