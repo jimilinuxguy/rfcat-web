@@ -65,6 +65,7 @@ export async function initHelpCenter(){
   onFinish:tour=>{state.completed=[...new Set([...state.completed,tour.id])];persist();showHome();}
  });
  function startTour(id){const tour=findTour(id);if(tour){exerciseResults.clear();engine.start(tour);}}
+ document.addEventListener("rfcat:start-help-tour",event=>{if(typeof event.detail==="string"&&findTour(event.detail))startTour(event.detail);});
  function showTopic(topic){
   tourTarget=null;dock();
   reset(topic.title);body.append(node("p",topic.text));
