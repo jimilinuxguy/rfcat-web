@@ -20,6 +20,8 @@ Technical reference, protocol notes, and validation guidance for the [RFCat Web 
 | [RFCat USB Protocol](rfcat-usb.md) | WebUSB endpoints, framing, commands, connect/reconnect, and TX/RX transport |
 | [Momentum Enhanced Sub-GHz Chat](momentum-subghz-chat.md) | Optional Flipper Zero interoperability: plaintext, AES-256-GCM, hardware test steps, and limitations |
 
+- [RF signal discovery](rf-signal-discovery.md) — investigate a spectrum bin, prepare preset scans and RX, save spectrum and capture evidence.
+
 ## Development workflows
 
 **Receive and analyze:** Configure RF → capture or import → select decoder → inspect raw and decoded data → save a session → compare captures → infer fields → validate a protocol preset → export JSON.

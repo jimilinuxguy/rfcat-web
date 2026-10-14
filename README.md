@@ -19,6 +19,10 @@ RFCat Web uses WebUSB to configure radios, transmit test frames, capture and dec
 
 The [Spectrum Explorer](docs/spectrum-explorer.md) provides stepped-frequency RSSI surveys with baseline comparison, average/peak traces, auto/fixed dBm scaling, frequency-chart hover inspection, target markers, a sweep-by-sweep waterfall, detection indicators, and CSV export. A guided **Spectrum Explorer walkthrough** is available in Help. YARD Stick One testing has demonstrated baseline-relative RF activity near a Flipper Zero transmission at 433.920 MHz; the scanner is not a wideband SDR or calibrated power meter.
 
+## RF signal discovery (in development)
+
+After a Spectrum Explorer scan, select **Investigate strongest signal** (or hover over a frequency first). The investigation transfers the frequency into the existing receiver preset scanner or Receiver without automatically tuning hardware, starts a new evidence boundary, and saves the spectrum snapshot plus subsequent receiver captures to a new Capture Library session. A JSON spectrum report is also available. See [RF signal discovery](docs/rf-signal-discovery.md) and **? Help → RF signal discovery: spectrum to capture**. This feature is on a testing branch and has not yet been merged.
+
 ## Screenshots
 
 The screenshots below illustrate the browser workspace without requiring RF hardware. The screenshot generator uses a fixed desktop viewport; disconnected device state is intentional.

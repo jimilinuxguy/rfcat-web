@@ -125,3 +125,7 @@ To validate, restart the welcome wizard, select the replay workflow, check that 
 ## Spectrum Explorer guided walkthrough
 
 Open **? Help → Advanced analysis → Spectrum Explorer walkthrough**. The tour navigates to the dynamically created Analyze panel and explains baseline capture, a transmitter-on scan, automatic versus fixed RSSI chart scaling, chart crosshair readings, waterfall interpretation, and CSV export. Tour steps do not start scans, retune the radio, or transmit. The selector-coverage test includes dynamically rendered Spectrum Explorer controls.
+
+## RF signal discovery wizard
+
+The **RF signal discovery: spectrum to capture** tutorial in **? Help → Advanced analysis** highlights the investigation launcher, receiver preset scan, receiver capture handoff, session saving and JSON export. It never starts scanning, receiving or transmitting. A completed tutorial does not certify that modulation or protocol identification succeeded.

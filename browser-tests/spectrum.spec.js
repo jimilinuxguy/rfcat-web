@@ -46,3 +46,44 @@ test("RSSI scale selector and chart hover diagnostics render",async({page})=>{
  await expect(page.locator("#spectrum-chart-hover")).toContainText("Hover over");
  await expect(page.locator("#spectrum-plot")).toBeVisible();
 });
+
+test("investigation controls are available without automatically starting RF",async({page})=>{
+ await page.goto("/");
+ await page.locator('[data-workspace-tab="analyze"]').click();
+ await page.locator("#spectrum-explorer summary").click();
+ await expect(page.locator("#spectrum-investigate")).toBeDisabled();
+ await expect(page.locator("#spectrum-investigation")).toBeHidden();
+ await expect(page.locator("#spectrum-investigate-save")).toHaveCount(1);
+});
+test("investigation save persists a separate capture-library session",async({page})=>{
+ await page.goto("/");
+ await page.evaluate(()=>document.dispatchEvent(new CustomEvent("rfcat:investigation-start",{detail:{frequencyHz:433920000}})));
+ const saved=page.evaluate(()=>new Promise(resolve=>document.addEventListener("rfcat:investigation-saved",event=>resolve(event.detail),{once:true})));
+ await page.evaluate(()=>document.dispatchEvent(new CustomEvent("rfcat:investigation-save",{detail:{frequencyHz:433920000,selectedAt:new Date().toISOString(),samples:[],summary:[],baseline:[]}})));
+ const result=await saved;
+ expect(result.error).toBeUndefined();
+ expect(result.captureCount).toBe(0);
+ await expect(page.locator("#session-select option")).toContainText(["RF investigation 433.920 MHz"]);
+});
+
+test("invalid investigation cannot persist a session",async({page})=>{
+ await page.goto("/");
+ const saved=page.evaluate(()=>new Promise(resolve=>document.addEventListener("rfcat:investigation-saved",e=>resolve(e.detail),{once:true})));
+ await page.evaluate(()=>document.dispatchEvent(new CustomEvent("rfcat:investigation-save",{detail:{frequencyHz:NaN}})));
+ const result=await saved;
+ expect(result.error).toContain("No selected investigation");
+});
+test("investigation starts a new capture boundary without radio actions",async({page})=>{
+ await page.goto("/");
+ const result=await page.evaluate(async()=>{
+  let usbCommands=0;
+  navigator.usb?.addEventListener?.("connect",()=>usbCommands++);
+  document.dispatchEvent(new CustomEvent("rfcat:investigation-start",{detail:{frequencyHz:433920000}}));
+  const saved=new Promise(resolve=>document.addEventListener("rfcat:investigation-saved",e=>resolve(e.detail),{once:true}));
+  document.dispatchEvent(new CustomEvent("rfcat:investigation-save",{detail:{frequencyHz:433920000,summary:[],samples:[],baseline:[]}}));
+  return {result:await saved,usbCommands};
+ });
+ expect(result.result.error).toBeUndefined();
+ expect(result.result.captureCount).toBe(0);
+ expect(result.usbCommands).toBe(0);
+});

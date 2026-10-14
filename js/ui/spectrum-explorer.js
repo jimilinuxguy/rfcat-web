@@ -10,14 +10,14 @@ export function initSpectrumExplorer({radio,isBusy=()=>false}){
  panel.innerHTML=`<summary class="section-summary"><span>Sub-GHz Spectrum Explorer</span><span class="summary-note">Stepped CC1111 RSSI · receive only</span></summary>
  <div class="section-body"><p>Sequential RSSI measurements, not a wideband FFT. Pause other radio operations before scanning.</p>
  <div class="grid"><label>Start (MHz)<input id="spectrum-start" type="number" step=".001" value="433.870"></label><label>Stop (MHz)<input id="spectrum-stop" type="number" step=".001" value="433.970"></label><label>Step (kHz)<input id="spectrum-step" type="number" min="10" max="1000" value="25"></label><label>Dwell (ms)<input id="spectrum-dwell" type="number" min="20" max="2000" value="150"></label><label>Passes<input id="spectrum-passes" type="number" min="1" max="100" value="20"></label><label>Peak threshold (dBm)<input id="spectrum-threshold" type="number" value="-115"></label><label>Minimum baseline rise (dB)<input id="spectrum-delta" type="number" min="0" max="100" value="6"></label></div>
- <div class="actions"><button id="spectrum-baseline" type="button">Capture baseline (TX off)</button><button id="spectrum-start-button" type="button">Scan signal (TX on)</button><button id="spectrum-stop-button" type="button" disabled>Stop</button><button id="spectrum-export" type="button" disabled>Export CSV</button><button id="spectrum-clear-baseline" type="button" disabled>Clear baseline</button></div>
+ <div class="actions"><button id="spectrum-baseline" type="button">Capture baseline (TX off)</button><button id="spectrum-start-button" type="button">Scan signal (TX on)</button><button id="spectrum-stop-button" type="button" disabled>Stop</button><button id="spectrum-export" type="button" disabled>Export CSV</button><button id="spectrum-clear-baseline" type="button" disabled>Clear baseline</button><button id="spectrum-investigate" type="button" disabled>Investigate strongest signal</button></div>
  <div class="grid" id="spectrum-metrics" aria-live="polite" style="gap:12px;margin:14px 0"><style>#spectrum-metrics>div{padding:14px;border:1px solid #405364;border-radius:8px;background:#14212b}#spectrum-metrics p{font-size:1.25rem;font-weight:700;margin:8px 0 0}#spectrum-metrics strong{font-size:.8rem;color:#aabaca}</style><div><strong>Strongest frequency</strong><p id="spectrum-metric-frequency">—</p></div><div><strong>Average RSSI</strong><p id="spectrum-metric-average">—</p></div><div><strong>Peak RSSI</strong><p id="spectrum-metric-peak">—</p></div><div><strong>Rise over baseline</strong><p id="spectrum-metric-delta">—</p></div><div><strong>Detections</strong><p id="spectrum-metric-detections">—</p></div><div><strong>Coverage</strong><p id="spectrum-metric-coverage">—</p></div></div><p id="spectrum-status" role="status">Connect a YARD Stick One to scan.</p>
- <div class="actions" aria-label="Spectrum chart view"><button id="spectrum-view-rssi" type="button" aria-pressed="true">RSSI</button><button id="spectrum-view-delta" type="button" aria-pressed="false">Baseline rise</button><label>Y scale <select id="spectrum-scale"><option value="auto">Auto (fit signal)</option><option value="fixed">Fixed (−120 to −30 dBm)</option></select></label><label style="margin-left:auto">Target (MHz) <input id="spectrum-target" type="number" step=".001" value="433.920" style="width:110px"></label></div><canvas id="spectrum-plot" width="960" height="320" style="width:100%;max-width:100%;border:1px solid #777" aria-label="RSSI by frequency with labeled dBm axis"></canvas>
+ <section id="spectrum-investigation" aria-label="RF investigation" hidden><h3>RF signal investigation</h3><p id="spectrum-investigation-summary"></p><div class="actions"><button id="spectrum-investigate-presets" type="button">Open receiver preset scan</button><button id="spectrum-investigate-receiver" type="button">Open receiver capture</button><button id="spectrum-investigate-save" type="button">Save investigation with captures</button><button id="spectrum-investigate-export" type="button">Export investigation JSON</button></div><p id="spectrum-investigation-status" role="status">No investigation selected.</p><p class="muted">Receiver configuration and captures require deliberate action. A preset scan does not prove modulation; only captures received after starting the investigation are included in a saved investigation.</p></section><div class="actions" aria-label="Spectrum chart view"><button id="spectrum-view-rssi" type="button" aria-pressed="true">RSSI</button><button id="spectrum-view-delta" type="button" aria-pressed="false">Baseline rise</button><label>Y scale <select id="spectrum-scale"><option value="auto">Auto (fit signal)</option><option value="fixed">Fixed (−120 to −30 dBm)</option></select></label><label style="margin-left:auto">Target (MHz) <input id="spectrum-target" type="number" step=".001" value="433.920" style="width:110px"></label></div><canvas id="spectrum-plot" width="960" height="320" style="width:100%;max-width:100%;border:1px solid #777" aria-label="RSSI by frequency with labeled dBm axis"></canvas>
  <p id="spectrum-chart-hover" role="status">Hover over the frequency chart to inspect average, peak, baseline and rise.</p><div class="actions" style="justify-content:space-between"><strong>RF activity waterfall</strong><span id="spectrum-hover" role="status">Hover over a cell for frequency, sweep and RSSI.</span></div><canvas id="spectrum-waterfall" width="960" height="280" style="width:100%;max-width:100%;border:1px solid #777" aria-label="Frequency versus sweep RSSI waterfall"></canvas><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0"><span>Estimated RSSI</span><span style="background:#1b3854;padding:5px 9px;border-radius:4px">≤ −105 dBm</span><span style="background:#147e89;padding:5px 9px;border-radius:4px">−105 to −90</span><span style="background:#e0a64f;color:#14212b;padding:5px 9px;border-radius:4px">−90 to −75</span><span style="background:#fa704b;color:#14212b;padding:5px 9px;border-radius:4px">≥ −75 dBm</span></div><p class="muted">Waterfall: each row is one sequential sweep (oldest at top). Dark blue = weak RSSI; teal, amber and orange = stronger RSSI. Blank cells indicate unmeasured frequencies.</p><p id="spectrum-peaks">No samples.</p><p class="muted">Green: average RSSI · Orange: peak RSSI · Gray: baseline average. Highlighted frequencies rise above baseline by the configured minimum. Click the chart to select a frequency for the receiver.</p></div>`;
  host.before(panel);
  const get=id=>panel.querySelector("#"+id);
  const start=get("spectrum-start-button"),baseButton=get("spectrum-baseline"),stop=get("spectrum-stop-button"),status=get("spectrum-status"),canvas=get("spectrum-plot"),ctx=canvas.getContext("2d");
- let controller=null,samples=[],baseline=[],baselineSettings=null,lastSettings=null,view="rssi",lastRenderAt=0,waterfallInfo=null,plotInfo=null,hoverFrequency=null;
+ let controller=null,samples=[],baseline=[],baselineSettings=null,lastSettings=null,view="rssi",lastRenderAt=0,waterfallInfo=null,plotInfo=null,hoverFrequency=null,selectedFrequency=null,investigation=null;
  const settings=()=>({startMHz:Number(get("spectrum-start").value),stopMHz:Number(get("spectrum-stop").value),stepKHz:Number(get("spectrum-step").value),dwellMs:Number(get("spectrum-dwell").value),passes:Number(get("spectrum-passes").value)});
  const scanKey=s=>[s.startMHz,s.stopMHz,s.stepKHz].join("/");
  const rows=()=>compareSpectrum(summarizeSpectrum(samples),baseline);
@@ -48,6 +48,7 @@ export function initSpectrumExplorer({radio,isBusy=()=>false}){
   const delta=Number(get("spectrum-delta").value),threshold=Number(get("spectrum-threshold").value);
   for(const r of data){if((r.deltaDb!==null&&r.deltaDb>=delta)||(r.peakDbm>=threshold&&!baseline.length)){ctx.fillStyle="#ffda7a";ctx.beginPath();ctx.arc(x(r.frequencyHz),y(deltaMode?(r.deltaDb??0):r.averageDbm),5,0,Math.PI*2);ctx.fill();}}
   const strongest=[...data].sort((a,b)=>baseline.length?(b.deltaDb??-Infinity)-(a.deltaDb??-Infinity):b.peakDbm-a.peakDbm)[0];
+  get("spectrum-investigate").disabled=!strongest||!!controller;
   get("spectrum-metric-frequency").textContent=strongest?(strongest.frequencyHz/1e6).toFixed(3)+" MHz":"—";
   get("spectrum-metric-average").textContent=strongest?strongest.averageDbm.toFixed(1)+" dBm":"—";
   get("spectrum-metric-peak").textContent=strongest?strongest.peakDbm.toFixed(1)+" dBm":"—";
@@ -87,9 +88,51 @@ export function initSpectrumExplorer({radio,isBusy=()=>false}){
  for(const [name,mode] of [["spectrum-view-rssi","rssi"],["spectrum-view-delta","delta"]]){
   get(name).addEventListener("click",()=>{view=mode;get("spectrum-view-rssi").setAttribute("aria-pressed",String(mode==="rssi"));get("spectrum-view-delta").setAttribute("aria-pressed",String(mode==="delta"));render();});
  }
+ const investigationStatus=get("spectrum-investigation-status");
+ const openWorkspace=workspace=>document.dispatchEvent(new CustomEvent("rfcat:workspace-activate",{detail:{workspace}}));
+ const investigationDetail=()=>investigation?structuredClone(investigation):null;
+ get("spectrum-investigate").addEventListener("click",()=>{
+  if(controller)return;
+  const data=rows();if(!data.length)return;
+  const selected=selectedFrequency===null?null:data.find(r=>r.frequencyHz===selectedFrequency);
+  const strongest=[...data].sort((a,b)=>baseline.length?(b.deltaDb??-Infinity)-(a.deltaDb??-Infinity):b.peakDbm-a.peakDbm)[0];
+  const point=selected||strongest;
+  investigation={frequencyHz:point.frequencyHz,selectedAt:new Date().toISOString(),averageDbm:point.averageDbm,peakDbm:point.peakDbm,baselineDbm:point.baselineDbm??null,deltaDb:point.deltaDb??null,scanSettings:{...lastSettings},baseline:baseline.map(r=>({...r})),samples:samples.map(r=>({...r})),summary:data.map(r=>({...r}))};
+  document.dispatchEvent(new CustomEvent("rfcat:investigation-start",{detail:{...investigation}}));
+  get("spectrum-investigation").hidden=false;
+  get("spectrum-investigation-summary").textContent=(point.frequencyHz/1e6).toFixed(3)+" MHz · avg "+point.averageDbm.toFixed(1)+" dBm · peak "+point.peakDbm.toFixed(1)+" dBm"+(point.deltaDb===null?"":" · baseline rise "+point.deltaDb.toFixed(1)+" dB");
+  investigationStatus.textContent="Investigation selected. Choose receiver presets or capture, then save evidence.";
+ });
+ get("spectrum-investigate-presets").addEventListener("click",()=>{
+  if(!investigation)return;
+  const freq=document.getElementById("signal-scan-frequency");
+  if(freq){freq.value=(investigation.frequencyHz/1e6).toFixed(3);freq.dispatchEvent(new Event("change",{bubbles:true}));}
+  openWorkspace("analyze");
+  document.getElementById("signal-scan-start")?.scrollIntoView({block:"center"});
+  investigationStatus.textContent="Preset scan frequency prepared. Run the scan manually; review evidence before selecting receiver settings.";
+ });
+ get("spectrum-investigate-receiver").addEventListener("click",()=>{
+  if(!investigation)return;
+  const freq=document.getElementById("freq");
+  if(freq){freq.value=(investigation.frequencyHz/1e6).toFixed(3);freq.dispatchEvent(new Event("change",{bubbles:true}));}
+  openWorkspace("receive");
+  document.getElementById("listen")?.scrollIntoView({block:"center"});
+  investigationStatus.textContent="Receiver frequency prepared. Apply radio configuration and start RX manually.";
+ });
+ get("spectrum-investigate-save").addEventListener("click",()=>{
+  const detail=investigationDetail();if(!detail)return;
+  document.dispatchEvent(new CustomEvent("rfcat:investigation-save",{detail}));
+  investigationStatus.textContent="Saving investigation with current receiver captures…";
+ });
+ get("spectrum-investigate-export").addEventListener("click",()=>{
+  const detail=investigationDetail();if(!detail)return;
+  const url=URL.createObjectURL(new Blob([JSON.stringify({schemaVersion:1,type:"rfcat-spectrum-investigation",...detail},null,2)],{type:"application/json"}));
+  const a=document.createElement("a");a.href=url;a.download="rfcat-investigation.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ });
+ document.addEventListener("rfcat:investigation-saved",event=>{investigationStatus.textContent=event.detail?.error?"Save failed: "+event.detail.error:"Investigation saved in Capture Library with "+event.detail.captureCount+" captures.";});
  get("spectrum-target").addEventListener("input",render);
  get("spectrum-scale").addEventListener("change",render);
- canvas.addEventListener("mousemove",event=>{if(!plotInfo||!plotInfo.frequencies.length)return;const {data,frequencies,left,pw}=plotInfo;const rect=canvas.getBoundingClientRect(),x=(event.clientX-rect.left)*canvas.width/rect.width;if(x<left||x>left+pw){hoverFrequency=null;get("spectrum-chart-hover").textContent="Hover over the frequency chart to inspect average, peak, baseline and rise.";render();return;}const i=Math.max(0,Math.min(frequencies.length-1,Math.round((x-left)/pw*(frequencies.length-1))));const hz=frequencies[i];if(hz===hoverFrequency)return;hoverFrequency=hz;const row=data.find(r=>r.frequencyHz===hz),base=baseline.find(r=>r.frequencyHz===hz);get("spectrum-chart-hover").textContent=(hz/1e6).toFixed(3)+" MHz · "+(row?"avg "+row.averageDbm.toFixed(1)+" dBm · peak "+row.peakDbm.toFixed(1)+" dBm · ":"")+(base?"baseline "+base.averageDbm.toFixed(1)+" dBm · ":"")+(row?.deltaDb!==null&&row?.deltaDb!==undefined?"rise "+row.deltaDb.toFixed(1)+" dB":"no baseline comparison");render();});
+ canvas.addEventListener("mousemove",event=>{if(!plotInfo||!plotInfo.frequencies.length)return;const {data,frequencies,left,pw}=plotInfo;const rect=canvas.getBoundingClientRect(),x=(event.clientX-rect.left)*canvas.width/rect.width;if(x<left||x>left+pw){hoverFrequency=null;get("spectrum-chart-hover").textContent="Hover over the frequency chart to inspect average, peak, baseline and rise.";render();return;}const i=Math.max(0,Math.min(frequencies.length-1,Math.round((x-left)/pw*(frequencies.length-1))));const hz=frequencies[i];if(hz===hoverFrequency)return;hoverFrequency=hz;selectedFrequency=hz;const row=data.find(r=>r.frequencyHz===hz),base=baseline.find(r=>r.frequencyHz===hz);get("spectrum-chart-hover").textContent=(hz/1e6).toFixed(3)+" MHz · "+(row?"avg "+row.averageDbm.toFixed(1)+" dBm · peak "+row.peakDbm.toFixed(1)+" dBm · ":"")+(base?"baseline "+base.averageDbm.toFixed(1)+" dBm · ":"")+(row?.deltaDb!==null&&row?.deltaDb!==undefined?"rise "+row.deltaDb.toFixed(1)+" dB":"no baseline comparison");render();});
  canvas.addEventListener("mouseleave",()=>{hoverFrequency=null;get("spectrum-chart-hover").textContent="Hover over the frequency chart to inspect average, peak, baseline and rise.";render();});
  get("spectrum-waterfall").addEventListener("mousemove",event=>{if(!waterfallInfo)return;const {frequencies,sweeps,left,top,pw,ph}=waterfallInfo;const rect=event.currentTarget.getBoundingClientRect();const x=(event.clientX-rect.left)*event.currentTarget.width/rect.width-left,y=(event.clientY-rect.top)*event.currentTarget.height/rect.height-top;if(x<0||x>=pw||y<0||y>=ph)return;const col=Math.floor(x/pw*frequencies.length),row=Math.floor(y/ph*sweeps.length),db=sweeps[row]?.[col];get("spectrum-hover").textContent="Sweep "+(row+1)+"/"+sweeps.length+" · "+(frequencies[col]/1e6).toFixed(3)+" MHz · "+(db===null?"not sampled":db.toFixed(1)+" dBm");});
  get("spectrum-waterfall").addEventListener("mouseleave",()=>get("spectrum-hover").textContent="Hover over a cell for frequency, sweep and RSSI.");
@@ -115,7 +158,7 @@ export function initSpectrumExplorer({radio,isBusy=()=>false}){
   if(isBusy()){status.textContent="Stop active receiving or chat before scanning.";return;}
   const current=settings();
   if(!captureBaseline&&baseline.length&&scanKey(current)!==scanKey(baselineSettings)){status.textContent="Scan range/step differs from baseline. Recapture baseline or clear it first.";return;}
-  lastSettings=current;controller=new AbortController();start.disabled=true;baseButton.disabled=true;stop.disabled=false;samples=[];render();get("spectrum-export").disabled=true;
+  lastSettings=current;controller=new AbortController();start.disabled=true;baseButton.disabled=true;stop.disabled=false;samples=[];selectedFrequency=null;render();get("spectrum-export").disabled=true;
   try{
    const result=await sweepSpectrum(radio,{...current,signal:controller.signal,onSample:(sample,count,total)=>{samples.push(sample);status.textContent=(captureBaseline?"Capturing baseline ":"Scanning signal ")+count+"/"+total;const now=performance.now();if(now-lastRenderAt>100||count===total){lastRenderAt=now;render();}}});
    if(captureBaseline){if(!result.cancelled&&samples.length){baseline=summarizeSpectrum(samples);baselineSettings=current;get("spectrum-clear-baseline").disabled=false;status.textContent="Baseline captured: "+baseline.length+" frequencies. Transmit and scan signal.";samples=[];}else status.textContent="Baseline capture cancelled; previous baseline retained.";}
