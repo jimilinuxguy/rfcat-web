@@ -35,3 +35,14 @@ test("RF dashboard shows target marker control, legend and hover hint",async({pa
  const a=await plot.boundingBox(),d=await delta.boundingBox();
  expect(d.y).toBeLessThan(a.y);
 });
+
+test("RSSI scale selector and chart hover diagnostics render",async({page})=>{
+ await page.goto("/");await page.locator('[data-workspace-tab="analyze"]').click();
+ const panel=page.locator("#spectrum-explorer");await panel.locator("summary").click();
+ const scale=page.locator("#spectrum-scale");
+ await expect(scale).toHaveValue("auto");
+ await scale.selectOption("fixed");
+ await expect(scale).toHaveValue("fixed");
+ await expect(page.locator("#spectrum-chart-hover")).toContainText("Hover over");
+ await expect(page.locator("#spectrum-plot")).toBeVisible();
+});
