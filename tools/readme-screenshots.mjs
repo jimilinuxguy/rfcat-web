@@ -55,6 +55,7 @@ try{
  await page.locator("#intelligence-results").getByText("candidate counter",{exact:false}).waitFor();
  await page.locator("#signal-intelligence").screenshot({path:"docs/images/signal-intelligence.png",animations:"disabled"});
  console.log("Wrote docs/images/signal-intelligence.png");
+ await page.locator('[data-workspace-tab="tools"]').click();
  const details=page.locator("#firmware-manager");
  if(!(await details.getAttribute("open")))await details.locator("summary").click();
  await page.locator("#firmware-manager").screenshot({path:"docs/images/firmware-manager.png",animations:"disabled"});
