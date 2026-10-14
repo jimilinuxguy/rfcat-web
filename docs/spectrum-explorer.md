@@ -6,11 +6,11 @@ This is a **stepped-frequency CC1111 RSSI survey**, not an SDR FFT or calibrated
 
 ## Usage
 
-Connect YARD Stick One, stop receiver listening / Momentum chat / other scans, expand Spectrum Explorer, select start/stop MHz, 10–1000 kHz step and 20–2000 ms dwell, then Start sweep. The scanner supports CC1111 bands 300–348, 387–464, and 779–928 MHz, with a maximum of 600 points per sweep. It does not cross unsupported gaps. Stop cancels the current sweep; hardware commands already in progress must finish first.
+Connect YARD Stick One, stop receiver listening / Momentum chat / other scans, expand Spectrum Explorer, select start/stop MHz, 10–1000 kHz step, 20–2000 ms dwell and 1–100 passes, then Start sweep. The scanner supports CC1111 bands 300–348, 387–464, and 779–928 MHz, with a maximum of 600 points per sweep. It does not cross unsupported gaps. Stop requests cancellation and immediately displays a stopping status; hardware commands and radio configuration restoration still must finish before controls unlock.
 
 The chart shows RSSI samples and highlights measurements above the configurable threshold. Click the chart to populate the radio frequency form, then apply radio configuration before receiving. Export CSV writes frequency (Hz), estimated RSSI (dBm) and timestamp.
 
-The CC1111 RSSI register uses signed half-dB steps with a nominal -74 dB offset; displayed dBm values are estimates, **not calibrated absolute power**. Peaks indicate activity or interference, not decoded transmissions or confirmed modulation. This version captures a single sweep, not a scrolling waterfall or continuous monitor.
+The CC1111 RSSI register uses signed half-dB steps with a nominal -74 dB offset; displayed dBm values are estimates, **not calibrated absolute power**. Peaks indicate activity or interference, not decoded transmissions or confirmed modulation. This version supports repeated sweeps with peak hold (maximum observed RSSI at each frequency), not a scrolling waterfall or continuous monitor. For a short Flipper transmission, try 433.820–434.020 MHz, 50 kHz step, 100 ms dwell and 10 passes. Peak hold helps catch intermittent signals but does not guarantee detection.
 
 ## Safety and restoration
 
