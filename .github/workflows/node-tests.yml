@@ -1,14 +1,32 @@
-name: Node tests
+name: Node and browser tests
 on:
   push:
-    branches: [main, feature/momentum-subghz-chat]
+    branches: [main]
   pull_request:
+
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm test
+      # No package-lock.json is committed yet; npm ci and setup-node npm caching require one.
+      - name: Install dependencies
+        run: npm install
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run Node and browser tests
+        run: npm run verify
+      - name: Upload Playwright failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
