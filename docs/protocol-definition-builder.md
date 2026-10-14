@@ -2,6 +2,10 @@
 
 Open **Analyze → Protocol Definition Builder**. This hardware-free workbench converts packet-field hypotheses into reusable, versioned, declarative protocol definitions. It does **not** register a transmitter or reconfigure RF hardware.
 
+## Visual field editor (M14)
+
+Select an offset in the byte map, then enter the field name, width and type. Assigned offsets are underlined. Choose an existing field from the dropdown to edit or remove it. Additional controls configure endian order, bit offsets and widths, enum labels, and checksum algorithms and ranges. The editor updates the JSON draft; use **Validate and save** to persist. Overlapping and invalid fields are rejected. Advanced JSON editing remains available and refreshes the map.
+
 ## Workflow
 
 1. Enter a unique definition ID, display name, expected packet length, optional hex prefix (the prefix must be present in the captured packet bytes), optional frequency in Hz, and a descriptive modulation label.
