@@ -17,3 +17,9 @@ test("disclosure preferences use dedicated storage key",()=>{
  assert.match(js,/rfcat\.receiver\.disclosure\.v1/);
  assert.match(js,/addEventListener\("toggle"/);
 });
+
+test("offline replay mounts beside, not inside, the collapsed library",()=>{
+ const source=readFileSync(new URL("../js/ui/replay-controller.js",import.meta.url),"utf8");
+ assert.match(source,/library\.before\(replayHost\)/);
+ assert.doesNotMatch(source,/\$\("session-save"\)\.parentElement\?\.append\(replayHost\);\s*let replayFrames/);
+});
