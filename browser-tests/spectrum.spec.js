@@ -46,3 +46,22 @@ test("RSSI scale selector and chart hover diagnostics render",async({page})=>{
  await expect(page.locator("#spectrum-chart-hover")).toContainText("Hover over");
  await expect(page.locator("#spectrum-plot")).toBeVisible();
 });
+
+test("investigation controls are available without automatically starting RF",async({page})=>{
+ await page.goto("/");
+ await page.locator('[data-workspace-tab="analyze"]').click();
+ await page.locator("#spectrum-explorer summary").click();
+ await expect(page.locator("#spectrum-investigate")).toBeDisabled();
+ await expect(page.locator("#spectrum-investigation")).toBeHidden();
+ await expect(page.locator("#spectrum-investigate-save")).toHaveCount(1);
+});
+test("investigation save persists a separate capture-library session",async({page})=>{
+ await page.goto("/");
+ await page.evaluate(()=>document.dispatchEvent(new CustomEvent("rfcat:investigation-start",{detail:{frequencyHz:433920000}})));
+ const saved=page.evaluate(()=>new Promise(resolve=>document.addEventListener("rfcat:investigation-saved",event=>resolve(event.detail),{once:true})));
+ await page.evaluate(()=>document.dispatchEvent(new CustomEvent("rfcat:investigation-save",{detail:{frequencyHz:433920000,selectedAt:new Date().toISOString(),samples:[],summary:[],baseline:[]}})));
+ const result=await saved;
+ expect(result.error).toBeUndefined();
+ expect(result.captureCount).toBe(0);
+ await expect(page.locator("#session-select option")).toContainText(["RF investigation 433.920 MHz"]);
+});
