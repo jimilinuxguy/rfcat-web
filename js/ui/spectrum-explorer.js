@@ -17,7 +17,7 @@ export function initSpectrumExplorer({radio,isBusy=()=>false}){
  host.before(panel);
  const get=id=>panel.querySelector("#"+id);
  const start=get("spectrum-start-button"),baseButton=get("spectrum-baseline"),stop=get("spectrum-stop-button"),status=get("spectrum-status"),canvas=get("spectrum-plot"),ctx=canvas.getContext("2d");
- let controller=null,samples=[],baseline=[],baselineSettings=null,lastSettings=null,view="rssi",lastRenderAt=0,waterfallInfo=null,plotInfo=null,hoverFrequency=null,investigation=null;
+ let controller=null,samples=[],baseline=[],baselineSettings=null,lastSettings=null,view="rssi",lastRenderAt=0,waterfallInfo=null,plotInfo=null,hoverFrequency=null,selectedFrequency=null,investigation=null;
  const settings=()=>({startMHz:Number(get("spectrum-start").value),stopMHz:Number(get("spectrum-stop").value),stepKHz:Number(get("spectrum-step").value),dwellMs:Number(get("spectrum-dwell").value),passes:Number(get("spectrum-passes").value)});
  const scanKey=s=>[s.startMHz,s.stopMHz,s.stepKHz].join("/");
  const rows=()=>compareSpectrum(summarizeSpectrum(samples),baseline);
@@ -94,7 +94,7 @@ export function initSpectrumExplorer({radio,isBusy=()=>false}){
  get("spectrum-investigate").addEventListener("click",()=>{
   if(controller)return;
   const data=rows();if(!data.length)return;
-  const selected=hoverFrequency===null?null:data.find(r=>r.frequencyHz===hoverFrequency);
+  const selected=selectedFrequency===null?null:data.find(r=>r.frequencyHz===selectedFrequency);
   const strongest=[...data].sort((a,b)=>baseline.length?(b.deltaDb??-Infinity)-(a.deltaDb??-Infinity):b.peakDbm-a.peakDbm)[0];
   const point=selected||strongest;
   investigation={frequencyHz:point.frequencyHz,selectedAt:new Date().toISOString(),averageDbm:point.averageDbm,peakDbm:point.peakDbm,baselineDbm:point.baselineDbm??null,deltaDb:point.deltaDb??null,scanSettings:{...lastSettings},baseline:baseline.map(r=>({...r})),samples:samples.map(r=>({...r})),summary:data.map(r=>({...r}))};
@@ -132,7 +132,7 @@ export function initSpectrumExplorer({radio,isBusy=()=>false}){
  document.addEventListener("rfcat:investigation-saved",event=>{investigationStatus.textContent=event.detail?.error?"Save failed: "+event.detail.error:"Investigation saved in Capture Library with "+event.detail.captureCount+" captures.";});
  get("spectrum-target").addEventListener("input",render);
  get("spectrum-scale").addEventListener("change",render);
- canvas.addEventListener("mousemove",event=>{if(!plotInfo||!plotInfo.frequencies.length)return;const {data,frequencies,left,pw}=plotInfo;const rect=canvas.getBoundingClientRect(),x=(event.clientX-rect.left)*canvas.width/rect.width;if(x<left||x>left+pw){hoverFrequency=null;get("spectrum-chart-hover").textContent="Hover over the frequency chart to inspect average, peak, baseline and rise.";render();return;}const i=Math.max(0,Math.min(frequencies.length-1,Math.round((x-left)/pw*(frequencies.length-1))));const hz=frequencies[i];if(hz===hoverFrequency)return;hoverFrequency=hz;const row=data.find(r=>r.frequencyHz===hz),base=baseline.find(r=>r.frequencyHz===hz);get("spectrum-chart-hover").textContent=(hz/1e6).toFixed(3)+" MHz · "+(row?"avg "+row.averageDbm.toFixed(1)+" dBm · peak "+row.peakDbm.toFixed(1)+" dBm · ":"")+(base?"baseline "+base.averageDbm.toFixed(1)+" dBm · ":"")+(row?.deltaDb!==null&&row?.deltaDb!==undefined?"rise "+row.deltaDb.toFixed(1)+" dB":"no baseline comparison");render();});
+ canvas.addEventListener("mousemove",event=>{if(!plotInfo||!plotInfo.frequencies.length)return;const {data,frequencies,left,pw}=plotInfo;const rect=canvas.getBoundingClientRect(),x=(event.clientX-rect.left)*canvas.width/rect.width;if(x<left||x>left+pw){hoverFrequency=null;get("spectrum-chart-hover").textContent="Hover over the frequency chart to inspect average, peak, baseline and rise.";render();return;}const i=Math.max(0,Math.min(frequencies.length-1,Math.round((x-left)/pw*(frequencies.length-1))));const hz=frequencies[i];if(hz===hoverFrequency)return;hoverFrequency=hz;selectedFrequency=hz;const row=data.find(r=>r.frequencyHz===hz),base=baseline.find(r=>r.frequencyHz===hz);get("spectrum-chart-hover").textContent=(hz/1e6).toFixed(3)+" MHz · "+(row?"avg "+row.averageDbm.toFixed(1)+" dBm · peak "+row.peakDbm.toFixed(1)+" dBm · ":"")+(base?"baseline "+base.averageDbm.toFixed(1)+" dBm · ":"")+(row?.deltaDb!==null&&row?.deltaDb!==undefined?"rise "+row.deltaDb.toFixed(1)+" dB":"no baseline comparison");render();});
  canvas.addEventListener("mouseleave",()=>{hoverFrequency=null;get("spectrum-chart-hover").textContent="Hover over the frequency chart to inspect average, peak, baseline and rise.";render();});
  get("spectrum-waterfall").addEventListener("mousemove",event=>{if(!waterfallInfo)return;const {frequencies,sweeps,left,top,pw,ph}=waterfallInfo;const rect=event.currentTarget.getBoundingClientRect();const x=(event.clientX-rect.left)*event.currentTarget.width/rect.width-left,y=(event.clientY-rect.top)*event.currentTarget.height/rect.height-top;if(x<0||x>=pw||y<0||y>=ph)return;const col=Math.floor(x/pw*frequencies.length),row=Math.floor(y/ph*sweeps.length),db=sweeps[row]?.[col];get("spectrum-hover").textContent="Sweep "+(row+1)+"/"+sweeps.length+" · "+(frequencies[col]/1e6).toFixed(3)+" MHz · "+(db===null?"not sampled":db.toFixed(1)+" dBm");});
  get("spectrum-waterfall").addEventListener("mouseleave",()=>get("spectrum-hover").textContent="Hover over a cell for frequency, sweep and RSSI.");
@@ -158,7 +158,7 @@ export function initSpectrumExplorer({radio,isBusy=()=>false}){
   if(isBusy()){status.textContent="Stop active receiving or chat before scanning.";return;}
   const current=settings();
   if(!captureBaseline&&baseline.length&&scanKey(current)!==scanKey(baselineSettings)){status.textContent="Scan range/step differs from baseline. Recapture baseline or clear it first.";return;}
-  lastSettings=current;controller=new AbortController();start.disabled=true;baseButton.disabled=true;stop.disabled=false;samples=[];render();get("spectrum-export").disabled=true;
+  lastSettings=current;controller=new AbortController();start.disabled=true;baseButton.disabled=true;stop.disabled=false;samples=[];selectedFrequency=null;render();get("spectrum-export").disabled=true;
   try{
    const result=await sweepSpectrum(radio,{...current,signal:controller.signal,onSample:(sample,count,total)=>{samples.push(sample);status.textContent=(captureBaseline?"Capturing baseline ":"Scanning signal ")+count+"/"+total;const now=performance.now();if(now-lastRenderAt>100||count===total){lastRenderAt=now;render();}}});
    if(captureBaseline){if(!result.cancelled&&samples.length){baseline=summarizeSpectrum(samples);baselineSettings=current;get("spectrum-clear-baseline").disabled=false;status.textContent="Baseline captured: "+baseline.length+" frequencies. Transmit and scan signal.";samples=[];}else status.textContent="Baseline capture cancelled; previous baseline retained.";}
