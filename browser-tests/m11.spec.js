@@ -31,6 +31,7 @@ test("M11 offline replay: timeline, stepping and bounds",async({page})=>{
  await page.locator("#replay-timeline .replay-marker").nth(2).click();
  await expect(page.locator("#replay-frame")).toContainText("010203");
  await expect(page.locator("#replay-next")).toBeDisabled();
+ await page.locator(".capture-library > summary").click();
  await page.locator("#session-new").click();
  await expect(page.locator("#replay-frame")).toBeEmpty();
  await expect(page.locator("#replay-play")).toBeDisabled();
@@ -57,6 +58,7 @@ test("M11 saved session comparison reads persisted hex and leaves captures intac
  const errors=await setup(page);
  await prepare(page);
  page.on("dialog",dialog=>dialog.accept("M11 reference"));
+ await page.locator(".capture-library > summary").click();
  await page.locator("#session-save").click();
  await expect(page.locator("#session-select option")).toHaveCount(1);
  await page.locator("#replay-load").click();
