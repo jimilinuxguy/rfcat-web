@@ -129,3 +129,9 @@ Open **? Help → Advanced analysis → Spectrum Explorer walkthrough**. The tou
 ## RF signal discovery wizard
 
 The **RF signal discovery: spectrum to capture** tutorial in **? Help → Advanced analysis** highlights the investigation launcher, receiver preset scan, receiver capture handoff, session saving and JSON export. It never starts scanning, receiving or transmitting. A completed tutorial does not certify that modulation or protocol identification succeeded.
+
+## Offline Signal Intelligence wizard
+
+Select **? Help → Advanced analysis → Offline signal fingerprinting**, or restart the welcome wizard and choose the same goal. The five-step tour opens the Analyze workspace, selects a saved Capture Library session, explains packet comparison, attaches the report and exports JSON. Each step highlights a real control without clicking it, changing capture bytes, or operating the radio.
+
+For a hardware-free acceptance check, save a Capture Library session containing `AA0100FF`, `AA0101FF`, `AA0102FF`, and a repeated `AA0100FF`. Refresh the Signal Intelligence session list, select the session, and click **Analyze packets**. Expect four valid captures, three unique payloads, a four-byte length group, and variable offset 2 (zero-based). Attach the report and verify it persists in IndexedDB, then export JSON. Run `npx playwright test browser-tests/signal-intelligence.spec.js` and the full `npm run verify` suite. See [Signal Intelligence](../signal-intelligence.md) for limitations and interpretation.
