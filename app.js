@@ -1,4 +1,5 @@
 import {initSpectrumExplorer} from "./js/ui/spectrum-explorer.js";
+import {createInvestigationEvidence} from "./js/rx/investigation-evidence.js";
 import {initFirmwareManager} from "./js/ui/firmware-manager.js";
 import {initReplayController} from "./js/ui/replay-controller.js";
 import { MomentumCrypto, momentumKeyFromPassword, momentumKeyFromHex } from "./js/chat/momentum-crypto.js";
@@ -1300,8 +1301,8 @@ async function refreshSessionList(selectId = activeSessionId) {
     $("session-status").textContent = activeSessionId ? "Saved" : "Unsaved";
 }
 
-let investigationCaptureStart=0;
-document.addEventListener("rfcat:investigation-start",()=>{investigationCaptureStart=rxCaptures.length;});
+const investigationEvidence=createInvestigationEvidence();
+document.addEventListener("rfcat:investigation-start",()=>investigationEvidence.start());
 document.addEventListener("rfcat:investigation-save",async event=>{
  const detail=event.detail;
  const finish=result=>document.dispatchEvent(new CustomEvent("rfcat:investigation-saved",{detail:result}));
@@ -1309,9 +1310,11 @@ document.addEventListener("rfcat:investigation-save",async event=>{
   if(!detail||!Number.isFinite(detail.frequencyHz))throw Error("No selected investigation");
   const name="RF investigation "+(detail.frequencyHz/1e6).toFixed(3)+" MHz";
   const snapshot=currentSessionSnapshot(name,crypto.randomUUID());
-  snapshot.captures=sessionCaptureData().slice(investigationCaptureStart);
+  const evidence=investigationEvidence.snapshot();
+  snapshot.captures=evidence.captures;
+  snapshot.investigationDroppedCaptures=evidence.dropped;
   snapshot.investigation={schemaVersion:1,type:"rfcat-spectrum-investigation",...detail};
-  snapshot.notes="Spectrum investigation at "+(detail.frequencyHz/1e6).toFixed(3)+" MHz; "+snapshot.captures.length+" receiver captures after investigation started. Radio preset findings are not modulation proof.";
+  snapshot.notes="Spectrum investigation at "+(detail.frequencyHz/1e6).toFixed(3)+" MHz; "+snapshot.captures.length+" receiver captures after investigation started. Radio preset findings are not modulation proof."+(evidence.dropped?" "+evidence.dropped+" additional packets omitted by evidence limit.":"");
   await saveCaptureSession(snapshot);
   await refreshSessionList(snapshot.id);
   finish({captureCount:snapshot.captures.length,id:snapshot.id});
@@ -2123,6 +2126,7 @@ d.addEventListener("packet", async (e) => {
         syncWord: $("sync").value,
         decodeMode,
     };
+    investigationEvidence.add(capture);
     renderRxCapture(capture);
 
     log(`RF RX ${b.length} bytes${decoded?.protocol ? ` · ${decoded.protocol.name}` : ""}: ${hex(b)}`);
