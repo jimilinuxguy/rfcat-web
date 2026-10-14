@@ -1,6 +1,7 @@
 import {validateProtocolDefinition,decodeProtocolPacket,validateProtocolCaptures,definitionFromAnnotations} from "../rx/protocol-definitions.js";
 import {listProtocolDefinitions,getProtocolDefinition,saveProtocolDefinition,deleteProtocolDefinition,importProtocolDefinition} from "../storage/protocol-definition-store.js";
 import {listCaptureSessions,getCaptureSession} from "../storage/capture-session-store.js";
+import {initVisualFieldEditor,parseFieldDraft} from "./visual-field-editor.js";
 let liveDefinitions=[];
 export function decodeCustomLiveCapture(bytes){if(!bytes)return [];const hex=Array.from(bytes,b=>b.toString(16).padStart(2,"0")).join("");return liveDefinitions.flatMap(def=>{try{const decoded=decodeProtocolPacket(def,hex);return decoded.matched?[decoded]:[];}catch{return [];}});}
 export function initProtocolDefinitionBuilder(){
@@ -20,9 +21,10 @@ export function initProtocolDefinitionBuilder(){
  <pre id="pd-output" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre><p id="pd-status" role="status"></p></div>`;
  host.after(panel);
  const el=id=>panel.querySelector("#"+id);let pending=null;
+ const visual=initVisualFieldEditor(panel,{readFields:()=>parseFieldDraft(el("pd-fields").value),writeFields:fields=>{el("pd-fields").value=JSON.stringify(fields,null,2);},readPacketLength:()=>Number(el("pd-length").value),setStatus:message=>setStatus(message)});
  function setStatus(message){el("pd-status").textContent=message;}
  function form(){return validateProtocolDefinition({schemaVersion:1,id:el("pd-id").value,name:el("pd-name").value,packetLength:Number(el("pd-length").value),sync:el("pd-sync").value.replace(/\s+/g,""),frequencyHz:el("pd-frequency").value?Number(el("pd-frequency").value):null,modulation:el("pd-modulation").value,fields:JSON.parse(el("pd-fields").value)});}
- function show(def){el("pd-id").value=def.id;el("pd-name").value=def.name;el("pd-length").value=String(def.packetLength);el("pd-sync").value=def.sync;el("pd-frequency").value=def.frequencyHz??"";el("pd-modulation").value=def.modulation;el("pd-fields").value=JSON.stringify(def.fields,null,2);}
+ function show(def){el("pd-id").value=def.id;el("pd-name").value=def.name;el("pd-length").value=String(def.packetLength);el("pd-sync").value=def.sync;el("pd-frequency").value=def.frequencyHz??"";el("pd-modulation").value=def.modulation;el("pd-fields").value=JSON.stringify(def.fields,null,2);visual.render();}
  async function refresh(){const selected=el("pd-library").value;const definitions=await listProtocolDefinitions();liveDefinitions=definitions;el("pd-library").replaceChildren(new Option("New definition",""),...definitions.map(d=>new Option(d.name+" ("+d.id+")",d.id)));if(definitions.some(d=>d.id===selected))el("pd-library").value=selected;}
  async function sessions(){const previous=el("pd-session").value;const items=await listCaptureSessions();el("pd-session").replaceChildren(new Option("Select capture session",""),...items.map(s=>new Option(s.name,s.id)));if(items.some(s=>s.id===previous))el("pd-session").value=previous;await updateCohorts();}
  async function updateCohorts(){pending=null;el("pd-confirm").disabled=true;el("pd-preview").textContent="";const session=await getCaptureSession(el("pd-session").value);const lengths=Object.keys(session?.fieldAnnotations||{}).filter(k=>Number.isInteger(Number(k))&&Number(k)>0).sort((a,b)=>Number(a)-Number(b));el("pd-cohort").replaceChildren(...lengths.map(n=>new Option(n+" bytes",n)));}
