@@ -4,7 +4,7 @@ Technical reference, protocol notes, and validation guidance for the [RFCat Web 
 
 ## Start here
 
-- [Sub-GHz Spectrum Explorer](spectrum-explorer.md) — stepped RSSI surveys, peak detection, CSV export, operating limits and validation.
+- [Sub-GHz Spectrum Explorer](spectrum-explorer.md) — stepped RSSI surveys, auto/fixed chart scaling, hover inspection, waterfall, baseline comparison, guided wizard, CSV export and validation.
 
 | Guide | Covers |
 | --- | --- |
