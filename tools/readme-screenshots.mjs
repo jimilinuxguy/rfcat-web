@@ -55,6 +55,13 @@ try{
  await page.locator("#intelligence-results").getByText("candidate counter",{exact:false}).waitFor();
  await page.locator("#signal-intelligence").screenshot({path:"docs/images/signal-intelligence.png",animations:"disabled"});
  console.log("Wrote docs/images/signal-intelligence.png");
+ // Demonstrate tentative packet field annotations on the same synthetic session.
+ await page.locator("#field-packet-grid").getByRole("button",{name:"Capture 0 byte 1: 00"}).click();
+ await page.locator("#field-name").fill("sequence");
+ await page.locator("#field-kind").selectOption("counter");
+ await page.locator("#field-add").click();
+ await page.locator("#packet-field-editor").screenshot({path:"docs/images/packet-field-editor.png",animations:"disabled"});
+ console.log("Wrote docs/images/packet-field-editor.png");
  await page.locator('[data-workspace-tab="tools"]').click();
  const details=page.locator("#firmware-manager");
  if(!(await details.getAttribute("open")))await details.locator("summary").click();
