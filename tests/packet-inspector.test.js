@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {inspectBytes,inspectRows,inspectBits,inspectSelection,inspectFields,inspectComparison,inspectAnnotation,inspectReport} from "../js/rx/packet-inspector.js";
+import {inspectBytes,inspectRows,inspectBits,inspectSelection,inspectFields,inspectComparison,inspectAnnotation,inspectReport,inspectBitRange,overlappingFields} from "../js/rx/packet-inspector.js";
 test("hex, ASCII, rows and bit order are consistent",()=>{
  const b=inspectBytes({hex:"41017F"});
  assert.equal(inspectRows(b,8)[0].ascii,"A..");
@@ -31,4 +31,20 @@ test("annotations and report do not mutate packet",()=>{
  assert.equal(inspectReport(packet,[annotation]).observed.hex,"41 42");
  assert.equal(JSON.stringify(packet),before);
  assert.throws(()=>inspectAnnotation(inspectBytes(packet),{start:2,width:1,label:"bad"}));
+});
+
+test("canonical bit ranges and overlapping field mapping",()=>{
+ const bytes=inspectBytes("A5F0");
+ assert.deepEqual(inspectBitRange(bytes,4,8),{startBit:4,bitLength:8,startByte:0,endByte:1,binary:"01011111",hex:"0x5F"});
+ const fields=[{name:"first",startBit:0,widthBits:8},{name:"second",startBit:6,widthBits:4},{name:"third",startBit:12,widthBits:4}];
+ assert.deepEqual(overlappingFields(fields,7,2).map(f=>f.name),["first","second"]);
+ assert.throws(()=>inspectBitRange(bytes,15,2));
+ assert.throws(()=>inspectBitRange(bytes,0,0));
+});
+test("live capture bytes are copied before inspection",()=>{
+ const capture={bytes:new Uint8Array([0xAA,0xBB])};
+ const bytes=inspectBytes(capture);
+ bytes[0]=0;
+ assert.equal(capture.bytes[0],0xAA);
+ assert.equal(inspectReport(capture).observed.hex,"AA BB");
 });
