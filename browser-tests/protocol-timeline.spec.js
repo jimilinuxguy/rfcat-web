@@ -1,0 +1,20 @@
+import {test,expect} from "@playwright/test";
+test("M18 timeline analyzes saved capture sequences",async({page})=>{
+ await page.goto("/");
+ await page.evaluate(async()=>{const {saveCaptureSession}=await import("./js/storage/capture-session-store.js");await saveCaptureSession({id:"m18-fixture",name:"M18 fixture",captures:[{hex:"AA01AB"},{hex:"AA02A8"},{hex:"AA03A9"},{hex:"AA03A9"}]});});
+ await page.locator('[data-workspace-tab="analyze"]').click();
+ await page.locator("#protocol-definition-builder summary").click();
+ await page.locator("#pd-id").fill("m18_demo");
+ await page.locator("#pd-name").fill("M18 demo");
+ await page.locator("#pd-length").fill("3");
+ await page.locator("#pd-sync").fill("AA");
+ await page.locator("#pd-fields").fill(JSON.stringify([{name:"counter",start:1,width:1,type:"uint"}]));
+ await page.locator("#pd-tl-refresh").click();
+ await page.locator("#pd-tl-session").selectOption("m18-fixture");
+ await page.locator("#pd-tl-run").click();
+ await expect(page.locator("#pd-tl-summary")).toContainText("4/4 matched");
+ await expect(page.locator("#pd-tl-summary")).toContainText("1 adjacent repeated packets");
+ await expect(page.locator("#pd-tl-table")).toContainText("counter");
+ await expect(page.locator("#pd-tl-events tr")).toHaveCount(5);
+ await expect(page.locator("#pd-status")).toContainText("Timeline analysis ready");
+});
