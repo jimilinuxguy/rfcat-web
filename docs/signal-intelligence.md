@@ -2,6 +2,10 @@
 
 Signal Intelligence lives in the **Analyze** workspace. It reads an existing **Capture Library** session, groups identical demodulated packet payloads, summarizes frame lengths, and marks byte offsets as fixed or variable within each frame-length cohort. It is intentionally read-only with respect to radio hardware.
 
+![Synthetic offline Signal Intelligence candidate field inference](images/signal-intelligence.png)
+
+*Generated from synthetic packet captures; no RF hardware was used.*
+
 ## Workflow
 
 1. Capture packets or import them into a Capture Library session and save it.
