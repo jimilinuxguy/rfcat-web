@@ -8,7 +8,7 @@ test("M21 investigation persists across reload and M22 diagrams/graphs show evid
   await saveProtocolDefinition({schemaVersion:1,id:"m21_proto",name:"M21 protocol",packetLength:3,sync:"AA",fields:[{name:"mode",type:"uint",start:1,width:1}]});
  });
  await page.locator('[data-workspace-tab="analyze"]').click();
- await page.locator("#protocol-definition-builder summary").click();
+ await page.locator("#protocol-definition-builder > summary").click();
  await page.locator("#pd-inv-refresh").click();
  await page.locator("#pd-inv-name").fill("M21 investigation");
  await page.locator("#pd-inv-session").selectOption("m21-capture");
@@ -28,7 +28,7 @@ test("M21 investigation persists across reload and M22 diagrams/graphs show evid
  await expect(page.locator("#pd-inv-status")).toContainText("saved locally");
  await page.reload();
  await page.locator('[data-workspace-tab="analyze"]').click();
- await page.locator("#protocol-definition-builder summary").click();
+ await page.locator("#protocol-definition-builder > summary").click();
  await page.locator("#pd-inv-refresh").click();
  await page.locator("#pd-inv-library").selectOption({label:"M21 investigation"});
  await page.locator("#pd-inv-load").click();
