@@ -17,7 +17,7 @@ export function initSpectrumExplorer({radio,isBusy=()=>false}){
  host.before(panel);
  const get=id=>panel.querySelector("#"+id);
  const start=get("spectrum-start-button"),baseButton=get("spectrum-baseline"),stop=get("spectrum-stop-button"),status=get("spectrum-status"),canvas=get("spectrum-plot"),ctx=canvas.getContext("2d");
- let controller=null,samples=[],baseline=[],baselineSettings=null,lastSettings=null,view="rssi";
+ let controller=null,samples=[],baseline=[],baselineSettings=null,lastSettings=null,view="rssi",lastRenderAt=0;
  const settings=()=>({startMHz:Number(get("spectrum-start").value),stopMHz:Number(get("spectrum-stop").value),stepKHz:Number(get("spectrum-step").value),dwellMs:Number(get("spectrum-dwell").value),passes:Number(get("spectrum-passes").value)});
  const scanKey=s=>[s.startMHz,s.stopMHz,s.stepKHz].join("/");
  const rows=()=>compareSpectrum(summarizeSpectrum(samples),baseline);
@@ -97,7 +97,7 @@ export function initSpectrumExplorer({radio,isBusy=()=>false}){
   if(!captureBaseline&&baseline.length&&scanKey(current)!==scanKey(baselineSettings)){status.textContent="Scan range/step differs from baseline. Recapture baseline or clear it first.";return;}
   lastSettings=current;controller=new AbortController();start.disabled=true;baseButton.disabled=true;stop.disabled=false;samples=[];render();get("spectrum-export").disabled=true;
   try{
-   const result=await sweepSpectrum(radio,{...current,signal:controller.signal,onSample:(sample,count,total)=>{samples.push(sample);status.textContent=(captureBaseline?"Capturing baseline ":"Scanning signal ")+count+"/"+total;render();}});
+   const result=await sweepSpectrum(radio,{...current,signal:controller.signal,onSample:(sample,count,total)=>{samples.push(sample);status.textContent=(captureBaseline?"Capturing baseline ":"Scanning signal ")+count+"/"+total;const now=performance.now();if(now-lastRenderAt>100||count===total){lastRenderAt=now;render();}}});
    if(captureBaseline){if(!result.cancelled&&samples.length){baseline=summarizeSpectrum(samples);baselineSettings=current;get("spectrum-clear-baseline").disabled=false;status.textContent="Baseline captured: "+baseline.length+" frequencies. Transmit and scan signal.";samples=[];}else status.textContent="Baseline capture cancelled; previous baseline retained.";}
    else{lastSettings=current;status.textContent=result.cancelled?"Scan cancelled; radio configuration restored.":"Scan complete: "+samples.length+" samples; radio left idle.";}
   }catch(e){status.textContent="Scan error: "+e.message;}
