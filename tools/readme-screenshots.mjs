@@ -38,6 +38,23 @@ try{
  await capture("receive","receiver-transmitter.png");
  await capture("transmit","waveform-preview.png");
  await capture("tools","radio-configuration.png");
+
+ // Deterministic offline field-inference screenshot.
+ await page.evaluate(async()=>{
+  const {saveCaptureSession}=await import("./js/storage/capture-session-store.js");
+  const now=new Date().toISOString();
+  await saveCaptureSession({id:"screenshot-inference",name:"Synthetic field inference",
+   createdAt:now,updatedAt:now,
+   captures:[0,1,2,3,4].map(n=>({hex:"AA"+n.toString(16).padStart(2,"0")+"FF"}))});
+ });
+ await page.locator('[data-workspace-tab="analyze"]').click();
+ await page.locator("#signal-intelligence summary").click();
+ await page.locator("#intelligence-refresh").click();
+ await page.locator("#intelligence-session").selectOption("screenshot-inference");
+ await page.locator("#intelligence-analyze").click();
+ await page.locator("#intelligence-results").getByText("candidate counter",{exact:false}).waitFor();
+ await page.locator("#signal-intelligence").screenshot({path:"docs/images/signal-intelligence.png",animations:"disabled"});
+ console.log("Wrote docs/images/signal-intelligence.png");
  const details=page.locator("#firmware-manager");
  if(!(await details.getAttribute("open")))await details.locator("summary").click();
  await page.locator("#firmware-manager").screenshot({path:"docs/images/firmware-manager.png",animations:"disabled"});
