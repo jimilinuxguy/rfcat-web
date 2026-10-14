@@ -3,7 +3,7 @@ test("protocol workflow guides open Help, navigate to Analyze, and highlight dyn
  await page.goto("/");
  const welcome=page.locator("#help-dialog");if(await welcome.isVisible())await page.locator('#help-dialog button:has-text("Skip")').first().click().catch(()=>page.evaluate(()=>document.querySelector("#help-dialog")?.close()));
  await page.locator('[data-workspace-tab="analyze"]').click();
- await page.locator("#protocol-definition-builder summary").click();
+ await page.locator("#protocol-definition-builder > summary").click();
  await page.locator('[data-help-tour="protocol-builder"]').click();
  await expect(page.locator("#help-title")).toContainText("Build a reusable protocol definition");
  await expect(page.locator("#pd-id")).toHaveClass(/help-target/);
