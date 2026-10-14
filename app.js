@@ -1,5 +1,6 @@
 import {initSpectrumExplorer} from "./js/ui/spectrum-explorer.js";
 import {initSignalIntelligence} from "./js/ui/signal-intelligence.js";
+import {initProtocolDefinitionBuilder} from "./js/ui/protocol-definition-builder.js";
 import {createInvestigationEvidence} from "./js/rx/investigation-evidence.js";
 import {initFirmwareManager} from "./js/ui/firmware-manager.js";
 import {initReplayController} from "./js/ui/replay-controller.js";
@@ -34,6 +35,7 @@ import {
 const d = new RFCatUSB();
 initFirmwareManager({radio:d});
 initSignalIntelligence();
+initProtocolDefinitionBuilder();
 initSpectrumExplorer({radio:d,isBusy:()=>listening||momentumChatActive||!!signalScanController});
 let signalScanController=null;
 const signalScanStart=document.getElementById("signal-scan-start");
