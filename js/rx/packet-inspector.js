@@ -3,6 +3,8 @@ import {compareProtocolPackets} from "./protocol-packet-comparison.js";
 import {decodeProtocolPacket,validateProtocolDefinition} from "./protocol-definitions.js";
 
 export function inspectBytes(packet) {
+ if(packet instanceof Uint8Array)return new Uint8Array(packet);
+ if(packet?.bytes instanceof Uint8Array)return new Uint8Array(packet.bytes);
  const value=typeof packet==="string"?packet:packet?.hex??packet?.packetHex;
  if(typeof value!=="string"||!/^(?:[0-9a-f]{2})*$/i.test(value)||value.length>131072)throw Error("Packet must contain complete hexadecimal bytes");
  return parseHex(value);
