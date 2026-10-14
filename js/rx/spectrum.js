@@ -16,7 +16,7 @@ export async function sweepSpectrum(device,{startMHz,stopMHz,stepKHz=100,dwellMs
  const frequencies=scanFrequencies(startMHz,stopMHz,stepKHz);
  if(!Number.isInteger(passes)||passes<1||passes>100)throw Error("Passes must be 1–100");
  const original=await device.config(),results=[];
- const wait=ms=>new Promise(resolve=>{const timer=setTimeout(done,ms);function done(){clearTimeout(timer);signal?.removeEventListener("abort",done);}signal?.addEventListener("abort",done,{once:true});});
+ const wait=ms=>new Promise(resolve=>{let settled=false;const finish=()=>{if(settled)return;settled=true;clearTimeout(timer);signal?.removeEventListener("abort",finish);resolve();};const timer=setTimeout(finish,ms);if(signal?.aborted)finish();else signal?.addEventListener("abort",finish,{once:true});});
  try{
   for(let pass=0;pass<passes&&!signal?.aborted;pass++)for(const hz of frequencies){
    if(signal?.aborted)break;
