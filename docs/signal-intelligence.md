@@ -19,3 +19,28 @@ This initial phase does not yet infer packet field semantics, perform known-prof
 ## Validation
 
 Run `node --test tests/signal-intelligence.test.js`, `npx playwright test browser-tests/signal-intelligence.spec.js`, then `npm run verify`. Verify empty sessions, duplicate packets, malformed payloads, report persistence, session switching and wizard target visibility. No hardware is required for this phase.
+
+## Quick offline demo
+
+No YARD Stick One is needed. Open the browser console on the application origin and run:
+
+```js
+(async () => {
+  const {saveCaptureSession} = await import('./js/storage/capture-session-store.js');
+  const now = new Date().toISOString();
+  await saveCaptureSession({
+    id: 'rf-intelligence-demo', name: 'RF Intelligence Demo',
+    createdAt: now, updatedAt: now,
+    captures: [
+      {hex: 'AA0100FF', protocol: 'Demo'},
+      {hex: 'AA0101FF', protocol: 'Demo'},
+      {hex: 'AA0102FF', protocol: 'Demo'},
+      {hex: 'AA0100FF', protocol: 'Demo'}
+    ]
+  });
+})();
+```
+
+In **Analyze → Signal Intelligence**, click **Refresh sessions**, select **RF Intelligence Demo**, and click **Analyze packets**. Expect four valid captures, three unique payloads, a four-byte cohort, and variable byte offset 2. Use **Attach report to session** to save the analysis, or **Export JSON** to download it. This sample is synthetic and does not establish protocol identity.
+
+The Signal Intelligence panel is independent of the collapsible RF Signal Analyzer. It should remain visible when the analyzer is closed. The Help Center's **Offline signal fingerprinting** walkthrough is also available as a first-run wizard goal.
