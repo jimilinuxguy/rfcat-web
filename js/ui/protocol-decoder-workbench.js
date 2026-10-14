@@ -3,11 +3,10 @@ import {getCaptureSession,listCaptureSessions} from "../storage/capture-session-
 
 export function initProtocolDecoderWorkbench(panel,{getDefinition,setStatus}){
  const section=document.createElement("section");section.id="pd-workbench";
- section.innerHTML=`<h4>Protocol Decoder Workbench (M17)</h4><p>Compare 2–24 captured packets side by side. Changed bytes and decoded fields are highlighted. Nothing is transmitted or saved.</p>
+ section.innerHTML=`<h4>Protocol Decoder Workbench</h4><p>Compare 2–24 captured packets side by side. Changed bytes and decoded fields are highlighted. Nothing is transmitted or saved.</p>
  <div class="actions"><label>Capture session <select id="pd-wb-session"></select></label><button type="button" id="pd-wb-refresh">Refresh sessions</button><button type="button" id="pd-wb-load">Load session packets</button><button type="button" id="pd-wb-compare">Compare packets</button><button type="button" id="pd-wb-export">Export comparison JSON</button></div>
  <label>Packet hex, one per line (or session-loaded values) <textarea id="pd-wb-packets" rows="6" spellcheck="false" placeholder="AA01AB&#10;AA02A8"></textarea></label>
  <p id="pd-wb-summary" role="status"></p><div id="pd-wb-results" style="overflow-x:auto"></div>`;
- const guide=document.createElement("button");guide.type="button";guide.textContent="Guided walkthrough";guide.className="pd-guide";guide.addEventListener("click",()=>document.dispatchEvent(new CustomEvent("rfcat:start-help-tour",{detail:"protocol-decoder"})));section.querySelector("h4").after(guide);
  panel.querySelector("#pd-output").before(section);
  const el=id=>section.querySelector("#"+id);
  let lastReport=null;

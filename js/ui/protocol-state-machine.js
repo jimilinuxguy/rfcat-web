@@ -2,10 +2,9 @@ import {inferProtocolStateMachine} from "../rx/protocol-state-machine.js";
 import {listCaptureSessions,getCaptureSession} from "../storage/capture-session-store.js";
 export function initProtocolStateMachine(panel,{getDefinition,setStatus}){
  const section=document.createElement("section");section.id="pd-state-machine";
- section.innerHTML=`<h4>Protocol State Machine Inference (M19)</h4><p>Infer candidate states and transitions from decoded captures. State semantics are unverified; counter fields can produce misleading graphs.</p>
+ section.innerHTML=`<h4>Protocol State Machine Inference</h4><p>Infer candidate states and transitions from decoded captures. State semantics are unverified; counter fields can produce misleading graphs.</p>
  <div class="actions"><label>Capture session <select id="pd-sm-session"></select></label><label>State field <select id="pd-sm-field"><option value="">Auto (prefer enum)</option></select></label><label><input type="checkbox" id="pd-sm-invalid"> Include invalid-checksum frames</label><button type="button" id="pd-sm-refresh">Refresh</button><button type="button" id="pd-sm-run">Infer states</button><button type="button" id="pd-sm-export">Export JSON</button></div>
  <p id="pd-sm-summary" role="status"></p><div id="pd-sm-results" style="overflow-x:auto"></div>`;
- const guide=document.createElement("button");guide.type="button";guide.textContent="Guided walkthrough";guide.className="pd-guide";guide.addEventListener("click",()=>document.dispatchEvent(new CustomEvent("rfcat:start-help-tour",{detail:"protocol-state-machine"})));section.querySelector("h4").after(guide);
  panel.querySelector("#pd-output").before(section);
  const el=id=>section.querySelector("#"+id);let report=null;
  async function refresh(){const selected=el("pd-sm-session").value;const sessions=await listCaptureSessions();el("pd-sm-session").replaceChildren(new Option("Select capture session",""),...sessions.map(s=>new Option(s.name+" ("+s.captures.length+")",s.id)));if(sessions.some(s=>s.id===selected))el("pd-sm-session").value=selected;}

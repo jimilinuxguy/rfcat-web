@@ -3,7 +3,7 @@ test("M18 timeline analyzes saved capture sequences",async({page})=>{
  await page.goto("/");
  await page.evaluate(async()=>{const {saveCaptureSession}=await import("./js/storage/capture-session-store.js");await saveCaptureSession({id:"m18-fixture",name:"M18 fixture",captures:[{hex:"AA01AB"},{hex:"AA02A8"},{hex:"AA03A9"},{hex:"AA03A9"}]});});
  await page.locator('[data-workspace-tab="analyze"]').click();
- await page.locator("#protocol-definition-builder summary").click();
+ await page.locator("#protocol-definition-builder > summary").click();
  await page.locator("#pd-id").fill("m18_demo");
  await page.locator("#pd-name").fill("M18 demo");
  await page.locator("#pd-length").fill("3");

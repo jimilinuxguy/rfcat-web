@@ -3,7 +3,7 @@ test("create, save, reload, validate and import a protocol definition offline",a
  await page.goto("/");
  await page.evaluate(async()=>{const {saveCaptureSession}=await import("./js/storage/capture-session-store.js");await saveCaptureSession({id:"m13-fixture",name:"M13 fixture",captures:[{hex:"AA0102"},{hex:"AA0203"},{hex:"BB0102"}]});});
  await page.locator('[data-workspace-tab="analyze"]').click();
- await page.locator("#protocol-definition-builder summary").click();
+ await page.locator("#protocol-definition-builder > summary").click();
  await page.locator("#pd-id").fill("m13_test");
  await page.locator("#pd-name").fill("M13 test");
  await page.locator("#pd-length").fill("3");
@@ -27,7 +27,7 @@ test("create, save, reload, validate and import a protocol definition offline",a
  expect(saved.fields).toHaveLength(2);
  await page.reload();
  await page.locator('[data-workspace-tab="analyze"]').click();
- await page.locator("#protocol-definition-builder summary").click();
+ await page.locator("#protocol-definition-builder > summary").click();
  await page.locator("#pd-library").selectOption("m13_test");
  await page.locator("#pd-load").click();
  await expect(page.locator("#pd-name")).toHaveValue("M13 test");
@@ -36,7 +36,7 @@ test("promoting annotations requires preview and explicit confirmation",async({p
  await page.goto("/");
  await page.evaluate(async()=>{const {saveCaptureSession}=await import("./js/storage/capture-session-store.js");await saveCaptureSession({id:"m13-promote",name:"M13 promotion",captures:[{hex:"AA0102"}],fieldAnnotations:{"3":[{name:"sequence",start:1,width:1,kind:"counter"}]}});});
  await page.locator('[data-workspace-tab="analyze"]').click();
- await page.locator("#protocol-definition-builder summary").click();
+ await page.locator("#protocol-definition-builder > summary").click();
  await page.locator("#pd-id").fill("promoted");
  await page.locator("#pd-name").fill("Promoted");
  await page.locator("#pd-refresh").click();

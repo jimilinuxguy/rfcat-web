@@ -96,3 +96,5 @@ Operate only on authorized frequencies and equipment. Prefer controlled, short b
 - [M27–M30 Offline Protocol Lab](protocol-offline-lab.md) — replay/simulation, seeded packet generation, differential decoding, evidence summaries, wizards and tests.
 
 - [M31–M34 Investigation Intelligence](protocol-intelligence.md) — automated pipeline, bit analysis, CRC candidate search, packet clustering, screenshot generation, Help tours and tests.
+
+- [Investigation workflow and packet validation](investigation-workflow.md) — visual comparisons, hypothesis evidence, decoder test corpus, clean navigation and screenshots.

@@ -2,7 +2,7 @@ import {test,expect} from "@playwright/test";
 test("M16 saves regression fixtures, blocks incompatible protocol edits and survives reload",async({page})=>{
  await page.goto("/");
  await page.locator('[data-workspace-tab="analyze"]').click();
- await page.locator("#protocol-definition-builder summary").click();
+ await page.locator("#protocol-definition-builder > summary").click();
  await page.locator("#pd-id").fill("m16_browser");
  await page.locator("#pd-name").fill("M16 Browser");
  await page.locator("#pd-length").fill("3");
@@ -29,7 +29,7 @@ test("M16 saves regression fixtures, blocks incompatible protocol edits and surv
  await expect(page.locator("#pd-status")).toContainText("Saved");
  await page.reload();
  await page.locator('[data-workspace-tab="analyze"]').click();
- await page.locator("#protocol-definition-builder summary").click();
+ await page.locator("#protocol-definition-builder > summary").click();
  await page.locator("#pd-library").selectOption("m16_browser");
  await page.locator("#pd-load").click();
  await expect(page.locator("#pd-regression-json")).toHaveValue(/known-good/);

@@ -24,6 +24,6 @@ The persisted review stores a compact set of candidate definitions and reference
 
 ## Guided walkthroughs and testing
 
-Launch **Candidate discovery wizard** or **Session correlation wizard** from the Investigation Workspace, Help Center, or welcome onboarding. The existing tour engine provides Back/Next/Exit and highlights controls; it never changes stored data or triggers analysis on its own.
+Launch **Candidate discovery wizard** or **Session correlation wizard** from the central Help Center or welcome onboarding. The existing tour engine provides Back/Next/Exit and highlights controls; it never changes stored data or triggers analysis on its own.
 
 Unit tests: `tests/protocol-candidate-discovery.test.js`. Browser tests: `browser-tests/m25-m26.spec.js` and `browser-tests/m25-m26-help.spec.js`. Tests use synthetic sessions and require no hardware.
