@@ -1,0 +1,38 @@
+import {test,expect} from "@playwright/test";
+test("M21 investigation persists across reload and M22 diagrams/graphs show evidence",async({page})=>{
+ await page.goto("/");
+ await page.evaluate(async()=>{
+  const {saveCaptureSession}=await import("./js/storage/capture-session-store.js");
+  const {saveProtocolDefinition}=await import("./js/storage/protocol-definition-store.js");
+  await saveCaptureSession({id:"m21-capture",name:"M21 captures",captures:[{hex:"AA01AB"},{hex:"AA02A8"},{hex:"AA01AB"},{hex:"AA02A8"}]});
+  await saveProtocolDefinition({schemaVersion:1,id:"m21_proto",name:"M21 protocol",packetLength:3,sync:"AA",fields:[{name:"mode",type:"uint",start:1,width:1}]});
+ });
+ await page.locator('[data-workspace-tab="analyze"]').click();
+ await page.locator("#protocol-definition-builder summary").click();
+ await page.locator("#pd-inv-refresh").click();
+ await page.locator("#pd-inv-name").fill("M21 investigation");
+ await page.locator("#pd-inv-session").selectOption("m21-capture");
+ await page.locator("#pd-inv-protocol").selectOption("m21_proto");
+ await page.locator("#pd-inv-stages [data-stage=definition]").click();
+ await page.getByRole("button",{name:"Load saved definition"}).click();
+ await expect(page.locator("#pd-inv-visual svg")).toHaveCount(1);
+ await page.locator("#pd-inv-stages [data-stage=timeline]").click();
+ await page.getByRole("button",{name:"Plot field timeline"}).click();
+ await expect(page.locator("#pd-inv-visual svg")).toHaveAttribute("role","img");
+ await page.locator("#pd-inv-stages [data-stage=states]").click();
+ await page.getByRole("button",{name:"Draw state graph"}).click();
+ await expect(page.locator("#pd-inv-visual svg [role=button]")).toHaveCount(2);
+ await page.locator("#pd-inv-visual svg [role=button]").first().click();
+ await expect(page.locator("#pd-inv-state-evidence")).toContainText("captures:");
+ await page.locator("#pd-inv-save").click();
+ await expect(page.locator("#pd-inv-status")).toContainText("saved locally");
+ await page.reload();
+ await page.locator('[data-workspace-tab="analyze"]').click();
+ await page.locator("#protocol-definition-builder summary").click();
+ await page.locator("#pd-inv-refresh").click();
+ await page.locator("#pd-inv-library").selectOption({label:"M21 investigation"});
+ await page.locator("#pd-inv-load").click();
+ await expect(page.locator("#pd-inv-name")).toHaveValue("M21 investigation");
+ await expect(page.locator("#pd-inv-session")).toHaveValue("m21-capture");
+ await expect(page.locator("#pd-inv-stages [data-stage=states]")).toHaveAttribute("aria-current","step");
+});
