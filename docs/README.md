@@ -4,6 +4,8 @@ Technical reference, protocol notes, and validation guidance for the [RFCat Web 
 
 ## Start here
 
+- [Protocol Definition Builder](protocol-definition-builder.md) — offline protocol schemas, decoder validation, local library, annotation promotion, and passive live RX matching.
+
 - [Packet Field Editor](packet-field-editor.md) — interactive byte comparisons, tentative annotations, JSON export and local persistence.
 
 - [Signal Intelligence](signal-intelligence.md) — offline packet fingerprints, fixed/variable byte positions, experimental candidate field inference, unverified decoder labels, session reports and validation.
