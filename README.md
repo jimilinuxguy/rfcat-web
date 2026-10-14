@@ -15,6 +15,10 @@ RFCat Web uses WebUSB to configure radios, transmit test frames, capture and dec
 - **Customize your workspace:** Drag, resize, and collapse panels. Layout preferences persist locally in IndexedDB.
 - **Interoperate with other devices:** Use specialized workflows such as Momentum Enhanced Sub-GHz Chat with a Flipper Zero.
 
+## Sub-GHz Spectrum Explorer
+
+The [Spectrum Explorer](docs/spectrum-explorer.md) provides stepped-frequency RSSI surveys with baseline comparison, average/peak traces, auto/fixed dBm scaling, frequency-chart hover inspection, target markers, a sweep-by-sweep waterfall, detection indicators, and CSV export. A guided **Spectrum Explorer walkthrough** is available in Help. YARD Stick One testing has demonstrated baseline-relative RF activity near a Flipper Zero transmission at 433.920 MHz; the scanner is not a wideband SDR or calibrated power meter.
+
 ## Screenshots
 
 The screenshots below illustrate the browser workspace without requiring RF hardware. The screenshot generator uses a fixed desktop viewport; disconnected device state is intentional.

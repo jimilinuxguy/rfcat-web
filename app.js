@@ -1,3 +1,4 @@
+import {initSpectrumExplorer} from "./js/ui/spectrum-explorer.js";
 import {initFirmwareManager} from "./js/ui/firmware-manager.js";
 import {initReplayController} from "./js/ui/replay-controller.js";
 import { MomentumCrypto, momentumKeyFromPassword, momentumKeyFromHex } from "./js/chat/momentum-crypto.js";
@@ -30,6 +31,7 @@ import {
 
 const d = new RFCatUSB();
 initFirmwareManager({radio:d});
+initSpectrumExplorer({radio:d,isBusy:()=>listening||momentumChatActive||!!signalScanController});
 let signalScanController=null;
 const signalScanStart=document.getElementById("signal-scan-start");
 const signalScanStop=document.getElementById("signal-scan-stop");

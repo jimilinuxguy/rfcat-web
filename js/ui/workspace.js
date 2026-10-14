@@ -14,6 +14,7 @@ const PANEL_DEFINITIONS = [
     ["waveform", ".waveform-card"],
     ["activity", ".console"],
     ["signal-analyzer", "#signal-analyzer-panel"],
+    ["spectrum-explorer", "#spectrum-explorer"],
     ["test-bench", ".test-bench-card"],
     ["cw", ".cw-card"],
     ["momentum-chat", ".momentum-chat-card"],
