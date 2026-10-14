@@ -177,3 +177,7 @@ Use **Analyze → Protocol Definition Builder → Investigation Workspace → Si
 ## M31–M34 Investigation Intelligence
 
 Use **Analyze → Protocol Definition Builder → Investigation Workspace → Pipeline / Bits / CRC / Clusters** to investigate saved capture sessions without hardware. The workbench includes a unified pipeline, bit-level variability and Hamming analysis, checksum/CRC preset discovery, and threshold-based packet clustering. Contextual **Investigation pipeline**, **Bit analysis**, **CRC discovery**, and **Clustering** wizards are available in Help and onboarding. Generate four reproducible screenshots using `npm run screenshots:intelligence`. See [M31–M34 guide](protocol-intelligence.md).
+
+## Guided investigation workflow
+
+The Investigation Workspace now provides **Evidence → Discover → Validate → Results**, visual packet comparison, pattern suggestions and decoder expectation tests. Advanced analysis remains available under an expandable disclosure. All guided walkthroughs are in the central **(?) Help** menu. See [Investigation workflow](investigation-workflow.md). Reproduce screenshots with `npm run screenshots:workflow`.
