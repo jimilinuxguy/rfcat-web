@@ -52,3 +52,7 @@ For each frame-length cohort with at least two packets, the report now includes 
 These labels are hypotheses, **not** verified device IDs, counters, commands or checksums. No device-ID or checksum detection is claimed. The exported and attached report uses schema version 2 and includes the candidate evidence. Older stored reports remain as previously saved until reanalysis.
 
 Use the **Offline signal fingerprinting** wizard's **Interpret field candidates** step to inspect the new evidence. For a counter-like synthetic test, save `AA00FF`, `AA01FF`, `AA02FF`, `AA03FF`, `AA04FF` in a session, then analyze. Byte offset 1 should be a moderate-confidence candidate counter. For a real device, compare repeated, deliberately controlled transmissions before assigning any field meaning.
+
+## Screenshot and release checklist
+
+Run `npm run verify` and `npm run screenshots:readme` locally after installing Playwright Chromium. Inspect `docs/images/signal-intelligence.png` for the synthetic five-packet candidate-counter example, the zero-based byte offset and the moderate-confidence label. Confirm no real device or captured personal RF traffic appears in the screenshot. Commit the generated PNG after visual review; the screenshot script alone does not commit image files. Then exercise the six-step **Offline signal fingerprinting** wizard and verify report persistence and JSON export.
