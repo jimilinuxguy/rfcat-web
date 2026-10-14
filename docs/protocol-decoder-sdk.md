@@ -36,6 +36,6 @@ To add a decoder to the app, commit a reviewed JavaScript module, import it from
 
 ## Guided walkthrough
 
-Open **Analyze → Protocol Definition Builder → Investigation Workspace → Decoder SDK test bench**, or launch **Decoder SDK wizard** from the guide bar / Help Center. Select a registered adapter, enter packet hex, click **Decode with adapter**, then inspect the returned fields and matched status.
+Open **Analyze → Protocol Definition Builder → Investigation Workspace → Decoder SDK test bench**, or launch **Decoder SDK wizard** from the central Help Center. Select a registered adapter, enter packet hex, click **Decode with adapter**, then inspect the returned fields and matched status.
 
 Tests: `tests/protocol-decoder-sdk.test.js` and `browser-tests/m23-m24.spec.js`.
