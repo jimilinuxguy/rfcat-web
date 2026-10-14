@@ -15,7 +15,7 @@ export function initProtocolInvestigation(panel,{getDefinition,showDefinition,se
  <nav id="pd-inv-stages" class="actions" aria-label="Investigation stages"></nav><p id="pd-inv-status" role="status"></p><div id="pd-inv-detail"></div><div id="pd-inv-visual" style="overflow-x:auto"></div>
  <div class="actions"><button type="button" id="pd-inv-back">Previous</button><button type="button" id="pd-inv-next">Next stage</button><button type="button" id="pd-inv-export">Export investigation report</button></div>`;
  const guides=document.createElement("div");guides.id="pd-inv-guides";guides.className="actions";
- for(const [id,label] of [["investigation-workflow","Investigation walkthrough"],["investigation-resume","Save & resume guide"],["investigation-field-diagram","Field diagram guide"],["investigation-timeline-chart","Timeline chart guide"],["investigation-state-graph","State graph guide"]]){
+ for(const [id,label] of [["investigation-workflow","Investigation walkthrough"],["investigation-resume","Save & resume guide"],["investigation-field-diagram","Field diagram guide"],["investigation-timeline-chart","Timeline chart guide"],["investigation-state-graph","State graph guide"],["investigation-hypothesis","Hypothesis wizard"],["investigation-hypothesis-validation","Evidence validation wizard"],["protocol-decoder-sdk","Decoder SDK wizard"]]){
   const button=document.createElement("button");button.type="button";button.textContent=label;button.dataset.helpTour=id;
   button.addEventListener("click",()=>document.dispatchEvent(new CustomEvent("rfcat:start-help-tour",{detail:id})));
   guides.append(button);
