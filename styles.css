@@ -379,3 +379,16 @@ body.connected #radio-status-connection{color:#73d5b4}
 #pd-inv-stages{display:flex;flex-wrap:wrap;gap:8px;min-width:0;max-width:100%;overflow:visible}
 #pd-inv-stages>button{flex:0 0 auto;max-width:100%;white-space:normal;overflow-wrap:anywhere}
 #pd-inv-advanced{min-width:0;max-width:100%}
+
+
+/* Packet Inspector: wrap controls rather than clipping resized panels. */
+#packet-inspector,.pd-inspector-body{min-width:0;max-width:100%}
+#packet-inspector .actions{display:flex;flex-wrap:wrap;gap:.5rem}
+.pd-inspector-bytes{max-width:100%;overflow-x:auto;padding:.5rem 0}
+.pd-inspector-row{display:flex;align-items:center;gap:.25rem;width:max-content;min-width:100%;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre}
+.pd-inspector-byte{font:inherit;min-width:2.3em;padding:.2rem;border-radius:.2rem}
+.pd-inspector-byte[aria-pressed="true"]{outline:2px solid currentColor;outline-offset:1px}
+.pd-inspector-ascii{white-space:pre}
+.pd-inspector-bits{overflow-wrap:anywhere;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+#packet-inspector [data-pi="fields"]{display:flex;flex-wrap:wrap;gap:.4rem;overflow-wrap:anywhere}
+#packet-inspector input{max-width:100%;min-width:0}
