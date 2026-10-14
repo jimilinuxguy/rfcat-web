@@ -1,0 +1,26 @@
+name: Investigation workflow screenshots
+on:
+  push:
+    paths:
+      - 'js/ui/protocol-investigation-tools.js'
+      - 'js/ui/protocol-investigation.js'
+      - 'tools/workflow-screenshots.mjs'
+      - '.github/workflows/investigation-workflow-screenshots.yml'
+  workflow_dispatch:
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run screenshots:workflow
+      - uses: actions/upload-artifact@v4
+        with:
+          name: investigation-workflow-screenshots
+          path: docs/images/investigation-workflow-*.png
+          if-no-files-found: error
