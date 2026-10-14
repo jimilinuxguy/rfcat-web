@@ -92,3 +92,7 @@ Under **Analyze → Protocol Definition Builder → Investigation Workspace → 
 ## M25/M26 — Candidate discovery and correlation
 
 Open **Analyze → Protocol Definition Builder → Investigation Workspace → Discovery** to compare saved capture sessions, infer unverified byte-aligned packet candidates, inspect session-specific differences and promote a reviewed candidate into an editable protocol draft. **Candidate discovery wizard** and **Session correlation wizard** are available from the workspace, Help Center and onboarding. See [M25/M26 guide](protocol-discovery-correlation.md) for limitations and tests.
+
+## M27–M30 Offline Protocol Lab
+
+Use **Analyze → Protocol Definition Builder → Investigation Workspace → Simulation / Synthetic / Differential / Dashboard** to replay saved packets, generate deterministic test data, compare decoder interpretations and summarize investigation evidence. The **Simulation**, **Synthetic packets**, **Differential analysis**, and **Evidence dashboard** wizards are available in contextual Help and onboarding. All workflows are offline and have Node/Playwright coverage. See [Offline Protocol Lab](protocol-offline-lab.md) for usage and limitations.

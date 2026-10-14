@@ -1,0 +1,6 @@
+import {simulateProtocol} from "./protocol-simulation.js";
+export function compareProtocolDecoders(left,right,captures,{leftAdapter="declarative",rightAdapter="declarative"}={}){
+ const a=simulateProtocol(left,captures,{adapterId:leftAdapter}),b=simulateProtocol(right,captures,{adapterId:rightAdapter});
+ const differences=a.frames.map((frame,i)=>{const other=b.frames[i],fieldsA=new Map(frame.fields.map(f=>[f.name,f.value])),fieldsB=new Map(other.fields.map(f=>[f.name,f.value]));const changed=[...new Set([...fieldsA.keys(),...fieldsB.keys()])].filter(key=>!Object.is(fieldsA.get(key),fieldsB.get(key))||fieldsA.has(key)!==fieldsB.has(key));return {index:i,matchChanged:frame.matched!==other.matched,changedFields:changed,leftMatched:frame.matched,rightMatched:other.matched};});
+ return {schemaVersion:1,total:captures.length,changed: differences.filter(d=>d.matchChanged||d.changedFields.length).length,differences:differences.filter(d=>d.matchChanged||d.changedFields.length),left:{protocolId:a.protocolId,adapterId:leftAdapter,matched:a.matched},right:{protocolId:b.protocolId,adapterId:rightAdapter,matched:b.matched},interpretation:"Differences show decoder behavior on identical packets, not which definition is correct."};
+}
