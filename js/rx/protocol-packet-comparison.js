@@ -1,0 +1,10 @@
+// Deterministic offline comparison of framed hex packets.
+function parse(value){const hex=typeof value==="string"?value:value?.hex??value?.packetHex;if(typeof hex!=="string"||hex.length<2||hex.length>510||hex.length%2!==0||!/^[0-9a-f]+$/i.test(hex))throw Error("Invalid packet hex");return hex.match(/../g).map(x=>parseInt(x,16));}
+export function compareProtocolPackets(packets,{annotations=[]}={}){
+ if(!Array.isArray(packets)||packets.length<2||packets.length>24)throw Error("Select 2–24 packets");
+ const bytes=packets.map(parse),length=Math.max(...bytes.map(p=>p.length));if(!Array.isArray(annotations)||annotations.length>64)throw Error("Invalid annotations");
+ const regions=Array.from({length},(_,offset)=>{const values=bytes.map(p=>p[offset]??null),present=values.filter(v=>v!==null),stable=present.length===bytes.length&&new Set(present).size===1;const xor=present.reduce((v,b)=>v^b,0);const changedBits=Array.from({length:8},(_,bit)=>{const samples=present.map(v=>(v>>(7-bit))&1);return samples.length!==bytes.length||new Set(samples).size>1?7-bit:null;}).filter(x=>x!==null);return {offset,values:values.map(v=>v===null?null:v.toString(16).padStart(2,"0").toUpperCase()),stable,xor:xor.toString(16).padStart(2,"0").toUpperCase(),changedBits};});
+ const pairs=bytes.slice(1).map((packet,i)=>{const first=bytes[0];return {packetIndex:i+1,changedBytes:regions.filter(r=>r.values[0]!==r.values[i+1]).map(r=>r.offset),hamming:regions.reduce((n,r)=>{const a=first[r.offset],b=packet[r.offset];return n+(a==null||b==null?8:(a^b).toString(2).replace(/0/g,"").length);},0)};});
+ const safeAnnotations=annotations.map(a=>{if(!Number.isInteger(a.start)||!Number.isInteger(a.width)||a.start<0||a.width<1||a.start+a.width>length||typeof a.label!=="string"||!a.label.trim()||a.label.length>80)throw Error("Invalid region annotation");return {start:a.start,width:a.width,label:a.label.trim()};});
+ return {schemaVersion:1,total:bytes.length,length,regions,pairs,annotations:safeAnnotations,interpretation:"Differences are byte/bit observations, not inferred protocol semantics."};
+}
