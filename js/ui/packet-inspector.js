@@ -44,7 +44,7 @@ export function initPacketInspector(host,{getSession,getDefinition,setStatus=()=
   if(!result.fields.length)fields.textContent="Definition contains no fields.";
   }catch(e){fields.textContent="No compatible definition: "+e.message;}
  }
- function showPacket(value,context){packet=value;bytes=inspectBytes(value);selected=0;selectedBit=null;bitLength=1;annotations=[];sourceContext=context;panel.open=true;el("context").textContent=context+" · "+bytes.length+" bytes";render();panel.scrollIntoView({block:"nearest"});}
+ function showPacket(value,context){document.dispatchEvent(new CustomEvent("rfcat:workspace-activate",{detail:{workspace:"analyze"}}));for(const ancestor of [host.closest("details"),host.closest("#protocol-definition-builder"),host.closest("#signal-intelligence")])if(ancestor?.tagName==="DETAILS")ancestor.open=true;packet=value;bytes=inspectBytes(value);selected=0;selectedBit=null;bitLength=1;annotations=[];sourceContext=context;panel.open=true;el("context").textContent=context+" · "+bytes.length+" bytes";render();panel.scrollIntoView({block:"nearest"});}
  document.addEventListener("rfcat:inspect-packet",event=>{try{showPacket(event.detail.packet,event.detail.context??"Receiver capture");}catch(error){el("context").textContent=error.message;}});
  el("bitselect").addEventListener("click",guard(async()=>{if(!bytes)throw Error("Inspect a packet first");const start=Number(el("bitstart").value),length=Number(el("bitlength").value);const range=inspectBitRange(bytes,start,length);selected=range.startByte;selectedBit=start;bitLength=length;render();}));
  el("load").addEventListener("click",guard(async()=>{
