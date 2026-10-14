@@ -135,3 +135,7 @@ The **RF signal discovery: spectrum to capture** tutorial in **? Help → Advanc
 Select **? Help → Advanced analysis → Offline signal fingerprinting**, or restart the welcome wizard and choose the same goal. The five-step tour opens the Analyze workspace, selects a saved Capture Library session, explains packet comparison, attaches the report and exports JSON. Each step highlights a real control without clicking it, changing capture bytes, or operating the radio.
 
 For a hardware-free acceptance check, save a Capture Library session containing `AA0100FF`, `AA0101FF`, `AA0102FF`, and a repeated `AA0100FF`. Refresh the Signal Intelligence session list, select the session, and click **Analyze packets**. Expect four valid captures, three unique payloads, a four-byte length group, and variable offset 2 (zero-based). Attach the report and verify it persists in IndexedDB, then export JSON. Run `npx playwright test browser-tests/signal-intelligence.spec.js` and the full `npm run verify` suite. See [Signal Intelligence](../signal-intelligence.md) for limitations and interpretation.
+
+## Protocol field inference walkthrough
+
+The **Offline signal fingerprinting** tutorial now includes **Interpret field candidates**, between packet comparison and report attachment. It points to the rendered intelligence results, explaining why a changing byte is not proof of a counter, command, identifier or checksum. No RF operations are performed. Follow the [Signal Intelligence guide](../signal-intelligence.md) for deterministic offline samples and limitations.

@@ -8,7 +8,7 @@ RFCat Web uses WebUSB to configure radios, transmit test frames, capture and dec
 
 - **Configure and transmit:** Set frequency, modulation, data rate, bandwidth, power, and packet settings; transmit using protocol-specific encoders or direct RF test modes. The RF Test Bench previews bounded hexadecimal packet sequences and compares subsequent RX packets byte-for-byte.
 - **Receive and decode:** Inspect raw captures, select decoders, and review decoded fields. Auto mode attempts applicable decoders without discarding unknown traffic. Live burst diagnostics group repeated packet events with timestamps, RSSI ranges, adjustable duplicate windows, and JSON export.
-- **Fingerprint captured packets:** Use Signal Intelligence to group repeated frames, compare fixed and changing byte positions, preserve conservative evidence reports in Capture Library, and export JSON. See [Signal Intelligence](docs/signal-intelligence.md).
+- **Fingerprint captured packets:** Use Signal Intelligence to group repeated frames, compare fixed and changing byte positions, review tentative counter/command byte candidates with explicit evidence and caveats, preserve conservative evidence reports in Capture Library, and export JSON. See [Signal Intelligence](docs/signal-intelligence.md).
 - **Analyze captures offline:** Import/export JSON, save capture sessions in IndexedDB, step through captures with timed offline playback and timeline navigation, compare saved sessions by payload frequency, export replay reports as JSON/CSV, compare captures, infer changing fields, and validate declarative protocol presets against positive and negative examples.
 - **Investigate unknown RF timing:** Import Flipper Zero RAW `.sub` captures in the RF Signal Analyzer panel, inspect waveforms, and review conservative encoding hypotheses. See [RF Signal Analyzer](docs/signal-analyzer.md) for current scope and limitations.
 - **Inspect signal timing:** Preview symbol timing and waveform quantization; analyze received OOK pulse distributions.
@@ -34,7 +34,9 @@ The screenshots below illustrate the browser workspace without requiring RF hard
 
 ![Radio configuration in Tools](docs/images/radio-configuration.png)
 
-Regenerate these images (plus a Firmware Manager screenshot) with `npm run screenshots:readme` after `npm install` and `npx playwright install chromium`. The Playwright browser suite checks the screenshot views and in-memory capture without modifying PNGs; run `npm run verify` to include that regression. Review generated images before committing them; they reflect the UI at capture time, not a connected device or verified RF activity. See [Screenshot automation](docs/readme-screenshots.md).
+![Offline Signal Intelligence candidate field inference](docs/images/signal-intelligence.png)
+
+Regenerate these images (plus a Firmware Manager screenshot and the synthetic Signal Intelligence example) with `npm run screenshots:readme` after `npm install` and `npx playwright install chromium`. The Playwright browser suite checks the screenshot views and in-memory capture without modifying PNGs; run `npm run verify` to include that regression. Review generated images before committing them; they reflect the UI at capture time, not a connected device or verified RF activity. See [Screenshot automation](docs/readme-screenshots.md).
 
 ## Quick start
 
