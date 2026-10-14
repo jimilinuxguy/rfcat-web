@@ -7,7 +7,7 @@ test("M15 compares independent sessions and displays evidence",async({page})=>{
   await saveCaptureSession({id:"m15-b",name:"M15 B",captures:[{hex:"AA03A9"},{hex:"BB01BA"}]});
  });
  await page.locator('[data-workspace-tab="analyze"]').click();
- await page.locator("#protocol-definition-builder summary").click();
+ await page.locator("#protocol-definition-builder > summary").click();
  await page.locator("#pd-id").fill("m15_demo");
  await page.locator("#pd-name").fill("M15 Demo");
  await page.locator("#pd-length").fill("3");
