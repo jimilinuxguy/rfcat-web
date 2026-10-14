@@ -4,9 +4,9 @@ import {evaluateProtocolEvidence} from "../js/rx/protocol-evidence.js";
 const def={schemaVersion:1,id:"demo",name:"Demo",packetLength:3,sync:"AA",fields:[{name:"check",start:2,width:1,type:"checksum",algorithm:"xor8",checksumStart:0,checksumEnd:1}]};
 const session=(id,hex)=>({id,name:id,captures:hex.map(hex=>({hex}))});
 test("cross-session evidence measures matches and checksum failures",()=>{
- const report=evaluateProtocolEvidence(def,[session("a",["AA01AB","AA02A8","BB01BA"]),session("b",["AA03A9","AA04AE","ZZ"])]);
+ const report=evaluateProtocolEvidence(def,[session("a",["AA01AB","AA02A7","BB01BA"]),session("b",["AA03A9","AA04AE","ZZ"])]);
  assert.equal(report.total,6);assert.equal(report.matched,4);assert.equal(report.coveredSessions,2);
- assert.equal(report.checksumChecks,4);assert.equal(report.checksumPasses,2);
+ assert.equal(report.checksumChecks,4);assert.equal(report.checksumPasses,3);
  assert.equal(report.sessions[1].invalid,1);assert.ok(report.warnings.some(w=>w.includes("checksum")));
  assert.ok(report.score>=0&&report.score<=100);
 });
