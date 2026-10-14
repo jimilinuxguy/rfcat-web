@@ -32,6 +32,7 @@ test("M21 investigation persists across reload and M22 diagrams/graphs show evid
  await page.locator("#pd-inv-refresh").click();
  await page.locator("#pd-inv-library").selectOption({label:"M21 investigation"});
  await page.locator("#pd-inv-load").click();
+ await expect(page.locator("#pd-inv-status")).toContainText("Investigation resumed.");
  await expect(page.locator("#pd-inv-name")).toHaveValue("M21 investigation");
  await expect(page.locator("#pd-inv-session")).toHaveValue("m21-capture");
  await expect(page.locator("#pd-inv-stages [data-stage=states]")).toHaveAttribute("aria-current","step");

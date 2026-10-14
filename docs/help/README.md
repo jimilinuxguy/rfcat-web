@@ -154,3 +154,10 @@ Use the seven stage tabs or Previous/Next: **Captures → Definition → Validat
 
 **Export investigation report** downloads JSON containing the referenced capture session, protocol definition, saved regression fixtures (if any), and freshly computed timeline/state reports. This is a snapshot, not a live link or a backup of all browser data. Reports can include captured packet content; review before sharing. Analysis requires at least two captured frames, uses the current definition draft in the interactive charts, and does not send RF commands. State identities, inferred counters, and visual trends are hypotheses requiring independent verification.
 
+
+## Guided M21–M22 investigation and visualization walkthroughs
+
+Open **? Help → Protocol analysis** or **Analyze → Protocol Definition Builder → Investigation Workspace**. Five new tours are available directly from the workspace: **Investigation walkthrough**, **Save & resume guide**, **Field diagram guide**, **Timeline chart guide**, and **State graph guide**. Each uses the existing Back/Next/Exit Help experience, navigates to Analyze, and highlights the actual workspace controls. The welcome wizard offers the same workflows, and contextual Help search includes investigation stages, persistence and visualization topics.
+
+The tours describe when to choose saved capture sessions, load a protocol, move between seven investigation stages, save and resume a record, draw a packet field diagram, plot a field timeline, and inspect state nodes for supporting capture indices. A tour never clicks an analysis button or changes stored data on your behalf. For charts and state graphs, first select a stage and manually draw the visualization; the Help tour explains what appears afterward. No RF hardware is required.
+
