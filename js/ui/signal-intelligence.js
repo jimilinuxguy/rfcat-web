@@ -10,7 +10,7 @@ export function initSignalIntelligence(){
  <div class="section-body"><p>Compare demodulated packets in a saved Capture Library session. No modulation or protocol identity is assumed.</p>
  <div class="actions"><label>Capture session <select id="intelligence-session"><option value="">Select a saved session</option></select></label><button id="intelligence-refresh" type="button">Refresh sessions</button><button id="intelligence-analyze" type="button">Analyze packets</button><button id="intelligence-export" type="button" disabled>Export JSON</button><button id="intelligence-save" type="button" disabled>Attach report to session</button></div>
  <p id="intelligence-status" role="status">Select a session to begin.</p><div id="intelligence-results" aria-live="polite"></div></div>`;
- host.append(panel);
+ host.after(panel);
  const el=id=>panel.querySelector("#"+id);
  let report=null,source=null,sourceFingerprint=null;
  async function refresh(){
