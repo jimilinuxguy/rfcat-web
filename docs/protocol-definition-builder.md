@@ -77,3 +77,10 @@ Saved definitions are loaded into an in-memory cache when the page starts. Newly
 Definition IDs must be unique within the local library. Byte ranges must fit within the declared frame and must not overlap. Checksum verification does not currently prevent a length/prefix match; failures are explicitly reported. The schema intentionally rejects executable JavaScript, custom code and unsupported CRC algorithms. All data stays in browser-local IndexedDB unless explicitly exported. Browser storage is origin-specific and may be cleared by the browser.
 
 The builder operates on bytes already delivered by the receiver's packet engine; it cannot recover missing RF symbols, infer modulation, or establish frame boundaries. **Definition fields and checksum matches are hypotheses** until validated against independently collected signals. For hardware-free regression testing, run `node --test tests/protocol-definitions.test.js` and `npm run verify`.
+
+## Guided M21–M22 investigation and visualization walkthroughs
+
+Open **? Help → Protocol analysis** or **Analyze → Protocol Definition Builder → Investigation Workspace**. Five new tours are available directly from the workspace: **Investigation walkthrough**, **Save & resume guide**, **Field diagram guide**, **Timeline chart guide**, and **State graph guide**. Each uses the existing Back/Next/Exit Help experience, navigates to Analyze, and highlights the actual workspace controls. The welcome wizard offers the same workflows, and contextual Help search includes investigation stages, persistence and visualization topics.
+
+The tours describe when to choose saved capture sessions, load a protocol, move between seven investigation stages, save and resume a record, draw a packet field diagram, plot a field timeline, and inspect state nodes for supporting capture indices. A tour never clicks an analysis button or changes stored data on your behalf. For charts and state graphs, first select a stage and manually draw the visualization; the Help tour explains what appears afterward. No RF hardware is required.
+
