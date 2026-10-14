@@ -1,0 +1,6 @@
+import {simulateProtocol} from "./protocol-simulation.js";
+export function summarizeProtocolEvidence(investigation,definition,sessions){
+ const hypotheses=investigation?.hypotheses??[],review=investigation?.candidateReview??null;const runs=sessions.map(s=>({id:s.id,name:s.name,total:s.captures.length,report:simulateProtocol(definition,s.captures)}));const matched=runs.reduce((n,r)=>n+r.report.matched,0),total=runs.reduce((n,r)=>n+r.total,0);
+ const referenced=hypotheses.flatMap(h=>h.evidence??[]),missing=referenced.filter(ref=>!sessions.some(s=>s.id===ref.sessionId&&ref.captureIndex>=0&&ref.captureIndex<s.captures.length));
+ return {schemaVersion:1,investigationId:investigation?.id??null,sessions:runs.map(r=>({id:r.id,name:r.name,total:r.total,matched:r.report.matched})),total,matched,coverage:total?Math.round(100*matched/total):0,hypotheses:hypotheses.length,evidenceReferences:referenced.length,missingEvidence:missing.length,candidateCount:review?.candidates?.length??0,unresolved:["Protocol semantics remain hypotheses",...(missing.length?["Some linked evidence is missing"]:[]),...(total===0?["No packets selected"]:[])],interpretation:"Coverage measures decoder matches only; it is not confidence in a protocol hypothesis."};
+}
