@@ -56,6 +56,7 @@ try{
  await page.locator("#signal-intelligence").screenshot({path:"docs/images/signal-intelligence.png",animations:"disabled"});
  console.log("Wrote docs/images/signal-intelligence.png");
  // Demonstrate tentative packet field annotations on the same synthetic session.
+ await page.locator("#field-cohort").selectOption("3");
  await page.locator("#field-packet-grid").getByRole("button",{name:"Capture 0 byte 1: 00"}).click();
  await page.locator("#field-name").fill("sequence");
  await page.locator("#field-kind").selectOption("counter");
