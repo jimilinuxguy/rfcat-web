@@ -379,3 +379,21 @@ body.connected #radio-status-connection{color:#73d5b4}
 #pd-inv-stages{display:flex;flex-wrap:wrap;gap:8px;min-width:0;max-width:100%;overflow:visible}
 #pd-inv-stages>button{flex:0 0 auto;max-width:100%;white-space:normal;overflow-wrap:anywhere}
 #pd-inv-advanced{min-width:0;max-width:100%}
+
+/* M40: Keep the live capture stream primary; secondary RX workflows disclose on demand. */
+.receiver-card .rx-specialized,
+.receiver-card .rx-diagnostics {border:1px solid var(--border, #344155);border-radius:8px;margin:10px 0;padding:10px 12px;min-width:0}
+.receiver-card .rx-specialized > summary,
+.receiver-card .rx-diagnostics > summary {cursor:pointer;font-weight:600}
+.receiver-card .rx-specialized .pocsag-rx-preset {margin-top:12px;flex-wrap:wrap}
+.receiver-card .rx-diagnostics .rx-burst-panel {margin-top:10px}
+.receiver-card .rx-compact-stats {display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.receiver-card .rx-compact-stats > span {flex:1 1 105px;min-width:90px}
+.receiver-card .packets {min-height:200px}
+.receiver-card .capture-library {margin-top:14px}
+.receiver-card .rx-file-actions {display:flex;flex-wrap:wrap;gap:6px}
+@media (max-width:680px) {
+ .receiver-card .rx-compact-stats > span {flex-basis:calc(50% - 8px)}
+ .receiver-card .rx-file-actions button {max-width:100%;white-space:normal}
+ .receiver-card .rx-specialized .pocsag-rx-preset label {min-width:0}
+}
