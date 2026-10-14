@@ -4,6 +4,8 @@ Technical reference, protocol notes, and validation guidance for the [RFCat Web 
 
 ## Start here
 
+- [Guided protocol analysis workflows](help/README.md) — M13–M19 guided tutorials for definition building, evidence, regression, packet comparison, timelines and state inference.
+
 - [Protocol Definition Builder](protocol-definition-builder.md) — offline protocol schemas, decoder validation, local library, annotation promotion, and passive live RX matching.
 
 - [Packet Field Editor](packet-field-editor.md) — interactive byte comparisons, tentative annotations, JSON export and local persistence.
