@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {compareProtocolPackets} from "../js/rx/protocol-packet-compare.js";
 const def={schemaVersion:1,id:"demo",name:"Demo",packetLength:3,sync:"AA",fields:[{name:"counter",start:1,width:1,type:"uint"},{name:"check",start:2,width:1,type:"checksum",algorithm:"xor8",checksumStart:0,checksumEnd:1}]};
 test("compares fields and bytes across matched and rejected packets",()=>{
- const result=compareProtocolPackets(def,["AA01AB","AA02A8","BB01BA"]);
+ const result=compareProtocolPackets(def,["AA01AB","AA02FF","BB01BA"]);
  assert.equal(result.total,3);assert.equal(result.matched,2);assert.equal(result.checksumFailures,1);
  assert.equal(result.fields[0].changed,true);
  assert.equal(result.fields[0].values[2],null);
