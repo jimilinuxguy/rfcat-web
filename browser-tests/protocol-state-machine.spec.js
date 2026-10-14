@@ -1,0 +1,20 @@
+import {test,expect} from "@playwright/test";
+test("M19 infers state transitions from saved capture sessions",async({page})=>{
+ await page.goto("/");
+ await page.evaluate(async()=>{const {saveCaptureSession}=await import("./js/storage/capture-session-store.js");await saveCaptureSession({id:"m19-fixture",name:"M19 fixture",captures:[{hex:"AA01AB"},{hex:"AA02A8"},{hex:"AA01AB"},{hex:"AA02A8"}]});});
+ await page.locator('[data-workspace-tab="analyze"]').click();
+ await page.locator("#protocol-definition-builder summary").click();
+ await page.locator("#pd-id").fill("m19_demo");
+ await page.locator("#pd-name").fill("M19 demo");
+ await page.locator("#pd-length").fill("3");
+ await page.locator("#pd-sync").fill("AA");
+ await page.locator("#pd-fields").fill(JSON.stringify([{name:"mode",start:1,width:1,type:"uint"}]));
+ await page.locator("#pd-sm-refresh").click();
+ await page.locator("#pd-sm-session").selectOption("m19-fixture");
+ await page.locator("#pd-sm-field").selectOption("mode");
+ await page.locator("#pd-sm-run").click();
+ await expect(page.locator("#pd-sm-summary")).toContainText("2 candidate states");
+ await expect(page.locator("#pd-sm-summary")).toContainText("1 recurring non-self transitions");
+ await expect(page.locator("#pd-sm-transitions")).toContainText("Yes");
+ await expect(page.locator("#pd-status")).toContainText("State machine inference ready");
+});
