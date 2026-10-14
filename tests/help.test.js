@@ -25,7 +25,7 @@ test("every contextual help and tutorial selector exists in index.html",()=>{
  const dynamic=readFileSync(new URL("../js/ui/replay-controller.js",import.meta.url),"utf8");
  const spectrum=readFileSync(new URL("../js/ui/spectrum-explorer.js",import.meta.url),"utf8");
  const intelligence=readFileSync(new URL("../js/ui/signal-intelligence.js",import.meta.url),"utf8");
- const protocolUi=["protocol-definition-builder.js","protocol-decoder-workbench.js","protocol-timeline.js","protocol-state-machine.js","protocol-investigation.js","protocol-evidence-workbench.js","protocol-discovery-workbench.js","protocol-offline-lab.js","protocol-intelligence-workbench.js","visual-field-editor.js"].map(file=>readFileSync(new URL("../js/ui/"+file,import.meta.url),"utf8")).join("\n");
+ const protocolUi=["protocol-definition-builder.js","protocol-decoder-workbench.js","protocol-timeline.js","protocol-state-machine.js","protocol-investigation.js","protocol-evidence-workbench.js","protocol-discovery-workbench.js","protocol-offline-lab.js","protocol-intelligence-workbench.js","protocol-investigation-tools.js","visual-field-editor.js"].map(file=>readFileSync(new URL("../js/ui/"+file,import.meta.url),"utf8")).join("\n");
  const selectors=[...HELP_TOPICS.map(t=>t.target),...TOURS.flatMap(t=>t.steps.map(s=>s.target))];
  for(const selector of selectors){
   const name=selector.slice(1);
