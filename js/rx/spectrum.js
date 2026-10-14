@@ -10,14 +10,15 @@ export function scanFrequencies(startMHz,stopMHz,stepKHz){
  return points;
 }
 export function rssiDbm(raw){if(!Number.isInteger(raw)||raw<0||raw>255)throw Error("Invalid RSSI register");return (raw>=128?raw-256:raw)/2-74;}
-export async function sweepSpectrum(device,{startMHz,stopMHz,stepKHz=100,dwellMs=40,signal,onSample=()=>{}}){
+export async function sweepSpectrum(device,{startMHz,stopMHz,stepKHz=100,dwellMs=40,signal,onSample=()=>{},passes=1}){
  if(!device?.device?.opened)throw Error("Connect YARD Stick One first");
  if(!Number.isInteger(dwellMs)||dwellMs<20||dwellMs>2000)throw Error("Dwell must be 20–2000 ms");
  const frequencies=scanFrequencies(startMHz,stopMHz,stepKHz);
+ if(!Number.isInteger(passes)||passes<1||passes>100)throw Error("Passes must be 1–100");
  const original=await device.config(),results=[];
  const wait=ms=>new Promise(resolve=>{const timer=setTimeout(done,ms);function done(){clearTimeout(timer);signal?.removeEventListener("abort",done);}signal?.addEventListener("abort",done,{once:true});});
  try{
-  for(const hz of frequencies){
+  for(let pass=0;pass<passes&&!signal?.aborted;pass++)for(const hz of frequencies){
    if(signal?.aborted)break;
    await device.mode(C.RF_IDLE);
    await device.setFrequency(hz);
@@ -26,7 +27,7 @@ export async function sweepSpectrum(device,{startMHz,stopMHz,stepKHz=100,dwellMs
    if(signal?.aborted)break;
    const bytes=await device.peek(R.RSSI,1);
    const sample={frequencyHz:hz,rssiDbm:rssiDbm(bytes[0]),timestamp:Date.now()};
-   results.push(sample);onSample(sample,results.length,frequencies.length);
+   results.push(sample);onSample(sample,results.length,frequencies.length*passes);
   }
  }finally{
   try{
