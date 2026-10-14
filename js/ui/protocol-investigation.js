@@ -23,7 +23,7 @@ export function initProtocolInvestigation(panel,{getDefinition,showDefinition,se
  section.querySelector("h4").after(guides);
  panel.querySelector(".section-body").prepend(section);
  const el=id=>section.querySelector("#"+id);let id=null,stage="captures";
- const evidenceWorkbench=initProtocolEvidenceWorkbench(section,{getDefinition,getInvestigationId:()=>id,setStatus});
+ const evidenceWorkbench=initProtocolEvidenceWorkbench(section,{getDefinition,getInvestigationId:()=>id,setStatus:message=>{setStatus(message);el("pd-inv-status").textContent=message;}});
  function status(message){el("pd-inv-status").textContent=message;setStatus(message);}
  function action(label,fn){const b=document.createElement("button");b.type="button";b.textContent=label;b.addEventListener("click",()=>Promise.resolve().then(fn).catch(e=>status(e.message)));el("pd-inv-detail").append(b);}
  function description(text){const p=document.createElement("p");p.textContent=text;el("pd-inv-detail").append(p);}
