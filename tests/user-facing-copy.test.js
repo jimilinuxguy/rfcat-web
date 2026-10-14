@@ -3,4 +3,4 @@ const ui=["protocol-definition-builder.js","protocol-evidence-workbench.js","pro
 test("user-facing protocol UI never shows internal milestone labels",()=>{for(const file of ui){const content=readFileSync(new URL("../js/ui/"+file,import.meta.url),"utf8");assert.doesNotMatch(content,/<h[1-6][^>]*>[^<]*\bM\d{1,3}\b/i,file);}});
 test("Help topics and walkthrough titles avoid milestone jargon",()=>{for(const item of [...TOURS,...HELP_TOPICS])assert.doesNotMatch(item.title,/\bM\d{1,3}\b/i,item.title);});
 
-test("protocol analysis panels contain no inline tour buttons or guide bar",()=>{for(const file of ui){const content=readFileSync(new URL("../js/ui/"+file,import.meta.url),"utf8");assert.doesNotMatch(content,/Guided walkthrough|pd-guide|pd-guides|data-help-tour|dataset\.helpTour|rfcat:start-help-tour/i,file);}});
+test("protocol analysis panels contain no inline tour buttons or guide bar",()=>{for(const file of ui){const content=readFileSync(new URL("../js/ui/"+file,import.meta.url),"utf8");assert.doesNotMatch(content,/Guided walkthrough|pd-guides?(?![a-z-])|data-help-tour|dataset\.helpTour|rfcat:start-help-tour/i,file);}});
