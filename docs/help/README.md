@@ -129,3 +129,4 @@ Open **? Help → Advanced analysis → Spectrum Explorer walkthrough**. The tou
 ## RF signal discovery wizard
 
 The **RF signal discovery: spectrum to capture** tutorial in **? Help → Advanced analysis** highlights the investigation launcher, receiver preset scan, receiver capture handoff, session saving and JSON export. It never starts scanning, receiving or transmitting. A completed tutorial does not certify that modulation or protocol identification succeeded.
+\n## Offline Signal Intelligence\n\nThe Analyze workspace includes an offline Signal Intelligence panel and guided walkthrough. See [Signal Intelligence](../signal-intelligence.md) for evidence limits and testing.\n
