@@ -5,6 +5,7 @@ import {getProtocolRegressionSuite} from "../storage/protocol-regression-store.j
 import {analyzeProtocolTimeline} from "../rx/protocol-timeline.js";
 import {inferProtocolStateMachine} from "../rx/protocol-state-machine.js";
 import {initInvestigationTools} from "./protocol-investigation-tools.js";
+import {initPacketInspector} from "./packet-inspector.js";
 import {initProtocolIntelligenceWorkbench} from "./protocol-intelligence-workbench.js";
 import {initProtocolOfflineLab} from "./protocol-offline-lab.js";
 import {initProtocolDiscoveryWorkbench} from "./protocol-discovery-workbench.js";
@@ -21,6 +22,7 @@ export function initProtocolInvestigation(panel,{getDefinition,showDefinition,se
  <div class="actions"><button type="button" id="pd-inv-back">Previous</button><button type="button" id="pd-inv-next">Next stage</button><button type="button" id="pd-inv-export">Export investigation report</button></div>`;
  panel.querySelector(".section-body").prepend(section);
  const el=id=>section.querySelector("#"+id);let id=null,stage="captures";
+ const packetInspector=initPacketInspector(section,{getSession:async()=>{const s=await getCaptureSession(el("pd-inv-session").value);if(!s)throw Error("Choose a saved capture session");return s;},getDefinition,setStatus});
  const workflowTools=initInvestigationTools(section,{getDefinition,getInvestigationId:()=>id,getSessionId:()=>el("pd-inv-session").value,setStatus:message=>{setStatus(message);el("pd-inv-status").textContent=message;}});
  const intelligenceWorkbench=initProtocolIntelligenceWorkbench(section,{getDefinition,getInvestigationId:()=>id,setStatus:message=>{setStatus(message);el("pd-inv-status").textContent=message;}});
  const offlineLab=initProtocolOfflineLab(section,{getDefinition,getInvestigationId:()=>id,setStatus:message=>{setStatus(message);el("pd-inv-status").textContent=message;}});
@@ -33,7 +35,7 @@ export function initProtocolInvestigation(panel,{getDefinition,showDefinition,se
  async function session(){const s=await getCaptureSession(el("pd-inv-session").value);if(!s)throw Error("Choose an existing capture session");return s;}
  function renderStage(){
   el("pd-inv-detail").replaceChildren();el("pd-inv-visual").replaceChildren();
-  if(stage==="captures"){description("Choose a saved Capture Library session above. Capture order is preserved.");action("Inspect selection",async()=>{const s=await session();status(s.name+": "+s.captures.length+" captures.");});}
+  if(stage==="captures"){description("Choose a saved Capture Library session above. Capture order is preserved.");action("Inspect selection",async()=>{const s=await session();status(s.name+": "+s.captures.length+" captures.");packetInspector.open();});}
   if(stage==="definition"){description("Choose a saved definition above, or inspect the current draft. Field offsets are hypotheses.");action("Load saved definition",async()=>{const d=await getProtocolDefinition(el("pd-inv-protocol").value);if(!d)throw Error("Choose a saved protocol");showDefinition(d);renderFieldDiagram(el("pd-inv-visual"),d);status("Definition loaded into editor.");});action("Show packet field diagram",()=>renderFieldDiagram(el("pd-inv-visual"),getDefinition()));}
   if(stage==="validation"){description("Run validation and regression using the existing protocol editor. Regression failures can block saving.");action("Open validation",()=>{select("pd-session",el("pd-inv-session").value);panel.querySelector("#pd-validate").scrollIntoView({block:"center"});});action("Run regression",()=>panel.querySelector("#pd-regression-run").click());}
   if(stage==="decoder"){description("Compare up to 24 packets and highlight field/byte differences.");action("Open in Decoder",()=>{select("pd-wb-session",el("pd-inv-session").value);panel.querySelector("#pd-wb-load").click();panel.querySelector("#pd-workbench").scrollIntoView({block:"center"});});}

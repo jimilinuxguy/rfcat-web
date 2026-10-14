@@ -1889,6 +1889,16 @@ function renderRxCapture(capture) {
         }
     };
     actions.append(copy);
+    const inspect=document.createElement("button");
+    inspect.type="button";
+    inspect.textContent="Inspect packet";
+    inspect.addEventListener("click",()=>{
+        document.dispatchEvent(new CustomEvent("rfcat:inspect-packet",{detail:{
+            packet:capture,
+            context:"Receiver · packet "+captureIndex
+        }}));
+    });
+    actions.append(inspect);
 
     if (capture.decoder && capture.fields && getProtocol(capture.decoder)) {
         const useTx = document.createElement("button");
