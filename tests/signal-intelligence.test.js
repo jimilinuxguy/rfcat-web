@@ -27,3 +27,17 @@ test("empty captures and malformed capture list",()=>{
  assert.deepEqual(r.fields,[]);
  assert.throws(()=>analyzeSignalCaptures(null),TypeError);
 });
+
+test("candidate counter uses first-seen unique payload order and does not assert identity",()=>{
+ const r=analyzeSignalCaptures([0,1,2,3,4].map(n=>({hex:"AA"+n.toString(16).padStart(2,"0")+"FF"})));
+ const candidate=r.fields[0].candidates[0];
+ assert.equal(candidate.offset,1);
+ assert.equal(candidate.label,"candidate counter");
+ assert.equal(candidate.confidence,"moderate");
+ assert.equal(r.schemaVersion,2);
+});
+test("small-domain variation is only a low-confidence command hypothesis",()=>{
+ const r=analyzeSignalCaptures(["AA00","AB00","AA01","AB01","AA00"].map(hex=>({hex})));
+ assert.equal(r.fields[0].candidates[0].label,"candidate command/flag");
+ assert.equal(r.fields[0].candidates[0].confidence,"low");
+});
