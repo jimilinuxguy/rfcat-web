@@ -14,7 +14,9 @@ test("create, save, reload, validate and import a protocol definition offline",a
  await page.locator("#pd-library").selectOption("m13_test");
  await page.locator("#pd-fields").fill("[]");
  await page.locator("#pd-load").click();
- await expect(page.locator("#pd-fields")).toContainText("counter");
+ await expect(page.locator("#pd-fields")).toHaveValue(/counter/);
+ await page.locator("#pd-refresh").click();
+ await expect(page.locator('#pd-session option[value="m13-fixture"]')).toHaveCount(1);
  await page.locator("#pd-session").selectOption("m13-fixture");
  await page.locator("#pd-validate").click();
  await expect(page.locator("#pd-status")).toContainText("2 of 3 captures matched");
@@ -37,12 +39,14 @@ test("promoting annotations requires preview and explicit confirmation",async({p
  await page.locator("#protocol-definition-builder summary").click();
  await page.locator("#pd-id").fill("promoted");
  await page.locator("#pd-name").fill("Promoted");
+ await page.locator("#pd-refresh").click();
+ await expect(page.locator('#pd-session option[value="m13-promote"]')).toHaveCount(1);
  await page.locator("#pd-session").selectOption("m13-promote");
  await expect(page.locator("#pd-confirm")).toBeDisabled();
  await page.locator("#pd-promote").click();
  await expect(page.locator("#pd-preview")).toContainText("sequence");
  await expect(page.locator("#pd-confirm")).toBeEnabled();
  await page.locator("#pd-confirm").click();
- await expect(page.locator("#pd-fields")).toContainText('"type": "uint"');
+ await expect(page.locator("#pd-fields")).toHaveValue(/"type": "uint"/);
  await expect(page.locator("#pd-status")).toContainText("not saved");
 });
