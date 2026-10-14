@@ -1,3 +1,4 @@
+import {initReceiverDisclosure} from "./js/ui/receiver-disclosure.js";
 import {initSpectrumExplorer} from "./js/ui/spectrum-explorer.js";
 import {initSignalIntelligence} from "./js/ui/signal-intelligence.js";
 import {initProtocolDefinitionBuilder,decodeCustomLiveCapture} from "./js/ui/protocol-definition-builder.js";
@@ -183,6 +184,7 @@ const protocolSelect = $("protocol");
 const protocolFields = $("protocol-fields");
 const waveformPreview = $("waveform-preview");
 
+initReceiverDisclosure();
 initWorkspace();
 
 renderProtocolSelector(protocolSelect, protocols);
