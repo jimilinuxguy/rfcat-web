@@ -13,13 +13,13 @@ test("M21 investigation persists across reload and M22 diagrams/graphs show evid
  await page.locator("#pd-inv-name").fill("M21 investigation");
  await page.locator("#pd-inv-session").selectOption("m21-capture");
  await page.locator("#pd-inv-protocol").selectOption("m21_proto");
- await page.locator("#pd-inv-stages [data-stage=definition]").click();
+ await page.locator("#pd-inv-advanced").evaluate(el=>el.open=true);await page.locator("#pd-inv-stages [data-stage=definition]").click();
  await page.getByRole("button",{name:"Load saved definition"}).click();
  await expect(page.locator("#pd-inv-visual svg")).toHaveCount(1);
- await page.locator("#pd-inv-stages [data-stage=timeline]").click();
+ await page.locator("#pd-inv-advanced").evaluate(el=>el.open=true);await page.locator("#pd-inv-stages [data-stage=timeline]").click();
  await page.getByRole("button",{name:"Plot field timeline"}).click();
  await expect(page.locator("#pd-inv-visual svg")).toHaveAttribute("role","img");
- await page.locator("#pd-inv-stages [data-stage=states]").click();
+ await page.locator("#pd-inv-advanced").evaluate(el=>el.open=true);await page.locator("#pd-inv-stages [data-stage=states]").click();
  await page.getByRole("button",{name:"Draw state graph"}).click();
  await expect(page.locator("#pd-inv-visual svg [role=button]")).toHaveCount(2);
  await page.locator("#pd-inv-visual svg [role=button]").first().click();
