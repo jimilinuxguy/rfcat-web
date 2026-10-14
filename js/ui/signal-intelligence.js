@@ -12,14 +12,14 @@ export function initSignalIntelligence(){
  <p id="intelligence-status" role="status">Select a session to begin.</p><div id="intelligence-results" aria-live="polite"></div></div>`;
  host.append(panel);
  const el=id=>panel.querySelector("#"+id);
- let report=null,source=null;
+ let report=null,source=null,sourceFingerprint=null;
  async function refresh(){
   const previous=el("intelligence-session").value;
   const sessions=await listCaptureSessions();
   el("intelligence-session").replaceChildren(new Option("Select a saved session",""),...sessions.map(s=>new Option(s.name||s.id,s.id)));
   if(sessions.some(s=>s.id===previous))el("intelligence-session").value=previous;
  }
- function reset(){report=null;source=null;el("intelligence-export").disabled=true;el("intelligence-save").disabled=true;el("intelligence-results").replaceChildren();}
+ function reset(){report=null;source=null;sourceFingerprint=null;el("intelligence-export").disabled=true;el("intelligence-save").disabled=true;el("intelligence-results").replaceChildren();}
  el("intelligence-session").addEventListener("change",reset);
  el("intelligence-refresh").addEventListener("click",()=>refresh().catch(error=>{el("intelligence-status").textContent=error.message;}));
  el("intelligence-analyze").addEventListener("click",async()=>{
@@ -30,6 +30,7 @@ export function initSignalIntelligence(){
    source=await getCaptureSession(id);
    if(!source)throw Error("Session not found. Refresh the list.");
    report=analyzeSignalCaptures(source.captures||[]);
+   sourceFingerprint=JSON.stringify((source.captures||[]).map(c=>({hex:c?.hex,protocol:c?.protocol})));
    const results=el("intelligence-results");
    const title=document.createElement("p");
    title.textContent=`${report.validCaptures} valid / ${report.totalCaptures} captures · ${report.uniquePayloads} unique payloads · ${report.repeatedPayloads.length} repeated payloads`;
@@ -56,9 +57,8 @@ export function initSignalIntelligence(){
   try{
    const latest=await getCaptureSession(source.id);
    if(!latest)throw Error("Session was deleted.");
-   const current=analyzeSignalCaptures(latest.captures||[]);
-   const fingerprint=r=>JSON.stringify({total:r.totalCaptures,invalid:r.invalidIndexes,lengths:r.lengths,fields:r.fields,repeated:r.repeatedPayloads});
-   if(fingerprint(current)!==fingerprint(report))throw Error("Session captures changed; analyze again before saving.");
+   const latestFingerprint=JSON.stringify((latest.captures||[]).map(c=>({hex:c?.hex,protocol:c?.protocol})));
+   if(latestFingerprint!==sourceFingerprint)throw Error("Session captures changed; analyze again before saving.");
    await saveCaptureSession({...latest,intelligence:structuredClone(report)});
    el("intelligence-status").textContent="Intelligence report attached to the capture session.";
   }catch(error){el("intelligence-status").textContent="Save failed: "+error.message;}
