@@ -2,7 +2,7 @@
 export const FIELD_KINDS=["unknown","device-id","counter","command","payload","checksum"];
 export function parsePacketRows(captures){
  return (Array.isArray(captures)?captures:[]).flatMap((capture,index)=>{
-  const hex=typeof capture?.hex==="string"?capture.hex.replace(/\\s+/g,"").toUpperCase():"";
+  const hex=typeof capture?.hex==="string"?capture.hex.replace(/\s+/g,"").toUpperCase():"";
   return /^(?:[0-9A-F]{2})+$/.test(hex)?[{index,hex,bytes:hex.match(/../g)}]:[];
  });
 }
