@@ -161,3 +161,7 @@ Open **? Help → Protocol analysis** or **Analyze → Protocol Definition Build
 
 The tours describe when to choose saved capture sessions, load a protocol, move between seven investigation stages, save and resume a record, draw a packet field diagram, plot a field timeline, and inspect state nodes for supporting capture indices. A tour never clicks an analysis button or changes stored data on your behalf. For charts and state graphs, first select a stage and manually draw the visualization; the Help tour explains what appears afterward. No RF hardware is required.
 
+
+## M23–M24: Evidence workbench and Decoder SDK
+
+Under **Analyze → Protocol Definition Builder → Investigation Workspace → Evidence**, create field hypotheses with notes and confidence, attach capture indices, save and reload them with an investigation, and validate across independent sessions. The same workspace includes the trusted **Decoder SDK test bench**. Use the **Hypothesis wizard**, **Evidence validation wizard**, or **Decoder SDK wizard** launch buttons; the Help Center and onboarding offer these tours too. See [Investigation Evidence](../investigation-evidence.md) and [Decoder SDK](../protocol-decoder-sdk.md) for detailed steps and limitations.
