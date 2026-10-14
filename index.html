@@ -353,18 +353,7 @@
                     </div>
                 </div>
 
-                <details class="rx-burst-panel" open>
-                    <summary>Live burst grouping <span class="summary-note">Packet-level · diagnostic only</span></summary>
-                    <p class="hint">Groups consecutive identical receiver payloads on the same configured frequency. All captures continue through the existing decoder and capture list.</p>
-                    <div class="rx-burst-controls">
-                        <label>Duplicate window (ms) <input id="rx-burst-window" type="number" min="0" max="60000" step="50" value="300"></label>
-                        <label><input id="rx-burst-enabled" type="checkbox" checked> Track bursts</label>
-                        <button id="rx-burst-clear" type="button">Reset grouping</button>
-                        <button id="rx-burst-export" type="button">Export burst JSON</button>
-                    </div>
-                    <div id="rx-burst-summary" class="hint" role="status">Awaiting receiver packets.</div>
-                    <div id="rx-burst-list" class="rx-burst-list" aria-live="polite"></div>
-                </details>
+                <details class="rx-specialized collapsible"><summary>Specialized receivers <span class="summary-note">POCSAG</span></summary>
                 <div class="pocsag-rx-preset">
                     <span>POCSAG Receiver</span>
                     <label>
@@ -382,6 +371,21 @@
                     <button id="pocsag-rx-start">Start POCSAG RX</button>
                 </div>
 
+                </details>
+                <details class="rx-diagnostics collapsible"><summary>Receiver diagnostics <span class="summary-note">Burst grouping</span></summary>
+                <details class="rx-burst-panel">
+                    <summary>Live burst grouping <span class="summary-note">Packet-level · diagnostic only</span></summary>
+                    <p class="hint">Groups consecutive identical receiver payloads on the same configured frequency. All captures continue through the existing decoder and capture list.</p>
+                    <div class="rx-burst-controls">
+                        <label>Duplicate window (ms) <input id="rx-burst-window" type="number" min="0" max="60000" step="50" value="300"></label>
+                        <label><input id="rx-burst-enabled" type="checkbox" checked> Track bursts</label>
+                        <button id="rx-burst-clear" type="button">Reset grouping</button>
+                        <button id="rx-burst-export" type="button">Export burst JSON</button>
+                    </div>
+                    <div id="rx-burst-summary" class="hint" role="status">Awaiting receiver packets.</div>
+                    <div id="rx-burst-list" class="rx-burst-list" aria-live="polite"></div>
+                </details>
+                </details>
                 <div class="receiver-controls">
                     <label>
                         Decode
@@ -402,7 +406,7 @@
                             <option value="unknown">Unknown only</option>
                         </select>
                     </label>
-                    <div class="rx-file-actions">
+                    <div class="rx-file-actions" aria-label="Capture actions">
                         <button id="rx-compare" disabled>Compare (0)</button>
                         <button id="rx-infer" disabled>Infer Fields</button>
                         <button id="preset-build" disabled>Build Protocol</button>
@@ -412,7 +416,7 @@
                     </div>
                 </div>
 
-                <details class="card rx-sessions capture-library collapsible" open>
+                <details class="card rx-sessions capture-library collapsible">
                     <summary class="section-summary"><span>Capture Library</span><span id="session-status" class="summary-note">Unsaved</span></summary>
                     <div class="capture-library-search"><input id="library-search" type="search" placeholder="Filter by name, notes, decoder, or frequency"></div>
                     <div class="rx-session-toolbar">
@@ -432,7 +436,7 @@
                     </label>
                 </details>
 
-                <div class="stats">
+                <div class="stats rx-compact-stats">
                     <span>
                         RX events
                         <b id="packets">0</b>
