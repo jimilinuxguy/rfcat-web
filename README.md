@@ -6,6 +6,8 @@ RFCat Web uses WebUSB to configure radios, transmit test frames, capture and dec
 
 ## What you can do
 
+- **M23 evidence and M24 decoder SDK:** Track and validate field hypotheses with linked capture evidence; register trusted offline decoder adapters. Guided Help, browser tests and [developer documentation](docs/protocol-decoder-sdk.md) included. See [Investigation Evidence](docs/investigation-evidence.md).
+
 - **Configure and transmit:** Set frequency, modulation, data rate, bandwidth, power, and packet settings; transmit using protocol-specific encoders or direct RF test modes. The RF Test Bench previews bounded hexadecimal packet sequences and compares subsequent RX packets byte-for-byte.
 - **Receive and decode:** Inspect raw captures, select decoders, and review decoded fields. Auto mode attempts applicable decoders without discarding unknown traffic. Live burst diagnostics group repeated packet events with timestamps, RSSI ranges, adjustable duplicate windows, and JSON export.
 - **Guided M21–M22 workflows:** Five walkthroughs for investigation stages, saving/resuming, field diagrams, timelines and state graphs are available from Help and the Investigation Workspace.

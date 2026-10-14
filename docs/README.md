@@ -4,6 +4,9 @@ Technical reference, protocol notes, and validation guidance for the [RFCat Web 
 
 ## Start here
 
+- [M23 Investigation Evidence & Validation](investigation-evidence.md) — persistent hypotheses, capture evidence links, cross-session contradiction reports, and wizard.
+- [M24 Decoder SDK](protocol-decoder-sdk.md) — trusted versioned decoder registration, offline test bench, security contract and wizard.
+
 - [Guided protocol analysis workflows](help/README.md) — M13–M19 guided tutorials for definition building, evidence, regression, packet comparison, timelines and state inference.
 
 - [Protocol Definition Builder](protocol-definition-builder.md) — offline protocol schemas, decoder validation, local library, annotation promotion, and passive live RX matching.

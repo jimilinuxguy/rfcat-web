@@ -57,7 +57,7 @@ test("tour target selectors exist in the page markup",async()=>{
  const dynamic=readFileSync(new URL("../js/ui/replay-controller.js",import.meta.url),"utf8");
  const spectrum=readFileSync(new URL("../js/ui/spectrum-explorer.js",import.meta.url),"utf8");
  const intelligence=readFileSync(new URL("../js/ui/signal-intelligence.js",import.meta.url),"utf8");
- const protocolUi=["protocol-definition-builder.js","protocol-decoder-workbench.js","protocol-timeline.js","protocol-state-machine.js","protocol-investigation.js"].map(file=>readFileSync(new URL("../js/ui/"+file,import.meta.url),"utf8")).join("\n");
+ const protocolUi=["protocol-definition-builder.js","protocol-decoder-workbench.js","protocol-timeline.js","protocol-state-machine.js","protocol-investigation.js","protocol-evidence-workbench.js"].map(file=>readFileSync(new URL("../js/ui/"+file,import.meta.url),"utf8")).join("\n");
  for(const tour of TOURS)for(const step of tour.steps){
   if(step.target.startsWith("#"))assert.ok(html.includes('id="'+step.target.slice(1)+'"')||(step.target.startsWith("#replay-")&&dynamic.includes('id="'+step.target.slice(1)+'"'))||(step.target.startsWith("#spectrum-")&&spectrum.includes('id="'+step.target.slice(1)+'"'))||(step.target.startsWith("#intelligence-")&&intelligence.includes('id="'+step.target.slice(1)+'"'))||(step.target==="#signal-intelligence"&&intelligence.includes('panel.id="signal-intelligence"'))||(step.target.startsWith("#pd-")&&protocolUi.includes('id="'+step.target.slice(1)+'"')),tour.id+": "+step.target);
   else if(step.target.startsWith("."))assert.ok(html.includes(step.target.slice(1)),tour.id+": "+step.target);
