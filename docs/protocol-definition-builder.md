@@ -1,5 +1,12 @@
 # M13 — Protocol Definition Builder
 
+## Guided protocol analysis workflows (M13–M19)
+
+The welcome wizard and **? Help → Protocol analysis** now include six guided workflows: **Build a reusable protocol definition**, **Cross-session protocol evidence**, **Build protocol regression fixtures**, **Compare decoded packets**, **Analyze protocol field timelines**, and **Infer candidate protocol states**. Each walkthrough highlights real controls in **Analyze → Protocol Definition Builder**, supports Back/Next/Exit and completion tracking, and navigates to Analyze automatically. The builder also has direct guide buttons for definition creation, evidence and regression; Decoder Workbench, Timeline and State Machine panels each have a **Guided walkthrough** button. Searchable contextual topics link to the protocol builder guide. No tutorial runs analysis, saves data, modifies radio configuration, or transmits automatically. Open the relevant panel and manually operate its controls. Offline workflows require existing captures, not hardware. Confirm any protocol interpretation with independent evidence.
+
+For browser acceptance, open each tour from Help and from its panel button; check that dynamically created controls are highlighted and the parent details panel expands. Use Back, Next and Exit; test with no saved sessions, keyboard navigation, narrow screens, and after a workspace layout change. Run `npm run verify` to check selector coverage and browser tour integration.
+
+
 Open **Analyze → Protocol Definition Builder**. This hardware-free workbench converts packet-field hypotheses into reusable, versioned, declarative protocol definitions. It does **not** register a transmitter or reconfigure RF hardware.
 
 ## Visual field editor (M14)
