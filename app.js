@@ -1,3 +1,4 @@
+import {initReceiverDisclosure} from "./js/ui/receiver-disclosure.js";
 import {initSpectrumExplorer} from "./js/ui/spectrum-explorer.js";
 import {initSignalIntelligence} from "./js/ui/signal-intelligence.js";
 import {initProtocolDefinitionBuilder,decodeCustomLiveCapture} from "./js/ui/protocol-definition-builder.js";
@@ -183,6 +184,7 @@ const protocolSelect = $("protocol");
 const protocolFields = $("protocol-fields");
 const waveformPreview = $("waveform-preview");
 
+initReceiverDisclosure();
 initWorkspace();
 
 renderProtocolSelector(protocolSelect, protocols);
@@ -1887,6 +1889,16 @@ function renderRxCapture(capture) {
         }
     };
     actions.append(copy);
+    const inspect=document.createElement("button");
+    inspect.type="button";
+    inspect.textContent="Inspect packet";
+    inspect.addEventListener("click",()=>{
+        document.dispatchEvent(new CustomEvent("rfcat:inspect-packet",{detail:{
+            packet:capture,
+            context:"Receiver · packet "+captureIndex
+        }}));
+    });
+    actions.append(inspect);
 
     if (capture.decoder && capture.fields && getProtocol(capture.decoder)) {
         const useTx = document.createElement("button");
