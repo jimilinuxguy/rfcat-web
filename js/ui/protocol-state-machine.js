@@ -12,7 +12,7 @@ export function initProtocolStateMachine(panel,{getDefinition,setStatus}){
  el("pd-sm-refresh").addEventListener("click",()=>{try{fields();refresh().catch(e=>setStatus(e.message));}catch(e){setStatus(e.message);}});
  el("pd-sm-run").addEventListener("click",async()=>{try{
   const session=await getCaptureSession(el("pd-sm-session").value);if(!session)throw Error("Select a capture session");
-  fields();report=inferProtocolStateMachine(getDefinition(),session.captures,{fieldName:el("pd-sm-field").value||null,includeInvalidChecksums:el("pd-sm-invalid").checked});
+  report=inferProtocolStateMachine(getDefinition(),session.captures,{fieldName:el("pd-sm-field").value||null,includeInvalidChecksums:el("pd-sm-invalid").checked});
   const root=el("pd-sm-results");root.replaceChildren();
   function table(id,headers,rows){const table=document.createElement("table");table.id=id;const head=document.createElement("tr");for(const h of headers){const th=document.createElement("th");th.textContent=h;head.append(th);}table.append(head);for(const values of rows){const tr=document.createElement("tr");for(const value of values){const td=document.createElement("td");td.textContent=String(value);tr.append(td);}table.append(tr);}root.append(table);}
   table("pd-sm-states",["State","Label","Observations","First capture"],report.states.map(s=>[s.id,s.label,s.count,s.firstIndex]));
