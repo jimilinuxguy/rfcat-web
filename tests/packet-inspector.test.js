@@ -16,7 +16,7 @@ test("invalid data and selections are rejected",()=>{
 test("comparison identifies changed bits and lengths",()=>{
  const result=inspectComparison("AABB","AABC00");
  assert.deepEqual(result.pairs[0].changedBytes,[1,2]);
- assert.deepEqual(result.regions[1].changedBits,[4,2,1,0]);
+ assert.deepEqual(result.regions[1].changedBits,[2,1,0]);
 });
 test("fields map exact ranges and unmatched packets",()=>{
  const def={schemaVersion:1,id:"sample",name:"Sample",packetLength:2,sync:"",fields:[{name:"Header",start:0,width:1,type:"hex"},{name:"Flag",start:1,width:1,type:"bits",bitOffset:2,bitWidth:3}]};
