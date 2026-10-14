@@ -2,7 +2,7 @@
 export const WORKSPACES=["receive","transmit","analyze","protocols","tools"];
 export const WORKSPACE_PANELS={
  "radio":"tools","receiver":"receive","capture-library":"receive",
- "pulse-analyzer":"analyze","signal-analyzer":"analyze",
+ "pulse-analyzer":"analyze","signal-analyzer":"analyze","spectrum-explorer":"analyze",
  "transmitter":"transmit","test-bench":"transmit","waveform":"transmit",
  "cw":"protocols","momentum-chat":"protocols","activity":"shared"
 };
