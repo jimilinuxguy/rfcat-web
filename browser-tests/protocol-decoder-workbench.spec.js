@@ -1,0 +1,22 @@
+import {test,expect} from "@playwright/test";
+test("M17 compares captured packets and highlights changed fields",async({page})=>{
+ await page.goto("/");
+ await page.evaluate(async()=>{const {saveCaptureSession}=await import("./js/storage/capture-session-store.js");await saveCaptureSession({id:"m17-fixture",name:"M17 fixture",captures:[{hex:"AA01AB"},{hex:"AA02A8"},{hex:"BB01BA"}]});});
+ await page.locator('[data-workspace-tab="analyze"]').click();
+ await page.locator("#protocol-definition-builder summary").click();
+ await page.locator("#pd-id").fill("m17_demo");
+ await page.locator("#pd-name").fill("M17 demo");
+ await page.locator("#pd-length").fill("3");
+ await page.locator("#pd-sync").fill("AA");
+ await page.locator("#pd-fields").fill(JSON.stringify([{name:"counter",start:1,width:1,type:"uint"},{name:"check",start:2,width:1,type:"checksum",algorithm:"xor8",checksumStart:0,checksumEnd:1}]));
+ await page.locator("#pd-wb-refresh").click();
+ await expect(page.locator('#pd-wb-session option[value="m17-fixture"]')).toHaveCount(1);
+ await page.locator("#pd-wb-session").selectOption("m17-fixture");
+ await page.locator("#pd-wb-load").click();
+ await expect(page.locator("#pd-wb-packets")).toHaveValue(/AA01AB/);
+ await page.locator("#pd-wb-compare").click();
+ await expect(page.locator("#pd-wb-summary")).toContainText("2/3 matched");
+ await expect(page.locator("#pd-wb-table")).toContainText("counter");
+ await expect(page.locator("#pd-wb-table")).toContainText("Byte 1");
+ await expect(page.locator("#pd-status")).toContainText("Workbench comparison ready");
+});
