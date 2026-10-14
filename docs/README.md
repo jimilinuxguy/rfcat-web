@@ -4,6 +4,8 @@ Technical reference, protocol notes, and validation guidance for the [RFCat Web 
 
 ## Start here
 
+- [Packet Field Editor](packet-field-editor.md) — interactive byte comparisons, tentative annotations, JSON export and local persistence.
+
 - [Signal Intelligence](signal-intelligence.md) — offline packet fingerprints, fixed/variable byte positions, experimental candidate field inference, unverified decoder labels, session reports and validation.
 
 - [Sub-GHz Spectrum Explorer](spectrum-explorer.md) — stepped RSSI surveys, auto/fixed chart scaling, hover inspection, waterfall, baseline comparison, guided wizard, CSV export and validation.
