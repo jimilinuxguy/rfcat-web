@@ -42,6 +42,17 @@ export function initSignalIntelligence(){
     line.textContent=field.length+"-byte frames: fixed offsets "+field.bytes.filter(b=>b.kind==="fixed").map(b=>b.offset).join(", ")+"; variable offsets "+field.bytes.filter(b=>b.kind==="variable").map(b=>b.offset).join(", ");
     results.append(line);
    }
+   for(const field of report.fields){
+    if(!field.candidates?.length)continue;
+    const heading=document.createElement("h4");heading.textContent=field.length+"-byte cohort · field candidates";results.append(heading);
+    const list=document.createElement("ul");list.className="intelligence-candidates";
+    for(const candidate of field.candidates){
+     const item=document.createElement("li");
+     item.textContent="Byte "+candidate.offset+" · "+candidate.label+" · "+candidate.confidence+" confidence (score "+candidate.score+"): "+candidate.evidence;
+     list.append(item);
+    }
+    results.append(list);
+   }
    for(const profile of report.profiles){const p=document.createElement("p");p.textContent="Decoder label: "+profile.name+" ("+profile.supportingCaptures+" captures; unverified)";results.append(p);}
    el("intelligence-export").disabled=false;el("intelligence-save").disabled=false;
    el("intelligence-status").textContent="Offline analysis complete. Review evidence before attaching.";
