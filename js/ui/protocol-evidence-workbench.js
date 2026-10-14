@@ -4,7 +4,7 @@ import {normalizeHypothesis,evaluateHypothesis,HYPOTHESIS_KINDS} from "../rx/inv
 import {listProtocolDecoders,decodeWithProtocolDecoder} from "../rx/protocol-decoder-sdk.js";
 export function initProtocolEvidenceWorkbench(section,{getDefinition,getInvestigationId,setStatus}){
  const host=document.createElement("section");host.id="pd-evidence-workbench";
- host.innerHTML=`<h4>M23 Evidence & Validation / M24 Decoder SDK</h4><p>Hypotheses are annotations, not verified protocol semantics. Decoder adapters are trusted application modules; imported JSON cannot execute code.</p>
+ host.innerHTML=`<h4>Evidence & Decoder Validation</h4><p>Hypotheses are annotations, not verified protocol semantics. Decoder adapters are trusted application modules; imported JSON cannot execute code.</p>
  <div class="actions"><label>Field <select id="pd-hyp-field"></select></label><label>Hypothesis <select id="pd-hyp-kind"></select></label><label>Confidence <select id="pd-hyp-confidence"><option>low</option><option>medium</option><option>high</option></select></label></div>
  <label>Notes <textarea id="pd-hyp-notes" rows="2" maxlength="2000"></textarea></label>
  <div class="actions"><label>Evidence session <select id="pd-hyp-session"></select></label><label>Capture index (zero-based) <input id="pd-hyp-index" type="number" min="0" value="0"></label><button id="pd-hyp-link" type="button">Link capture evidence</button><button id="pd-hyp-save" type="button">Save hypothesis</button></div>
