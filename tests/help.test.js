@@ -25,12 +25,18 @@ test("every contextual help and tutorial selector exists in index.html",()=>{
  const dynamic=readFileSync(new URL("../js/ui/replay-controller.js",import.meta.url),"utf8");
  const spectrum=readFileSync(new URL("../js/ui/spectrum-explorer.js",import.meta.url),"utf8");
  const intelligence=readFileSync(new URL("../js/ui/signal-intelligence.js",import.meta.url),"utf8");
+ const protocolUi=["protocol-definition-builder.js","protocol-decoder-workbench.js","protocol-timeline.js","protocol-state-machine.js","visual-field-editor.js"].map(file=>readFileSync(new URL("../js/ui/"+file,import.meta.url),"utf8")).join("\n");
  const selectors=[...HELP_TOPICS.map(t=>t.target),...TOURS.flatMap(t=>t.steps.map(s=>s.target))];
  for(const selector of selectors){
   const name=selector.slice(1);
   const exists=selector[0]==="#"
    ? [...html.matchAll(/\bid="([^"]+)"/g)].some(m=>m[1]===name)
    : [...html.matchAll(/\bclass="([^"]+)"/g)].some(m=>m[1].split(/\s+/).includes(name));
-  assert.ok(exists||(selector.startsWith("#replay-")&&dynamic.includes(`id="${name}"`))||(selector.startsWith("#spectrum-")&&spectrum.includes(`id="${name}"`))||(selector.startsWith("#intelligence-")&&intelligence.includes(`id="${name}"`))||(selector==="#signal-intelligence"&&intelligence.includes('panel.id="signal-intelligence"')),"Missing help target: "+selector);
+  assert.ok(exists||(selector.startsWith("#replay-")&&dynamic.includes(`id="${name}"`))||(selector.startsWith("#spectrum-")&&spectrum.includes(`id="${name}"`))||(selector.startsWith("#intelligence-")&&intelligence.includes(`id="${name}"`))||(selector==="#signal-intelligence"&&intelligence.includes('panel.id="signal-intelligence"'))||(selector.startsWith("#pd-")&&protocolUi.includes(`id="${name}"`)),"Missing help target: "+selector);
  }
+});
+
+test("M13–M19 guided workflows cover protocol builder, evidence, regression, decoder, timeline and state inference",()=>{
+ for(const id of ["protocol-builder","protocol-evidence","protocol-regression","protocol-decoder","protocol-timeline","protocol-state-machine"]){const tour=findTour(id);assert.ok(tour,id);assert.equal(tour.category,"Protocol analysis");assert.ok(tour.steps.length>=4);assert.ok(tour.steps.every(step=>step.workspace==="analyze"));}
+ assert.ok(HELP_TOPICS.some(topic=>topic.target==="#pd-sm-run"));
 });
