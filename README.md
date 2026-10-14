@@ -165,3 +165,5 @@ Tools includes a browser-only YARD Stick One firmware manager using Web Serial f
 - **M25/M26 — Automated candidate discovery and multi-session correlation:** infer byte-aligned protocol layouts from saved captures, compare candidates, preserve reviews, and promote editable protocol drafts. Includes [workflow documentation](docs/protocol-discovery-correlation.md), guided wizards and browser tests.
 
 - **M27–M30 Offline Protocol Lab:** Deterministic packet replay, synthetic test packets, decoder differential analysis, and evidence dashboard, with [documentation](docs/protocol-offline-lab.md), four guided wizards, and hardware-free browser tests.
+
+- **M31–M34 Investigation Intelligence:** Run a unified offline investigation pipeline, inspect MSB-first bit variability and Hamming distances, discover trailing checksum/CRC candidates, and cluster similar packets. Includes four guided wizards, reproducible screenshots (`npm run screenshots:intelligence`), browser tests, and [full documentation](docs/protocol-intelligence.md).
