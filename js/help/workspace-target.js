@@ -22,6 +22,9 @@ export function revealHelpTarget(target,doc=document){
  if(workspace&&workspace!=="shared"){
   doc.dispatchEvent(new CustomEvent("rfcat:workspace-activate",{detail:{workspace}}));
  }
+ // Reveal only the relevant offline investigation tool tab; never activate RF controls.
+ const toolPanel=node.closest("#pd-tools-compare-panel,#pd-tools-hypotheses-panel,#pd-tools-tests-panel");
+ if(toolPanel?.hidden){const name=toolPanel.id.replace("pd-tools-","").replace("-panel","");doc.getElementById("pd-tools-"+name)?.click();}
  // Opening an ancestor details panel is necessary for nested help controls.
  let parent=node.closest("details");
  while(parent){parent.open=true;parent=parent.parentElement?.closest("details");}
