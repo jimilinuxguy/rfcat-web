@@ -3,8 +3,8 @@ export function inferProtocolStateMachine(definition,captures,{fieldName=null,in
  const timeline=analyzeProtocolTimeline(definition,captures);
  const candidates=timeline.fields.filter(field=>field.type==="enum"||field.type==="bits"||field.type==="uint"||field.type==="hex");
  const selected=fieldName?candidates.find(field=>field.name===fieldName):candidates.find(field=>field.type==="enum")??candidates.find(field=>field.type==="bits")??candidates.find(field=>field.type==="uint"&&!field.incrementing)??candidates[0];
- if(!selected)throw Error("No suitable decoded state field found");
  if(fieldName&&!candidates.some(field=>field.name===fieldName))throw Error("Unknown state field");
+ if(!selected)throw Error("No suitable decoded state field found");
  const observations=timeline.events.filter(event=>event.matched&&(includeInvalidChecksums||event.checksumsValid!==false)).map(event=>{
   const decoded=event.fields.find(field=>field.name===selected.name);
   return decoded?{index:event.index,time:event.time,value:String(decoded.value),label:String(decoded.label??decoded.value)}:null;
