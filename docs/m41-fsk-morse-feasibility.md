@@ -36,3 +36,20 @@ At 20 WPM, one dot is 60 ms, one dash is 180 ms, and word gaps are 420 ms. At 5 
 **Conditional / not yet proven.** Reuse the existing Morse timing decoder if the receive path can produce valid timed runs. Do not implement or advertise live FSK Morse RX until the hardware gate passes.
 
 References: [TI CC1110/CC1111 datasheet](https://www.ti.com/lit/ds/symlink/cc1110-cc1111.pdf), [RFCat upstream](https://github.com/atlas0fd00m/rfcat), [existing CW workbench](cw-workbench.md).
+
+## Upstream RFCat firmware source inspection
+
+Source inspected: [appNIC.c](https://github.com/atlas0fd00m/rfcat/blob/cf7a4f986aa50f6a1eec2b3cd5cfb6b81cb1723f/firmware/appNIC.c) and [cc1111rf.c](https://github.com/atlas0fd00m/rfcat/blob/cf7a4f986aa50f6a1eec2b3cd5cfb6b81cb1723f/firmware/cc1111rf.c).
+
+- `appNIC.c` lines 64–76: `NIC_RECV` USB events are sent after `RFIF_IRQ_DONE` and expose a packet buffer. They are **not** documented as a continuous, timestamped discriminator-state stream.
+- `cc1111rf.c` lines 433–495: RX uses radio byte reception, with DMA when enabled, and packet-completion interrupts.
+- `cc1111rf.c` lines 533–554: an interrupt-driven infinite-length mode is present, but this is a **byte/packet length feature**, not evidence that clock recovery tolerates seconds of unchanged symbols.
+- Consequently, browser-side decoding of arbitrary NIC_RECV payloads as FSK Morse would be misleading. The new `js/cw/fsk-symbols.js` and `js/cw/fsk-run-stream.js` modules are **offline-only** adapters for independently verified demodulated symbols.
+
+### Next hardware gate
+
+Identify a firmware-supported, continuously clocked demodulated-bit output or an on-chip sampling mechanism that can be transferred over USB without losing timing. Verify actual CC1111 pin mux constraints and clock recovery for long constant states before attempting any custom firmware or live browser integration. This requires a connected device and a known-good second RF signal source; neither has been exercised in this investigation.
+
+### Implementation status
+
+Offline adapter and continuous stream assembler committed with unit-test source. Test execution and physical validation remain pending. No live FSK UI, flash, or PR.
