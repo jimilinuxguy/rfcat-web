@@ -53,7 +53,7 @@ export async function reserveSecurityPlusCode(name, expectedCode, fixed, frequen
                     return reject(new Error("Rolling-code counter exhausted"));
                 }
                 // The encoder masks bit zero. Advance by two to avoid an identical next waveform.
-                const nextRolling = (nextCode & ~1) + 2;
+                const nextRolling = nextCode - (nextCode % 2) + 2;
                 reserved = { name: key, rolling: nextCode, nextRolling };
                 store.put({
                     name: key, nextRolling, fixed, frequency, repeats, invert,
