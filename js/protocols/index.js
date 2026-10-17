@@ -1,4 +1,5 @@
 import binary from "./binary.js";
+import securityPlus from "./security-plus.js";
 import came12 from "./came12.js";
 import lrs from "./lrs.js";
 import jtech from "./jtech.js";
@@ -24,6 +25,7 @@ import { retekessT119, retekessTd157, retekessTd165, retekessTd174 } from "./ret
 
 export const protocols = Object.freeze([
     binary,
+    securityPlus,
     came12,
     lrs,
     jtech,
