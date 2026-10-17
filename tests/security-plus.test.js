@@ -13,7 +13,7 @@ test("Security+ numeric validation and packing", () => {
     assert.equal(parseSecplusInteger("0xFFFFFFFF", "rolling", 0xffffffff), 0xffffffff);
     assert.equal(parseSecplusInteger("123", "fixed", SECPLUS_MAX_FIXED), 123);
     assert.throws(() => parseSecplusInteger("-1", "rolling", 0xffffffff));
-    assert.throws(() => encodeSecurityPlus(0, 0, 20), /|/);
+    assert.equal(encodeSecurityPlus(0, 0, 20).bytes.length, 1025);
     assert.equal(encodeSecurityPlus(0, 0, 1).bytes.length, 75);
     assert.notDeepEqual(encodeSecurityPlus(0, 0, 1).bytes, encodeSecurityPlus(2, 0, 1).bytes);
 });
