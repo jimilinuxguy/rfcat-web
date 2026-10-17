@@ -318,7 +318,9 @@ async function initializeSecurityPlusFields() {
             status("Saved Security+ profile locally. Next code: " + encoded.rolling);
         } catch(error) { status("Security+ profile save error: " + error.message); }
     };
-    await loadProfile();
+    // Load an existing profile automatically, but do not overwrite a new user's draft.
+    const saved = await loadSecurityPlusProfile(field("profile").value).catch(() => null);
+    if (saved) await loadProfile();
 }
 
 async function selectProtocol() {
