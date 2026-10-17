@@ -271,7 +271,6 @@ function pocsagFingerprint(decoded) {
     return [f.capcode, f.function, f.message, f.polarity].join("|");
 }
 
-async 
 // The profile controls live inside the existing protocol-specific field host.
 // A rolling-code reservation is durably written BEFORE RF transmission, because
 // interrupted USB sends can still be received over the air.
@@ -322,7 +321,7 @@ async function initializeSecurityPlusFields() {
     await loadProfile();
 }
 
-function selectProtocol() {
+async function selectProtocol() {
     const protocol = getProtocol(protocolSelect.value);
 
     if (!protocol) {
