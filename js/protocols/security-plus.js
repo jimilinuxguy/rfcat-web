@@ -63,6 +63,12 @@ export function encodeSecurityPlus(rolling, fixed, repeats = 4) {
     };
 }
 
+function encodedLengthForRepeats(repeats) {
+    const count = Number(repeats);
+    if (!Number.isInteger(count) || count < 1 || count > 4) throw new Error("Repetitions must be 1..4");
+    return 25 + 50 * count;
+}
+
 const securityPlus = {
     id: "security-plus",
     name: "Security+ 1.0 (rolling code)",
@@ -106,7 +112,15 @@ const securityPlus = {
         await device.poke(R.PKTCTRL0, new Uint8Array([pktctrl0 & ~0x47]));
         let pktctrl1 = (await device.peek(R.PKTCTRL1))[0];
         await device.poke(R.PKTCTRL1, new Uint8Array([pktctrl1 & ~0x07]));
-        await device.configureAskOokPa();
+        // Match rfcat-secplus setMaxPower(): ASK/OOK uses PA_TABLE1, not PA_TABLE0.
+        // A populated PA_TABLE0 with PA_POWER=1 can select the wrong power level.
+        await device.setMaxPower();
+        // The waveform is sent as one fixed-length packet, not the previous
+        // radio configuration's packet length.
+        await device.poke(R.PKTLEN, new Uint8Array([encodedLengthForRepeats(values.repeats)]));
+        // Disable preamble quality threshold and carrier-sense gating.
+        const p1 = (await device.peek(R.PKTCTRL1))[0];
+        await device.poke(R.PKTCTRL1, new Uint8Array([p1 & 0x07]));
     },
     async transmit(device, encoded) {
         await device.setAmpMode(true);
