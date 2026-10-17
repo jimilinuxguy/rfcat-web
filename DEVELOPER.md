@@ -274,3 +274,7 @@ Use:
 -   `docs/README.md` as the documentation index.
 -   `docs/protocols/*.md` for protocol research, packet layouts, RF
     timing, test vectors, and validation notes.
+
+## Security+ 1.0 transmitter
+
+The browser-native encoder resides in `js/protocols/security-plus.js`; IndexedDB profile reservations are in `js/storage/security-plus-store.js` (database schema v8). See [docs/protocols/security-plus.md](docs/protocols/security-plus.md) for roll-forward behavior, 255-byte WebUSB TX constraints, verification status, and upstream GPL license obligations.

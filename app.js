@@ -26,6 +26,7 @@ import { initWorkspace } from "./js/ui/workspace.js";
 import { deleteCaptureSession, getCaptureSession, listCaptureSessions, saveCaptureSession } from "./js/storage/capture-session-store.js";
 
 import { protocols, getProtocol } from "./js/protocols/index.js";
+import { loadSecurityPlusProfile, saveSecurityPlusProfile, reserveSecurityPlusCode } from "./js/storage/security-plus-store.js";
 
 import {
     renderProtocolSelector,
@@ -270,7 +271,59 @@ function pocsagFingerprint(decoded) {
     return [f.capcode, f.function, f.message, f.polarity].join("|");
 }
 
-function selectProtocol() {
+// The profile controls live inside the existing protocol-specific field host.
+// A rolling-code reservation is durably written BEFORE RF transmission, because
+// interrupted USB sends can still be received over the air.
+async function initializeSecurityPlusFields() {
+    if (protocolSelect.value !== "security-plus") return;
+    const host = protocolFields;
+    const field = id => host.querySelector(`[data-protocol-field="${id}"]`);
+    const note = document.createElement("p");
+    note.className = "hint";
+    note.dataset.secplusStatus = "";
+    note.textContent = "Code storage: local browser IndexedDB. The next encoded code is reserved before TX. Separate browsers do not synchronize.";
+    host.append(note);
+    const actions = document.createElement("div");
+    actions.className = "actions";
+    const load = document.createElement("button");
+    load.type = "button"; load.textContent = "Load saved profile";
+    const save = document.createElement("button");
+    save.type = "button"; save.textContent = "Save profile";
+    actions.append(load, save); host.append(actions);
+    const collect = () => getProtocolValues(host, getProtocol("security-plus"));
+    const status = message => { note.textContent = message; log(message); };
+    const loadProfile = async () => {
+        try {
+            const saved = await loadSecurityPlusProfile(field("profile").value);
+            if (!saved) return status("No saved Security+ profile with that name. Enter values and save.");
+            field("rolling").value = String(saved.nextRolling);
+            field("fixed").value = String(saved.fixed);
+            field("frequency").value = String(saved.frequency);
+            field("repeats").value = String(saved.repeats);
+            field("invert").checked = Boolean(saved.invert);
+            status(`Loaded Security+ profile "${saved.name}" · next code ${saved.nextRolling}`);
+            updateProtocolPreview();
+        } catch(error) { status("Security+ profile load error: " + error.message); }
+    };
+    load.onclick = loadProfile;
+    save.onclick = async () => {
+        try {
+            const values = collect();
+            const encoded = getProtocol("security-plus").encode(values);
+            await saveSecurityPlusProfile({
+                name: values.profile.trim(), nextRolling: encoded.rolling,
+                fixed: encoded.fixed, frequency: encoded.frequency,
+                repeats: encoded.repeats, invert: Boolean(values.invert),
+            });
+            status("Saved Security+ profile locally. Next code: " + encoded.rolling);
+        } catch(error) { status("Security+ profile save error: " + error.message); }
+    };
+    // Load an existing profile automatically, but do not overwrite a new user's draft.
+    const saved = await loadSecurityPlusProfile(field("profile").value).catch(() => null);
+    if (saved) await loadProfile();
+}
+
+async function selectProtocol() {
     const protocol = getProtocol(protocolSelect.value);
 
     if (!protocol) {
@@ -279,6 +332,7 @@ function selectProtocol() {
     }
 
     renderProtocolFields(protocolFields, protocol);
+    if (protocol.id === "security-plus") await initializeSecurityPlusFields();
     updateProtocolPreview();
 }
 
@@ -824,9 +878,21 @@ $("protocol-transmit").onclick = async () => {
             log(encoded.summary);
         }
 
+        let reservation = null;
+        if (protocol.id === "security-plus") {
+            if (!window.confirm("Transmit Security+ 1.0 on authorized equipment? The next rolling code will be consumed before RF transmission.")) return;
+            reservation = await reserveSecurityPlusCode(
+                values.profile, encoded.rolling, encoded.fixed, encoded.frequency,
+                encoded.repeats, Boolean(values.invert),
+            );
+            const nextInput = protocolFields.querySelector('[data-protocol-field="rolling"]');
+            if (nextInput) nextInput.value = String(reservation.nextRolling);
+            updateProtocolPreview();
+            log(`Security+ code ${reservation.rolling} reserved. Next: ${reservation.nextRolling}`);
+        }
         await protocol.transmit(d, encoded, values);
-
         log(`TX ${encoded.bytes.length} bytes: ` + hex(encoded.bytes));
+        if (reservation) log(`Security+ TX command acknowledged. Next rolling code: ${reservation.nextRolling}. Receiver acceptance not verified.`);
     } catch (e) {
         log(`Protocol TX error: ${e.message}`);
     } finally {

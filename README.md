@@ -171,3 +171,7 @@ Tools includes a browser-only YARD Stick One firmware manager using Web Serial f
 - **Guided investigation workflow:** Four clear steps, visual packet comparisons, evidence-backed pattern suggestions, decoder expectations, and a streamlined interface with advanced tools tucked away. [User guide](docs/investigation-workflow.md). Walkthroughs are in the main (?) Help menu.
 
 Packet inspection: The Investigation Workspace includes an offline, read-only [Packet Inspector](docs/unified-packet-inspector.md) for saved capture sessions, with hex/ASCII/bit views, field decoding, comparison, annotations and JSON export.
+
+### Security+ 1.0 transmitter
+
+The Protocol Transmitter includes a browser-native Security+ 1.0 OOK waveform encoder with IndexedDB rolling-code profiles. See [Security+ transmitter documentation](docs/protocols/security-plus.md) for setup, limitations, and authorization guidance. Security+ 2.0 is not supported.
