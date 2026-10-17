@@ -115,13 +115,18 @@ const securityPlus = {
         await device.poke(R.PKTCTRL1, new Uint8Array([pktctrl1 & ~0x07]));
         // Match rfcat-secplus setMaxPower(): ASK/OOK uses PA_TABLE1, not PA_TABLE0.
         // A populated PA_TABLE0 with PA_POWER=1 can select the wrong power level.
-        await device.setMaxPower();
+        // Write the PA table as one contiguous burst. Individual PA_TABLE0/1
+        // writes may not address the CC1111 PATABLE FIFO as intended.
+        await device.poke(R.PATABLE, new Uint8Array([0x00, 0xc2, 0, 0, 0, 0, 0, 0]));
+        await device.setTxPaPower();
         // The waveform is sent as one fixed-length packet, not the previous
         // radio configuration's packet length.
         await device.poke(R.PKTLEN, new Uint8Array([encodedLengthForRepeats(values.repeats)]));
         // Disable preamble quality threshold and carrier-sense gating.
         const p1 = (await device.peek(R.PKTCTRL1))[0];
         await device.poke(R.PKTCTRL1, new Uint8Array([p1 & 0x07]));
+        // PATABLE is a special access register: its read pointer behavior can
+        // differ from ordinary memory, so readback is diagnostic, not proof.
         const pa = await device.peek(R.PATABLE, 2);
         const frend0 = (await device.peek(R.FREND0))[0];
         const pktlen = (await device.peek(R.PKTLEN))[0];
