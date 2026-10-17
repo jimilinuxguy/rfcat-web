@@ -98,3 +98,5 @@ Operate only on authorized frequencies and equipment. Prefer controlled, short b
 - [M31–M34 Investigation Intelligence](protocol-intelligence.md) — automated pipeline, bit analysis, CRC candidate search, packet clustering, screenshot generation, Help tours and tests.
 
 - [Investigation workflow and packet validation](investigation-workflow.md) — visual comparisons, hypothesis evidence, decoder test corpus, clean navigation and screenshots.
+
+- [Security+ 1.0 transmitter](protocols/security-plus.md): OOK waveform encoding, profiles, IndexedDB and rolling-code handling.
