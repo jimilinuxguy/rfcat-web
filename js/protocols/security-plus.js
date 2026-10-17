@@ -2,6 +2,7 @@
 // The companion source is GPL-3.0-or-later, derived from argilo/secplus.
 // Retain the source attribution and license obligations when distributing.
 import { R } from "../radio/registers.js";
+import { log } from "../ui/log.js";
 
 export const SECPLUS_MAX_FIXED = 3 ** 20 - 1;
 export function parseSecplusInteger(value, label, max) {
@@ -121,6 +122,14 @@ const securityPlus = {
         // Disable preamble quality threshold and carrier-sense gating.
         const p1 = (await device.peek(R.PKTCTRL1))[0];
         await device.poke(R.PKTCTRL1, new Uint8Array([p1 & 0x07]));
+        const pa = await device.peek(R.PATABLE, 2);
+        const frend0 = (await device.peek(R.FREND0))[0];
+        const pktlen = (await device.peek(R.PKTLEN))[0];
+        const pktctrl0 = (await device.peek(R.PKTCTRL0))[0];
+        log(`Security+ pre-TX radio: PATABLE0=0x${pa[0].toString(16).padStart(2, "0")} PATABLE1=0x${pa[1].toString(16).padStart(2, "0")} FREND0=0x${frend0.toString(16).padStart(2, "0")} PKTLEN=${pktlen} PKTCTRL0=0x${pktctrl0.toString(16).padStart(2, "0")}`);
+        if (pktlen !== encodedLengthForRepeats(values.repeats) || (frend0 & 0x07) !== 1) {
+            throw new Error("Security+ TX radio readback does not match expected packet length / PA power");
+        }
     },
     async transmit(device, encoded) {
         await device.setAmpMode(true);
