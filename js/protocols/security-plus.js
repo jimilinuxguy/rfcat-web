@@ -125,8 +125,8 @@ const securityPlus = {
         const pa = await device.peek(R.PATABLE, 2);
         const frend0 = (await device.peek(R.FREND0))[0];
         const pktlen = (await device.peek(R.PKTLEN))[0];
-        const pktctrl0 = (await device.peek(R.PKTCTRL0))[0];
-        log(`Security+ pre-TX radio: PATABLE0=0x${pa[0].toString(16).padStart(2, "0")} PATABLE1=0x${pa[1].toString(16).padStart(2, "0")} FREND0=0x${frend0.toString(16).padStart(2, "0")} PKTLEN=${pktlen} PKTCTRL0=0x${pktctrl0.toString(16).padStart(2, "0")}`);
+        const pktctrl0Readback = (await device.peek(R.PKTCTRL0))[0];
+        log(`Security+ pre-TX radio: PATABLE0=0x${pa[0].toString(16).padStart(2, "0")} PATABLE1=0x${pa[1].toString(16).padStart(2, "0")} FREND0=0x${frend0.toString(16).padStart(2, "0")} PKTLEN=${pktlen} PKTCTRL0=0x${pktctrl0Readback.toString(16).padStart(2, "0")}`);
         if (pktlen !== encodedLengthForRepeats(values.repeats) || (frend0 & 0x07) !== 1) {
             throw new Error("Security+ TX radio readback does not match expected packet length / PA power");
         }
