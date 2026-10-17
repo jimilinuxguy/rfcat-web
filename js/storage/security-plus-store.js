@@ -42,9 +42,9 @@ export async function reserveSecurityPlusCode(name, expectedCode, fixed, frequen
             store.get(key).onsuccess = event => {
                 const current = event.target.result;
                 const nextCode = current?.nextRolling ?? expectedCode;
-                if (current && nextCode !== expectedCode) {
+                if (current && (nextCode !== expectedCode || current.fixed !== fixed || current.frequency !== frequency || current.repeats !== repeats || current.invert !== invert)) {
                     transaction.abort();
-                    return reject(new Error("Profile rolling code changed elsewhere. Reload profile before transmitting."));
+                    return reject(new Error("Saved profile differs from the form or changed elsewhere. Save/reload the profile before transmitting."));
                 }
                 if (!Number.isInteger(nextCode) || nextCode < 0 || nextCode > 0xfffffffd) {
                     transaction.abort();
