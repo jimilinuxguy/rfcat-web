@@ -39,7 +39,9 @@ export async function reserveSecurityPlusCode(name, expectedCode, fixed, frequen
             const transaction = database.transaction(SECURITY_PLUS_STORE, "readwrite");
             const store = transaction.objectStore(SECURITY_PLUS_STORE);
             let reserved = null;
-            store.get(key).onsuccess = event => {
+            const request = store.get(key);
+            request.onerror = () => transaction.abort();
+            request.onsuccess = event => {
                 const current = event.target.result;
                 const nextCode = current?.nextRolling ?? expectedCode;
                 if (current && (nextCode !== expectedCode || current.fixed !== fixed || current.frequency !== frequency || current.repeats !== repeats || current.invert !== invert)) {
